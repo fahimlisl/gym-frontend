@@ -2,173 +2,217 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { renewMembership } from "../../api/admin.api";
 
-export default function RenewMembershipModal({
-  userId,
-  onClose,
-  onSuccess,
-}) {
+export default function RenewMembershipModal({ userId, onClose, onSuccess }) {
   const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState({
     plan: "monthly",
     price: "",
-    startDate: "",
     paymentMethod: "cash",
+    discountType: "none",
+    discount: "",
   });
-
-  /* ================= SUBMIT ================= */
 
   const submit = async (e) => {
     e.preventDefault();
 
-    if (!form.price) {
-      toast.error("Price is required");
-      return;
-    }
-
     try {
       setLoading(true);
-
       await renewMembership(userId, form);
-
       toast.success("Membership renewed successfully");
       onSuccess();
       onClose();
     } catch (err) {
-      toast.error(
-        err?.response?.data?.message ||
-          "Failed to renew membership"
-      );
+      toast.error("Failed to renew membership");
     } finally {
       setLoading(false);
     }
   };
 
-  /* ================= UI ================= */
-
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur
-                    flex items-center justify-center">
+    <Modal title="RENEW MEMBERSHIP" onClose={onClose}>
+      <form onSubmit={submit} className="space-y-8">
 
-      <div className="w-full max-w-lg rounded-2xl
-                      bg-gradient-to-br from-black via-neutral-900 to-black
-                      border border-red-600/30 p-8">
+        <TwoCol>
+          <Select
+            label="PLAN"
+            value={form.plan}
+            onChange={(e) =>
+              setForm({ ...form, plan: e.target.value })
+            }
+            options={["monthly", "quarterly", "half-yearly", "yearly"]}
+          />
 
-        {/* HEADER */}
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-black tracking-widest">
-            RENEW MEMBERSHIP
+          <Input
+            label="BASE PRICE (₹)"
+            type="number"
+            value={form.price}
+            onChange={(e) =>
+              setForm({ ...form, price: e.target.value })
+            }
+            required
+          />
+        </TwoCol>
+
+        <DiscountBlock
+          title="DISCOUNT (OPTIONAL)"
+          typeName="discountType"
+          valueName="discount"
+          form={form}
+          onChange={(e) =>
+            setForm({ ...form, [e.target.name]: e.target.value })
+          }
+        />
+
+        <Select
+          label="PAYMENT METHOD"
+          value={form.paymentMethod}
+          onChange={(e) =>
+            setForm({ ...form, paymentMethod: e.target.value })
+          }
+          options={["cash", "upi", "card", "netbanking"]}
+        />
+
+        <Actions
+          loading={loading}
+          onClose={onClose}
+          submitText="RENEW MEMBERSHIP"
+        />
+      </form>
+    </Modal>
+  );
+}
+
+
+function Modal({ title, children, onClose }) {
+  return (
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur flex items-center justify-center px-4">
+      <div
+        className="w-full max-w-2xl rounded-2xl
+                   bg-gradient-to-br from-black via-neutral-900 to-black
+                   border border-red-600/30 shadow-2xl p-8"
+      >
+        <div className="flex justify-between items-center mb-8">
+          <h2 className="text-2xl font-black tracking-widest text-white">
+            {title}
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-red-500"
+            className="text-gray-400 hover:text-red-500 text-xl"
           >
             ✕
           </button>
         </div>
 
-        {/* FORM */}
-        <form onSubmit={submit} className="space-y-5">
-
-          {/* PLAN */}
-          <Field label="PLAN">
-            <select
-              value={form.plan}
-              onChange={(e) =>
-                setForm({ ...form, plan: e.target.value })
-              }
-              className="input"
-            >
-              <option value="monthly">Monthly</option>
-              <option value="quarterly">Quarterly</option>
-              <option value="half-yearly">Half-Yearly</option>
-              <option value="yearly">Yearly</option>
-            </select>
-          </Field>
-
-          {/* PRICE */}
-          <Field label="PRICE">
-            <input
-              type="number"
-              className="input"
-              value={form.price}
-              onChange={(e) =>
-                setForm({ ...form, price: e.target.value })
-              }
-              required
-            />
-          </Field>
-
-          {/* START DATE */}
-          <Field label="START DATE (OPTIONAL)">
-            <input
-              type="date"
-              className="input"
-              value={form.startDate}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  startDate: e.target.value,
-                })
-              }
-            />
-          </Field>
-
-          {/* PAYMENT */}
-          <Field label="PAYMENT METHOD">
-            <select
-              value={form.paymentMethod}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  paymentMethod: e.target.value,
-                })
-              }
-              className="input"
-            >
-              <option value="cash">Cash</option>
-              <option value="upi">UPI</option>
-              <option value="card">Card</option>
-              <option value="netbanking">Netbanking</option>
-            </select>
-          </Field>
-
-          {/* ACTIONS */}
-          <div className="flex justify-end gap-4 pt-6">
-            <button
-              type="button"
-              onClick={onClose}
-              className="border border-white/20 px-6 py-3
-                         text-xs font-extrabold tracking-widest"
-            >
-              CANCEL
-            </button>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="bg-red-600 hover:bg-red-700
-                         px-8 py-3 text-xs font-extrabold tracking-widest
-                         disabled:opacity-50"
-            >
-              {loading ? "RENEWING..." : "RENEW"}
-            </button>
-          </div>
-        </form>
+        {children}
       </div>
     </div>
   );
 }
 
-/* ================= SMALL UI ================= */
+function DiscountBlock({ title, typeName, valueName, form, onChange }) {
+  return (
+    <div className="border border-red-600/20 rounded-xl p-5 bg-black/40 space-y-4">
+      <p className="text-xs tracking-widest text-red-500 font-bold">
+        {title}
+      </p>
 
-function Field({ label, children }) {
+      <TwoCol>
+        <Select
+          label="DISCOUNT TYPE"
+          name={typeName}
+          value={form[typeName]}
+          onChange={onChange}
+          options={["none", "percentage", "flat"]}
+        />
+
+        {form[typeName] !== "none" && (
+          <Input
+            label={
+              form[typeName] === "percentage"
+                ? "DISCOUNT (%)"
+                : "DISCOUNT AMOUNT (₹)"
+            }
+            name={valueName}
+            type="number"
+            onChange={onChange}
+          />
+        )}
+      </TwoCol>
+    </div>
+  );
+}
+
+function Input({ label, ...props }) {
   return (
     <div>
       <label className="text-xs tracking-widest text-gray-400">
         {label}
       </label>
-      <div className="mt-2">{children}</div>
+      <input
+        {...props}
+        className="
+          mt-2 w-full rounded-lg
+          bg-neutral-100 text-black
+          border border-neutral-300
+          px-4 py-3 text-sm
+          focus:outline-none focus:border-red-600
+        "
+      />
     </div>
   );
 }
+
+function Select({ label, options, ...props }) {
+  return (
+    <div>
+      <label className="text-xs tracking-widest text-gray-400">
+        {label}
+      </label>
+      <select
+        {...props}
+        className="
+          mt-2 w-full rounded-lg
+          bg-neutral-100 text-black
+          border border-neutral-300
+          px-4 py-3 text-sm
+          focus:outline-none focus:border-red-600
+        "
+      >
+        {options.map((o) => (
+          <option key={o} value={o}>
+            {o.toUpperCase()}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+const TwoCol = ({ children }) => (
+  <div className="grid md:grid-cols-2 gap-4">{children}</div>
+);
+
+const Actions = ({ loading, onClose, submitText }) => (
+  <div className="flex justify-end gap-4 pt-8 border-t border-white/10">
+    <button
+      type="button"
+      onClick={onClose}
+      className="border border-white/20 px-6 py-3
+                 text-xs font-extrabold tracking-widest
+                 text-gray-300 hover:border-red-600"
+    >
+      CANCEL
+    </button>
+
+    <button
+      type="submit"
+      disabled={loading}
+      className="bg-red-600 hover:bg-red-700
+                 px-10 py-3 text-xs font-extrabold tracking-widest
+                 text-white disabled:opacity-50"
+    >
+      {loading ? "PROCESSING..." : submitText}
+    </button>
+  </div>
+);
