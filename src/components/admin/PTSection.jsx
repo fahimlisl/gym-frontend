@@ -1,6 +1,4 @@
 export default function PTSection({ pt, onAssign, onRenew }) {
-  /* ================= NO PT ================= */
-
   if (!pt) {
     return (
       <div className="rounded-xl border border-red-600/30
@@ -23,7 +21,6 @@ export default function PTSection({ pt, onAssign, onRenew }) {
     );
   }
 
-  /* ================= HAS PT ================= */
 
   const current =
     pt.subscription?.[pt.subscription.length - 1];
@@ -33,7 +30,6 @@ export default function PTSection({ pt, onAssign, onRenew }) {
                     bg-gradient-to-br from-black via-neutral-900 to-black
                     p-8 space-y-6">
 
-      {/* TRAINER */}
       <div className="flex items-center gap-5">
         <img
           src={current.trainer?.avatar?.url}
@@ -51,7 +47,6 @@ export default function PTSection({ pt, onAssign, onRenew }) {
         </div>
       </div>
 
-      {/* DETAILS */}
       <div className="grid grid-cols-2 gap-4 text-sm">
         <Info label="PLAN" value={current.plan} />
         <Info label="PRICE" value={`₹${current.price}`} />
@@ -65,7 +60,6 @@ export default function PTSection({ pt, onAssign, onRenew }) {
         />
       </div>
 
-      {/* ACTIONS */}
       <div className="flex flex-col sm:flex-row gap-4 pt-4">
         <button
           onClick={onRenew}
@@ -89,9 +83,7 @@ export default function PTSection({ pt, onAssign, onRenew }) {
       </div>
     </div>
   );
-}
-
-/* ================= HELPERS ================= */
+};
 
 function Info({ label, value }) {
   return (

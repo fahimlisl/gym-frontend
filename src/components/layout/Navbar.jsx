@@ -17,7 +17,6 @@ export default function Navbar() {
     <header className="sticky top-0 z-50 bg-black border-b border-white/10">
       <nav className="container flex items-center justify-between h-16">
         
-        {/* Logo */}
         <Link
           to="/"
           className="text-xl font-extrabold tracking-widest"
@@ -25,7 +24,6 @@ export default function Navbar() {
          <span className="text-red-600">ALPHA</span> GYM
         </Link>
 
-        {/* Desktop Nav */}
         <ul className="hidden md:flex items-center gap-8">
           <NavLink to="/" className={navLinkClass}>
             Home
@@ -49,7 +47,6 @@ export default function Navbar() {
           </NavLink>
         </ul>
 
-        {/* Desktop CTA */}
         <div className="hidden md:block">
           <Link
             to="/login"
@@ -59,7 +56,6 @@ export default function Navbar() {
           </Link>
         </div>
 
-        {/* Mobile Toggle */}
         <button
           onClick={() => setOpen(!open)}
           className="md:hidden text-white"
@@ -68,7 +64,6 @@ export default function Navbar() {
         </button>
       </nav>
 
-      {/* Mobile Menu */}
       {open && (
         <div className="md:hidden bg-black border-t border-white/10">
           <div className="flex flex-col p-6 gap-5 text-sm font-bold tracking-wide">
@@ -119,8 +114,3 @@ export default function Navbar() {
     </header>
   );
 }
-
-
-{/* <li className="hover:text-red-500 cursor-pointer">Programs</li>
-<li className="hover:text-red-500 cursor-pointer">Pricing</li>
-<li className="hover:text-red-500 cursor-pointer">Contact</li> */}

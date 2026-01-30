@@ -88,7 +88,6 @@ export default function PricingP() {
   return (
     <div className="bg-neutral-950 text-white">
       
-      {/* Hero */}
       <section className="container py-24 text-center">
         <h1 className="text-4xl sm:text-5xl font-black tracking-tight">
           INVEST IN YOUR
@@ -99,7 +98,6 @@ export default function PricingP() {
           choose a plan that matches your mindset.
         </p>
 
-        {/* Billing Toggle */}
         <div className="mt-10 inline-flex border border-white/10">
           <button
             onClick={() => setBilling("monthly")}
@@ -124,7 +122,6 @@ export default function PricingP() {
         </div>
       </section>
 
-      {/* Pricing Cards */}
       <section className="container pb-28">
         <div className="grid md:grid-cols-3 gap-10">
           {plans[billing].map((plan) => (
@@ -136,7 +133,6 @@ export default function PricingP() {
         </div>
       </section>
 
-      {/* Final CTA */}
       <section className="bg-black border-t border-white/10 py-20">
         <div className="container text-center">
           <h2 className="text-3xl font-black mb-4">

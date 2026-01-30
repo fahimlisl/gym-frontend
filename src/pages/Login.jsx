@@ -52,22 +52,18 @@ export default function Login() {
  return (
   <div className="min-h-screen relative flex items-center justify-center bg-black overflow-hidden">
     
-    {/* Red Energy Background */}
     <div className="absolute inset-0">
       <div className="absolute -top-40 -left-40 w-[600px] h-[600px] bg-red-700/30 blur-[220px]" />
       <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-red-600/20 blur-[200px]" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,0,0,0.12),transparent_60%)]" />
     </div>
 
-    {/* Login Shell */}
     <div className="relative w-full max-w-md border border-red-600/30 bg-neutral-950 shadow-[0_0_80px_rgba(255,0,0,0.15)]">
       
-      {/* Top Accent Bar */}
       <div className="h-1 bg-gradient-to-r from-red-700 via-red-500 to-red-700" />
 
       <div className="p-8 sm:p-10">
         
-        {/* Brand */}
         <div className="text-center mb-10">
           <h1 className="text-4xl font-black tracking-widest">
             <span className="text-red-600">ALPHA</span> GYM
@@ -77,7 +73,6 @@ export default function Login() {
           </p>
         </div>
 
-        {/* Role Selector */}
         <div className="mb-10">
           <p className="text-[10px] text-gray-500 font-bold tracking-widest mb-3">
             SELECT ACCESS LEVEL
@@ -101,10 +96,8 @@ export default function Login() {
           </div>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           
-          {/* Identifier */}
           <div>
             <label className="block text-[10px] font-bold tracking-[0.25em] text-gray-500 mb-2">
               EMAIL / PHONE
@@ -127,7 +120,6 @@ export default function Login() {
             )}
           </div>
 
-          {/* Password */}
           <div>
             <label className="block text-[10px] font-bold tracking-[0.25em] text-gray-500 mb-2">
               PASSWORD
@@ -150,7 +142,6 @@ export default function Login() {
             )}
           </div>
 
-          {/* Action */}
           <button
             type="submit"
             disabled={isSubmitting}
@@ -167,7 +158,6 @@ export default function Login() {
           </button>
         </form>
 
-        {/* Warning */}
         <p className="mt-8 text-center text-[10px] tracking-widest text-gray-600">
           UNAUTHORIZED ACCESS IS PROHIBITED
         </p>

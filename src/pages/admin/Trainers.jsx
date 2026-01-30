@@ -32,7 +32,6 @@ export default function Trainers() {
     <AdminDashboardLayout>
       <div className="space-y-10">
 
-        {/* HEADER */}
         <div className="border border-red-600/30
                         bg-gradient-to-br from-black via-neutral-900 to-black
                         p-6 md:p-8 rounded-xl flex justify-between items-center">
@@ -54,7 +53,6 @@ export default function Trainers() {
           </button>
         </div>
 
-        {/* STATS */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Stat label="TOTAL TRAINERS" value={trainers.length} />
           <Stat
@@ -68,7 +66,6 @@ export default function Trainers() {
           <Stat label="SALARY BASED" value="—" />
         </div>
 
-        {/* LIST */}
         {loading && (
           <p className="text-gray-500 tracking-widest">
             LOADING TRAINERS...
@@ -94,7 +91,6 @@ export default function Trainers() {
         )}
       </div>
 
-      {/* MODAL */}
       {addOpen && (
         <AddTrainerModal
           onClose={() => setAddOpen(false)}
@@ -105,7 +101,6 @@ export default function Trainers() {
   );
 }
 
-/* ================= SMALL UI ================= */
 
 function Stat({ label, value }) {
   return (

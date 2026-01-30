@@ -18,7 +18,6 @@ export default function UserDashboardLayout({ children }) {
   return (
     <div className="min-h-screen bg-neutral-950 text-white">
       
-      {/* TOP BAR */}
       <header
         className="sticky top-0 z-40
                    border-b border-red-600/30
@@ -26,7 +25,6 @@ export default function UserDashboardLayout({ children }) {
         <div className="max-w-7xl mx-auto px-6 py-4
                         flex items-center justify-between">
 
-          {/* BRAND */}
           <div
             className="font-black tracking-widest text-lg cursor-pointer"
             onClick={() => navigate("/user/dashboard")}
@@ -34,7 +32,6 @@ export default function UserDashboardLayout({ children }) {
             ALPHA <span className="text-red-600">GYM</span>
           </div>
 
-          {/* ACTIONS */}
           <div className="flex items-center gap-4">
             <button
               onClick={logout}
@@ -48,12 +45,10 @@ export default function UserDashboardLayout({ children }) {
         </div>
       </header>
 
-      {/* MAIN CONTENT */}
       <main className="max-w-7xl mx-auto px-6 py-8">
         {children}
       </main>
 
-      {/* FOOTER */}
       <footer className="border-t border-white/10 mt-16">
         <div className="max-w-7xl mx-auto px-6 py-6
                         text-center text-xs text-gray-500 tracking-widest">

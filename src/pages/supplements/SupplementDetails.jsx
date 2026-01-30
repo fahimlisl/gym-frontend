@@ -22,7 +22,6 @@ export default function SupplementDetails() {
   return (
     <div className="container py-16 grid lg:grid-cols-2 gap-10">
       
-      {/* Images */}
       <div className="space-y-4">
         {product.images.map((img) => (
           <img
@@ -33,7 +32,6 @@ export default function SupplementDetails() {
         ))}
       </div>
 
-      {/* Info */}
       <div>
         <h1 className="text-3xl font-black">
           {product.productName}

@@ -10,7 +10,6 @@ export default function StudentCard({ student }) {
                       bg-gradient-to-br from-black via-neutral-900 to-black
                       rounded-xl p-6 space-y-5">
 
-        {/* HEADER */}
         <div className="flex items-center gap-4">
           <img
             src={student.avatar?.url}
@@ -27,7 +26,6 @@ export default function StudentCard({ student }) {
           </div>
         </div>
 
-        {/* INFO */}
         <div className="text-xs text-gray-400 space-y-1">
           <p>
             Joined:{" "}
@@ -39,7 +37,6 @@ export default function StudentCard({ student }) {
           </p>
         </div>
 
-        {/* ACTIONS */}
         <div className="flex gap-3 pt-4">
           <button
             onClick={() => setDietOpen(true)}

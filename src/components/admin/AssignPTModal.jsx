@@ -19,8 +19,6 @@ export default function AssignPTModal({ userId, onClose, onSuccess }) {
     paymentMethod: "cash",
   });
 
-  /* ================= LOAD TRAINERS ================= */
-
   useEffect(() => {
 
     const loadTrainers = async () => {
@@ -37,7 +35,6 @@ export default function AssignPTModal({ userId, onClose, onSuccess }) {
     loadTrainers();
   }, []);
 
-  /* ================= SUBMIT ================= */
 
   const submit = async (e) => {
     e.preventDefault();
@@ -69,15 +66,12 @@ export default function AssignPTModal({ userId, onClose, onSuccess }) {
     }
   };
 
-  /* ================= UI ================= */
-
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur flex items-center justify-center">
       <div className="w-full max-w-xl rounded-2xl
                       bg-gradient-to-br from-black via-neutral-900 to-black
                       border border-red-600/30 p-8">
 
-        {/* HEADER */}
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-black tracking-widest">
             ASSIGN PERSONAL TRAINING
@@ -90,10 +84,8 @@ export default function AssignPTModal({ userId, onClose, onSuccess }) {
           </button>
         </div>
 
-        {/* FORM */}
         <form onSubmit={submit} className="space-y-5">
 
-          {/* TRAINER */}
           <Field label="TRAINER">
             <select
               value={trainerId}
@@ -109,7 +101,6 @@ export default function AssignPTModal({ userId, onClose, onSuccess }) {
             </select>
           </Field>
 
-          {/* PLAN */}
           <Field label="PLAN">
             <select
               value={form.plan}
@@ -125,7 +116,6 @@ export default function AssignPTModal({ userId, onClose, onSuccess }) {
             </select>
           </Field>
 
-          {/* PRICE */}
           <Field label="PRICE">
             <input
               type="number"
@@ -138,7 +128,6 @@ export default function AssignPTModal({ userId, onClose, onSuccess }) {
             />
           </Field>
 
-          {/* START DATE */}
           <Field label="START DATE (OPTIONAL)">
             <input
               type="date"
@@ -150,7 +139,6 @@ export default function AssignPTModal({ userId, onClose, onSuccess }) {
             />
           </Field>
 
-          {/* PAYMENT METHOD */}
           <Field label="PAYMENT METHOD">
             <select
               value={form.paymentMethod}
@@ -169,7 +157,6 @@ export default function AssignPTModal({ userId, onClose, onSuccess }) {
             </select>
           </Field>
 
-          {/* ACTIONS */}
           <div className="flex justify-end gap-4 pt-6">
             <button
               type="button"
@@ -195,7 +182,6 @@ export default function AssignPTModal({ userId, onClose, onSuccess }) {
   );
 }
 
-/* ================= SMALL UI ================= */
 
 function Field({ label, children }) {
   return (

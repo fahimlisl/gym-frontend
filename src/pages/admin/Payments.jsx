@@ -39,7 +39,6 @@ export default function Payments() {
     <AdminDashboardLayout>
       <div className="space-y-8">
 
-        {/* HEADER */}
         <div className="border border-red-600/30 bg-black p-6">
           <h1 className="text-3xl font-black tracking-widest">
             PAYMENTS
@@ -49,13 +48,11 @@ export default function Payments() {
           </p>
         </div>
 
-        {/* STATS */}
         <PaymentStats
           total={total}
           transactions={transactions}
         />
 
-        {/* TABLE */}
         {loading ? (
           <p className="text-gray-500 tracking-widest">
             LOADING TRANSACTIONS...

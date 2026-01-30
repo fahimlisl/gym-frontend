@@ -18,12 +18,10 @@ export default function TrainerDashboardLayout({ trainer, children }) {
   return (
     <div className="min-h-screen bg-neutral-950 text-white">
 
-      {/* HEADER */}
       <header className="border-b border-red-600/30
                          bg-black px-6 py-4
                          flex items-center justify-between">
 
-        {/* LEFT */}
         <div className="flex items-center gap-4">
           <img
             src={trainer?.avatar?.url}
@@ -41,7 +39,6 @@ export default function TrainerDashboardLayout({ trainer, children }) {
           </div>
         </div>
 
-        {/* RIGHT */}
         <button
           onClick={logout}
           className="border border-red-600
@@ -53,7 +50,6 @@ export default function TrainerDashboardLayout({ trainer, children }) {
         </button>
       </header>
 
-      {/* PAGE CONTENT */}
       <main className="p-6">
         {children}
       </main>

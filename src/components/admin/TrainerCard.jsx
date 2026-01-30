@@ -24,7 +24,6 @@ export default function TrainerCard({ trainer, onUpdate }) {
                     bg-gradient-to-br from-black via-neutral-900 to-black
                     rounded-xl p-6 space-y-5">
 
-      {/* HEADER */}
       <div className="flex items-center gap-4">
         <img
           src={trainer.avatar.url}
@@ -41,7 +40,6 @@ export default function TrainerCard({ trainer, onUpdate }) {
         </div>
       </div>
 
-      {/* INFO */}
       <div className="text-sm space-y-1">
         <p>📞 {trainer.phoneNumber}</p>
         {trainer.email && <p>✉️ {trainer.email}</p>}
@@ -49,7 +47,6 @@ export default function TrainerCard({ trainer, onUpdate }) {
         <p>💰 Salary: ₹{trainer.salary || "—"}</p>
       </div>
 
-      {/* ACTIONS */}
       <div className="flex gap-3 pt-4">
         <button
           onClick={() => setEditOpen(true)}

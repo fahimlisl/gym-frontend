@@ -1,11 +1,11 @@
-import Hero from "../components/home/Hero";
+import Hero, { PerformanceCafe } from "../components/home/Hero";
 
 export default function Home() {
   return (
     <>
       <Hero />
 
-      {/* Features Section */}
+      <PerformanceCafe />
       <section className="bg-neutral-950 text-white py-20">
         <div className="container grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {["Modern Equipment", "Certified Trainers", "Flexible Plans"].map(

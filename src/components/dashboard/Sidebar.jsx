@@ -5,45 +5,94 @@ import {
   UserCog,
   CreditCard,
   Package,
+  Coffee,
+  PlusSquare,
+  List,
 } from "lucide-react";
 
-const menu = [
+const mainMenu = [
   { label: "Dashboard", to: "/admin/dashboard", icon: LayoutDashboard },
   { label: "Members", to: "/admin/members", icon: Users },
   { label: "Trainers", to: "/admin/trainers", icon: UserCog },
   { label: "Payments", to: "/admin/payments", icon: CreditCard },
+];
+
+const cafeMenu = [
+  { label: "All Items", to: "/admin/cafe/items", icon: List },
+  { label: "Add Item", to: "/admin/cafe/add-item", icon: PlusSquare },
+  { label: "Cafe Admins", to: "/admin/cafe/admins", icon: UserCog },
+];
+
+const otherMenu = [
   { label: "Supplements", to: "/admin/supplements", icon: Package },
 ];
 
 export default function Sidebar() {
   return (
-    <aside className="hidden md:flex w-64 flex-col border-r border-white/10 bg-black">
-      
-      {/* Logo */}
-      <div className="h-16 flex items-center px-6 text-xl font-extrabold tracking-widest">
-        ALPHA <span className="text-red-600"> GYM</span>
+    <aside className="hidden md:flex w-72 flex-col
+                     border-r border-white/10 bg-black">
+
+      <div className="h-16 flex items-center px-6
+                      text-xl font-black tracking-widest">
+        ALPHA
+        <span className="text-red-600 ml-1">GYM</span>
       </div>
 
-      {/* Menu */}
-      <nav className="flex-1 px-4 py-6 space-y-1">
-        {menu.map((item) => (
-          <NavLink
-            key={item.label}
-            to={item.to}
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-4 py-3 text-sm font-bold tracking-wide transition
-               ${
-                 isActive
-                   ? "bg-red-600 text-white"
-                   : "text-gray-400 hover:text-white hover:bg-white/5"
-               }`
-            }
-          >
-            <item.icon size={18} />
-            {item.label}
-          </NavLink>
-        ))}
+      <nav className="flex-1 px-4 py-6 space-y-6 overflow-y-auto">
+
+        <Section title="CORE">
+          {mainMenu.map(renderLink)}
+        </Section>
+
+        <Section title="CAFE" icon={Coffee} accent="emerald">
+          {cafeMenu.map(renderLink)}
+        </Section>
+
+        <Section title="INVENTORY">
+          {otherMenu.map(renderLink)}
+        </Section>
+
       </nav>
     </aside>
+  );
+}
+
+function Section({ title, children, icon: Icon, accent = "red" }) {
+  return (
+    <div>
+      <div className="flex items-center gap-2 px-3 mb-2">
+        {Icon && <Icon size={14} className={`text-${accent}-500`} />}
+        <p className="text-xs text-gray-500 tracking-widest font-bold">
+          {title}
+        </p>
+      </div>
+
+      <div className="space-y-1">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function renderLink(item) {
+  const Icon = item.icon;
+
+  return (
+    <NavLink
+      key={item.label}
+      to={item.to}
+      className={({ isActive }) =>
+        `flex items-center gap-3 px-4 py-3
+         text-sm font-bold tracking-wide rounded-lg transition
+         ${
+           isActive
+             ? "bg-red-600 text-white shadow-md shadow-red-600/30"
+             : "text-gray-400 hover:text-white hover:bg-white/5"
+         }`
+      }
+    >
+      <Icon size={18} />
+      {item.label}
+    </NavLink>
   );
 }

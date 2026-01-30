@@ -4,13 +4,11 @@ export default function Footer() {
   return (
     <footer className="relative bg-black text-gray-400 overflow-hidden">
       
-      {/* Red Glow */}
       <div className="absolute -top-32 -left-32 w-[400px] h-[400px] bg-red-600/20 blur-[160px]" />
       <div className="absolute bottom-0 right-0 w-[300px] h-[300px] bg-red-600/10 blur-[140px]" />
 
       <div className="relative container py-16 grid gap-12 md:grid-cols-3">
         
-        {/* Brand */}
         <div>
           <h3 className="text-white font-black text-2xl tracking-widest">
             <span className="text-red-600">ALPHA </span>GYM
@@ -26,7 +24,6 @@ export default function Footer() {
           </p>
         </div>
 
-        {/* Links */}
         <div className="grid grid-cols-2 gap-10 text-sm">
           <div className="space-y-3">
             <p className="text-white font-extrabold tracking-wide">
@@ -59,7 +56,6 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* CTA + Socials */}
         <div className="border border-white/10 p-6 bg-neutral-950 flex flex-col justify-between">
           <div>
             <p className="text-white font-extrabold text-lg mb-3">
@@ -76,7 +72,6 @@ export default function Footer() {
             </button>
           </div>
 
-          {/* Social Icons */}
           <div className="flex gap-4 mt-6">
             <a
               href="#"
@@ -100,7 +95,6 @@ export default function Footer() {
         </div>
       </div>
 
-      {/* Bottom Strip */}
       <div className="border-t border-white/10">
         <div className="container py-6 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-gray-600">
           

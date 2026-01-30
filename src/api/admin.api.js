@@ -1,6 +1,6 @@
-import api from "./axios.api.js"; // your axios instance
+import api from "./axios.api.js";
 
-const fetchAllMembers = () =>
+export const fetchAllMembers = () =>
   api.get("/admin/fetchAllUser");
 
 
@@ -40,15 +40,7 @@ export const renewMembership = (userId, data) =>
   api.patch(`/admin/renewalSubscription/${userId}`, data);
 
 
-/* ================= PERSONAL TRAINING ================= */
-
-// export const assignPT = (memberId, trainerId, payload) => {
-//   return axios.post(
-//     `/personal-training/${memberId}/${trainerId}`,
-//     payload
-//   );
-// };
-
+// personal training
 export const renewPT = (memberId, trainerId, payload) => {
   return api.post(
     `/admin/personal-training-renewal/${memberId}/${trainerId}`,
@@ -57,8 +49,6 @@ export const renewPT = (memberId, trainerId, payload) => {
 };
 
 // trainers
-
-
 export const registerTrainer = (formData) =>
   api.post("/admin/register-trainer", formData, {
     headers: { "Content-Type": "multipart/form-data" },
@@ -78,4 +68,40 @@ export const calculateTotalInLet = () =>
   api.get("/admin/calculateTotalInLet");
 
 
-export {fetchAllMembers}
+// revenew part 
+export const fetchDashboardRevenue = () =>
+  api.get("/admin/dashboard-revenue");
+
+export const fetchRevenueBySource = () =>
+  api.get("/admin/revenue-by-source");
+
+export const fetchRecentTransactions = () =>
+  api.get("/admin/recent-transactions");
+
+
+// cafe
+export const fetchAllCafeItem = () =>
+  api.get("/admin/fetchAllCafeItem");
+
+export const destroyCafeItem = (id) =>
+  api.delete(`/admin/destroy-item/${id}`);
+
+export const editCafeItem = (id, data) =>
+  api.post(`/admin/edit-item/${id}`, data);
+
+// api/admin.api.js
+export const addCafeItem = (formData) =>
+  api.post("/admin/add-item", formData);
+
+export const toggleCafeItemAvailability = (id) =>
+  api.patch(`/admin/toggleAvailability/${id}`);
+
+// cafe admin staff
+export const addCafeAdmin = (data) =>
+  api.post("/admin/add-cafe-admin", data);
+
+export const fetchAllCafeAdmin = () =>
+  api.get("/admin/fetchAllCafeAdmin");
+
+export const destroyCafeAdmin = (id) =>
+  api.delete(`/admin/destroyCafeAdmin/${id}`);

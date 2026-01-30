@@ -49,7 +49,6 @@ export default function EditTrainerModal({
                       bg-gradient-to-br from-black via-neutral-900 to-black
                       rounded-xl p-6 space-y-6">
 
-        {/* HEADER */}
         <div className="flex justify-between items-center">
           <h2 className="font-black tracking-widest">
             EDIT TRAINER
@@ -62,7 +61,6 @@ export default function EditTrainerModal({
           </button>
         </div>
 
-        {/* FORM */}
         <form onSubmit={submit} className="space-y-4">
 
           <Input
@@ -101,7 +99,6 @@ export default function EditTrainerModal({
             type="number"
           />
 
-          {/* ACTIONS */}
           <div className="flex gap-3 pt-4">
             <button
               type="button"
@@ -128,9 +125,7 @@ export default function EditTrainerModal({
       </div>
     </div>
   );
-}
-
-/* ================= SMALL INPUT ================= */
+};
 
 function Input({
   label,

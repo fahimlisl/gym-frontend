@@ -32,7 +32,6 @@ export default function Members() {
     <AdminDashboardLayout>
       <div className="space-y-12">
 
-        {/* ===== PAGE HEADER ===== */}
         <div className="relative overflow-hidden rounded-2xl
                         bg-gradient-to-br from-black via-neutral-900 to-black
                         border border-red-600/25 p-8">
@@ -60,12 +59,10 @@ export default function Members() {
             </button>
           </div>
 
-          {/* Glow */}
           <div className="absolute -top-24 -right-24 w-96 h-96
                           bg-red-600/10 blur-3xl rounded-full" />
         </div>
 
-        {/* ===== STATS ===== */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           <StatBox label="TOTAL MEMBERS" value={users.length} />
           <StatBox
@@ -79,7 +76,6 @@ export default function Members() {
           <StatBox label="ACTIVE" value={users.length} />
         </div>
 
-        {/* ===== CONTENT ===== */}
         {loading && (
           <div className="text-gray-500 tracking-widest">
             LOADING MEMBERS...
@@ -102,7 +98,6 @@ export default function Members() {
         )}
       </div>
 
-      {/* ===== ADD MEMBER MODAL ===== */}
       {openAdd && (
         <AddMemberModal
           onClose={() => setOpenAdd(false)}
@@ -113,7 +108,6 @@ export default function Members() {
   );
 }
 
-/* ===== SMALL UI COMPONENT ===== */
 
 function StatBox({ label, value }) {
   return (

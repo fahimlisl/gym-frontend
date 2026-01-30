@@ -48,7 +48,6 @@ export default function AddTrainerModal({ onClose, onSuccess }) {
                       bg-gradient-to-br from-black via-neutral-900 to-black
                       rounded-2xl p-8">
 
-        {/* HEADER */}
         <div className="flex items-center justify-between mb-8">
           <h2 className="text-2xl font-black tracking-widest">
             ADD TRAINER
@@ -63,7 +62,6 @@ export default function AddTrainerModal({ onClose, onSuccess }) {
 
         <form onSubmit={submit} className="space-y-8">
 
-          {/* TOP GRID */}
           <div className="grid md:grid-cols-2 gap-6">
 
             <Input
@@ -117,11 +115,9 @@ export default function AddTrainerModal({ onClose, onSuccess }) {
             />
           </div>
 
-          {/* AVATAR UPLOAD */}
           <div className="border border-white/10 rounded-xl p-6
                           flex items-center gap-6">
 
-            {/* PREVIEW */}
             <div className="w-24 h-24 rounded-full border-2 border-red-600 overflow-hidden bg-black">
               {form.avatar ? (
                 <img
@@ -137,7 +133,6 @@ export default function AddTrainerModal({ onClose, onSuccess }) {
               )}
             </div>
 
-            {/* INPUT */}
             <div className="flex-1">
               <p className="text-xs text-gray-400 tracking-widest mb-2">
                 TRAINER AVATAR
@@ -157,7 +152,6 @@ export default function AddTrainerModal({ onClose, onSuccess }) {
             </div>
           </div>
 
-          {/* ACTIONS */}
           <div className="flex justify-end gap-4 pt-4">
             <button
               type="button"
@@ -185,8 +179,6 @@ export default function AddTrainerModal({ onClose, onSuccess }) {
     </div>
   );
 }
-
-/* ================= INPUT ================= */
 
 function Input({ label, type = "text", value, onChange }) {
   return (

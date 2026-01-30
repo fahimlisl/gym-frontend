@@ -1,4 +1,3 @@
-// import ProgramCard from "../programs/ProgramCard";
 import ProgramCard from "../components/program/ProgramCard";
 
 export default function Programs() {
@@ -31,7 +30,6 @@ export default function Programs() {
 
   return (
     <div className="bg-neutral-950 text-white">
-      {/* Hero */}
       <section className="container py-24 text-center">
         <h1 className="text-4xl sm:text-5xl font-black">
           TRAINING
@@ -43,7 +41,6 @@ export default function Programs() {
         </p>
       </section>
 
-      {/* Programs */}
       <section className="container pb-28">
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {programs.map((p) => (
@@ -52,7 +49,6 @@ export default function Programs() {
         </div>
       </section>
 
-      {/* CTA */}
       <section className="bg-black border-t border-white/10 py-20">
         <div className="container text-center">
           <h2 className="text-3xl font-black mb-4">
