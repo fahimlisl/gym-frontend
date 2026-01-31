@@ -148,82 +148,93 @@ function CafeItemCard({ item }) {
   };
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-2xl
+    <div className="group relative flex flex-col rounded-2xl overflow-hidden
                     bg-gradient-to-br from-black via-neutral-900 to-black
                     border border-white/10 hover:border-red-600/40
-                    transition">
+                    transition-all duration-300">
 
-      <div className="h-48 overflow-hidden">
+      <div className="relative h-52 overflow-hidden">
         <img
           src={item.image?.url}
           alt={item.name}
-          className="w-full h-full object-cover hover:scale-105 transition"
+          className="w-full h-full object-cover
+                     group-hover:scale-105 transition duration-300"
         />
+
+        <div className="absolute top-3 left-3 flex items-center gap-2
+                        bg-black/70 backdrop-blur px-3 py-1 rounded-full text-xs font-bold">
+          <span
+            className={`w-2.5 h-2.5 rounded-full
+                        ${item.isVeg ? "bg-emerald-500" : "bg-red-500"}`}
+          />
+          {item.isVeg ? "VEG" : "NON-VEG"}
+        </div>
+
+        <span className="absolute top-3 right-3
+                         bg-black/70 px-3 py-1 text-[10px]
+                         tracking-widest uppercase rounded-full text-gray-300">
+          {item.category}
+        </span>
       </div>
 
-      <div className="p-5 space-y-3 flex-1">
+      <div className="flex-1 p-5 space-y-4">
 
-        <div className="space-y-1">
+        <h3 className="text-lg font-black tracking-wide leading-tight">
+          {item.name}
+        </h3>
 
-  <div className="flex items-center gap-2">
-    <span
-      className={`w-3 h-3 rounded-full
-                  ${item.isVeg ? "bg-emerald-500" : "bg-red-500"}`}
-    />
-    <h3 className="text-lg font-black tracking-wide">
-      {item.name}
-    </h3>
-  </div>
-
-  <p className="text-xs text-gray-400 tracking-widest uppercase">
-    {item.category}
-  </p>
-</div>
-
-
-        <p className="text-sm text-gray-300 line-clamp-2">
+        <p className="text-sm text-gray-400 line-clamp-2">
           {item.description}
         </p>
 
-        <div className="grid grid-cols-3 text-xs text-gray-400 pt-2">
-          <span>P {item.macros?.protein || 0}g</span>
-          <span>C {item.macros?.carbs || 0}g</span>
-          <span>F {item.macros?.fats || 0}g</span>
+        <div className="grid grid-cols-3 gap-2 text-xs text-gray-400">
+          <Macro label="PROTEIN" value={`${item.macros?.protein || 0}g`} />
+          <Macro label="CARBS" value={`${item.macros?.carbs || 0}g`} />
+          <Macro label="FATS" value={`${item.macros?.fats || 0}g`} />
         </div>
 
-        <div className="flex justify-between items-center pt-3">
-          <p className="text-xl font-black text-red-500">
-            ₹{item.price}
-          </p>
-          <span className="text-xs text-gray-400">
-            {item.calories} kcal
-          </span>
+        <div className="flex justify-between items-end pt-3">
+          <div>
+            <p className="text-xs tracking-widest text-gray-600">
+              SELL PRICE
+            </p>
+            <p className="text-2xl font-black text-red-500">
+              ₹{item.price}
+            </p>
+          </div>
+
+          <div className="text-right text-xs text-gray-200 space-y-1">
+            <p>{item.calories} kcal</p>
+            <p>Stock: {item.quantity ?? "—"}</p>
+            {item.purchasePrice && (
+              <p className="opacity-100 text-gray-50">
+                Buy : ₹{item.purchasePrice}
+              </p>
+            )}
+          </div>
         </div>
       </div>
 
       <div
         className={`flex items-center justify-between px-5 py-4
                     font-extrabold tracking-widest text-xs
+                    transition
                     ${
                       available
-                        ? "bg-emerald-500/90 text-black"
+                        ? "bg-emerald-500 text-black"
                         : "bg-red-600 text-white"
                     }`}
       >
         <div className="flex items-center gap-2">
-          {available ? (
-            <CheckCircle size={16} />
-          ) : (
-            <XCircle size={16} />
-          )}
+          {available ? <CheckCircle size={16} /> : <XCircle size={16} />}
           {available ? "AVAILABLE" : "OUT OF STOCK"}
         </div>
 
         <button
           onClick={toggle}
           disabled={loading}
-          className={`px-4 py-2 text-xs font-black tracking-widest
-                      border transition
+          className={`px-4 py-2 border text-xs font-black tracking-widest
+                      transition
                       ${
                         available
                           ? "border-black/40 hover:bg-black/10"
@@ -237,3 +248,15 @@ function CafeItemCard({ item }) {
   );
 }
 
+function Macro({ label, value }) {
+  return (
+    <div className="bg-black/40 border border-white/5 rounded-lg p-2 text-center">
+      <p className="text-[10px] tracking-widest text-gray-500">
+        {label}
+      </p>
+      <p className="font-bold text-gray-300">
+        {value}
+      </p>
+    </div>
+  );
+}

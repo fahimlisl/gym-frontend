@@ -102,7 +102,7 @@ export default function Navbar() {
 
 
             <Link
-              to="/login"
+              to="/pricing"
               onClick={() => setOpen(false)}
               className="mt-4 bg-red-600 py-3 text-center font-extrabold tracking-widest shadow-[0_0_25px_rgba(239,68,68,0.5)]"
             >

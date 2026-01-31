@@ -51,7 +51,7 @@ export default function Payments() {
         <PaymentStats
           total={total}
           transactions={transactions}
-        />
+          />
 
         {loading ? (
           <p className="text-gray-500 tracking-widest">

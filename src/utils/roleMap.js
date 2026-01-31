@@ -14,4 +14,10 @@ export const ROLE_MAP = {
     endpoint: "/user/login",
     redirect: "/member/dashboard",
   },
+
+   cafe: {
+    label: "Cafe",
+    endpoint: "/cafe/admin/login", 
+    redirect: "/cafe/dashboard",
+  },
 };

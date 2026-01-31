@@ -19,7 +19,7 @@ const mainMenu = [
 
 const cafeMenu = [
   { label: "All Items", to: "/admin/cafe/items", icon: List },
-  { label: "Add Item", to: "/admin/cafe/add-item", icon: PlusSquare },
+  // { label: "Add Item", to: "/admin/cafe/add-item", icon: PlusSquare },
   { label: "Cafe Admins", to: "/admin/cafe/admins", icon: UserCog },
 ];
 

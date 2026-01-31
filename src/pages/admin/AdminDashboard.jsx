@@ -17,6 +17,7 @@ export default function AdminDashboard() {
   const [sources, setSources] = useState([]);
   const [recent, setRecent] = useState([]);
   const [loading, setLoading] = useState(true);
+  let i = 1;
 
   useEffect(() => {
     const load = async () => {
@@ -85,6 +86,7 @@ export default function AdminDashboard() {
           <table className="w-full text-sm">
             <thead className="text-gray-400 border-b border-white/10">
               <tr>
+                <th className="py-2 text-left">S.No</th>
                 <th className="py-2 text-left">USER</th>
                 <th className="text-left">SOURCE</th>
                 <th className="text-left">AMOUNT</th>
@@ -99,6 +101,7 @@ export default function AdminDashboard() {
                   key={t._id}
                   className="border-b border-white/5 hover:bg-white/5"
                 >
+                  <td>{i++}</td>
                   <td className="py-3">
                     {t.user?.username || "—"}
                   </td>

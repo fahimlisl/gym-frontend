@@ -1,10 +1,12 @@
 export default function TransactionsTable({ transactions }) {
+  let i = 1;
   return (
     <div className="border border-white/10 bg-black overflow-x-auto">
 
       <table className="min-w-full text-sm">
         <thead className="bg-neutral-900 text-gray-400">
           <tr>
+            <Th>S.No</Th>
             <Th>DATE</Th>
             <Th>SOURCE</Th>
             <Th>AMOUNT</Th>
@@ -19,6 +21,7 @@ export default function TransactionsTable({ transactions }) {
               key={t._id}
               className="border-t border-white/5 hover:bg-neutral-900"
             >
+              <Td>{i++}</Td>
               <Td>{formatDate(t.paidAt)}</Td>
               <Td className="capitalize">{t.source}</Td>
               <Td className="font-bold">₹{t.amount}</Td>

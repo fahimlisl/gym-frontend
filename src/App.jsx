@@ -25,6 +25,8 @@ import UserDashboard from "./pages/user/UserDashboard.jsx";
 import CafeItems from "./pages/admin/CafeItems.jsx";
 import AddCafeItemModal from "./components/admin/cafe/AddCafeItemModal.jsx";
 import CafeAdmins from "./pages/admin/CafeAdmins.jsx";
+import CafeAdminDashboard from "./pages/cafe/CafeAdminDashboard.jsx";
+
 
 export default function App() {
   return (
@@ -78,6 +80,11 @@ export default function App() {
         <Route path="/admin/cafe/items" element={<CafeItems />} />
         <Route path="/admin/cafe/add-item" element={<AddCafeItemModal />} />
         <Route path="/admin/cafe/admins" element={<CafeAdmins />} />
+
+        <Route path="/cafe/dashboard" element={<CafeAdminDashboard />} />
+
+        <Route path="/cafe/dashboard" element={<CafeAdminDashboard />} />
+
 
 
       </Routes>
