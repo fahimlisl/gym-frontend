@@ -26,6 +26,8 @@ import CafeItems from "./pages/admin/CafeItems.jsx";
 import AddCafeItemModal from "./components/admin/cafe/AddCafeItemModal.jsx";
 import CafeAdmins from "./pages/admin/CafeAdmins.jsx";
 import CafeAdminDashboard from "./pages/cafe/CafeAdminDashboard.jsx";
+import Coupon from "./pages/admin/Coupon.jsx";
+import Expenses from "./pages/admin/Expenses.jsx";
 
 
 export default function App() {
@@ -75,6 +77,8 @@ export default function App() {
 
         <Route path="/admin/trainers" element={<Trainers />} />
         <Route path="/admin/payments" element={<Payments />} />
+        <Route path="/admin/coupons" element={<Coupon />} />
+        <Route path="/admin/expenses" element={<Expenses />} />
 
         {/* cafe things starts here  */}
         <Route path="/admin/cafe/items" element={<CafeItems />} />

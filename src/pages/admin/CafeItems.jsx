@@ -51,12 +51,6 @@ export default function CafeItems() {
                         p-6 rounded-xl">
 
           <div className="space-y-2">
-            <button
-              onClick={() => window.location.href = "/admin/cafe/items"}
-              className="flex items-center gap-2 text-sm text-gray-400 hover:text-white"
-            >
-              <ArrowLeft size={16} /> BACK TO CAFE
-            </button>
 
             <h1 className="text-3xl font-black tracking-widest">
               CAFE ITEMS

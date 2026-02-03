@@ -8,6 +8,8 @@ import {
   Coffee,
   PlusSquare,
   List,
+  TicketPercent,
+  BanknoteArrowDown 
 } from "lucide-react";
 
 const mainMenu = [
@@ -25,6 +27,8 @@ const cafeMenu = [
 
 const otherMenu = [
   { label: "Supplements", to: "/admin/supplements", icon: Package },
+  { label: "Coupons", to: "/admin/coupons", icon: TicketPercent },
+  { label: "Expenses", to: "/admin/expenses", icon: BanknoteArrowDown },
 ];
 
 export default function Sidebar() {
