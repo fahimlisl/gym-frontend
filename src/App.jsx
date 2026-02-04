@@ -28,6 +28,9 @@ import CafeAdmins from "./pages/admin/CafeAdmins.jsx";
 import CafeAdminDashboard from "./pages/cafe/CafeAdminDashboard.jsx";
 import Coupon from "./pages/admin/Coupon.jsx";
 import Expenses from "./pages/admin/Expenses.jsx";
+import Foods from "./pages/trainer/Foods.jsx";
+import TrainerDashboardLayout from "./components/layout/TrainerDashboardLayout.jsx";
+import TrainerDietManager from "./pages/trainer/TrainerDietManager.jsx";
 
 
 export default function App() {
@@ -61,6 +64,16 @@ export default function App() {
 
         {/* trainer dashboard  */}
         <Route path="/trainer/dashboard" element={<TrainerDashboard />} />
+        <Route path="/trainer/foods" element={<Foods />} />
+        <Route
+          path="/trainer/diet/:userId"
+          element={
+            <TrainerDashboardLayout>
+              <TrainerDietManager />
+            </TrainerDashboardLayout>
+          }
+        />
+
 
         {/* member dashboard */}
         <Route path="/member/dashboard" element={<UserDashboard />} />
