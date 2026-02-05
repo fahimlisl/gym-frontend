@@ -6,6 +6,7 @@ export default function DietModal({ studentId, onClose }) {
   const [diet, setDiet] = useState(null);
   const [step, setStep] = useState("loading");
   const [loading, setLoading] = useState(false);
+  const [dietStatus, setDietStatus] = useState("draft");
 
   const [goal, setGoal] = useState("");
   const [dietType, setDietType] = useState("");
@@ -24,6 +25,16 @@ export default function DietModal({ studentId, onClose }) {
         if (check.data.data.exists) {
           const dietRes = await api.get(`/trainer/diet/show/${studentId}`);
           setDiet(dietRes.data.data);
+          
+          if (dietRes.data.data._id) {
+            try {
+              const statusRes = await api.get(`/trainer/diet/check/status/${dietRes.data.data._id}`);
+              setDietStatus(statusRes.data.data);
+            } catch {
+              setDietStatus("draft");
+            }
+          }
+          
           setStep("foods");
         } else {
           setStep("create");
@@ -53,6 +64,7 @@ export default function DietModal({ studentId, onClose }) {
       setLoading(true);
       const res = await api.patch(`/trainer/diet/approve/${diet._id}`);
       setDiet(res.data.data);
+      setDietStatus("approved");
       toast.success("Diet approved");
     } catch {
       toast.error("Failed to approve diet");
@@ -75,6 +87,7 @@ export default function DietModal({ studentId, onClose }) {
         mealsPerDay,
       });
       setDiet(res.data.data);
+      setDietStatus("draft");
       setStep("foods");
     } catch {
       toast.error("Failed to create diet");
@@ -99,6 +112,22 @@ export default function DietModal({ studentId, onClose }) {
 
   const updateGrams = (foodId, grams) => {
     setSelectedFoods((p) => ({ ...p, [foodId]: Number(grams) }));
+  };
+
+  const calculateSelectedNutrition = () => {
+    return Object.entries(selectedFoods).reduce((totals, [foodId, grams]) => {
+      const food = allFoods.find(f => f._id === foodId);
+      if (!food || !food.nutrition || grams <= 0) return totals;
+
+      const multiplier = grams / 100;
+      
+      return {
+        calories: totals.calories + (food.nutrition.calories * multiplier),
+        protein: totals.protein + (food.nutrition.protein_g * multiplier),
+        carbs: totals.carbs + (food.nutrition.carbs_g * multiplier),
+        fat: totals.fat + (food.nutrition.fat_g * multiplier),
+      };
+    }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
   };
 
   const submitFoods = async () => {
@@ -131,6 +160,7 @@ export default function DietModal({ studentId, onClose }) {
       setNewFoodName("");
       const res = await api.get("/trainer/getAllFoods");
       setAllFoods(res.data.data || []);
+      toast.success("Food added to database");
     } catch {
       toast.error("Failed to add food");
     } finally {
@@ -183,6 +213,7 @@ export default function DietModal({ studentId, onClose }) {
 
               <input
                 type="number"
+                placeholder="Meals per day"
                 className="w-full bg-black border p-2"
                 value={mealsPerDay}
                 onChange={(e) => setMealsPerDay(e.target.value)}
@@ -190,62 +221,101 @@ export default function DietModal({ studentId, onClose }) {
 
               <button
                 onClick={createDiet}
-                className="w-full border border-red-600 py-2 font-bold tracking-widest"
+                disabled={loading}
+                className="w-full border border-red-600 py-2 font-bold tracking-widest disabled:opacity-50"
               >
-                CREATE DIET
+                {loading ? "CREATING..." : "CREATE DIET"}
               </button>
             </div>
           )}
 
           {step === "foods" && diet && (
             <div className="space-y-8">
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-                {[
-                  {
-                    label: "TARGET",
-                    value: diet.calories,
-                    unit: "kcal",
-                  },
-                  {
-                    label: "CURRENT",
-                    value: diet.foods?.reduce((s, f) => s + f.calories, 0) || 0,
-                    unit: "kcal",
-                  },
-                  {
-                    label: "REMAINING",
-                    value:
-                      diet.calories -
-                      (diet.foods?.reduce((s, f) => s + f.calories, 0) || 0),
-                    unit: "kcal",
-                  },
-                  {
-                    label: "PROTEIN",
-                    value:
-                      diet.foods?.reduce(
-                        (sum, food) => sum + (food.protein || 0),
-                        0,
-                      ) || 0,
-                    unit: "g",
-                  },
-                ].map(({ label, value, unit }) => (
-                  <div
-                    key={label}
-                    className="border border-neutral-800 rounded-xl p-4 text-center"
-                  >
-                    <p className="text-xs text-gray-400 tracking-widest">
-                      {label}
-                    </p>
+              {(() => {
+                const addedNutrition = {
+                  calories: diet.foods?.reduce((s, f) => s + f.calories, 0) || 0,
+                  protein: diet.foods?.reduce((sum, food) => sum + (food.protein || 0), 0) || 0,
+                };
+                const selectedNutrition = calculateSelectedNutrition();
+                const totalCurrent = addedNutrition.calories + selectedNutrition.calories;
+                const totalProtein = addedNutrition.protein + selectedNutrition.protein;
+                const remaining = diet.calories - totalCurrent;
 
-                    <p className="text-2xl font-black mt-1">
-                      {unit === "g" ? value.toFixed(1) : value}
-                    </p>
+                return (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                      {[
+                        {
+                          label: "TARGET",
+                          value: diet.calories,
+                          unit: "kcal",
+                        },
+                        {
+                          label: "CURRENT",
+                          value: totalCurrent,
+                          unit: "kcal",
+                          highlight: selectedNutrition.calories > 0,
+                        },
+                        {
+                          label: "REMAINING",
+                          value: remaining,
+                          unit: "kcal",
+                          highlight: selectedNutrition.calories > 0,
+                        },
+                        {
+                          label: "PROTEIN",
+                          value: totalProtein,
+                          unit: "g",
+                          highlight: selectedNutrition.protein > 0,
+                        },
+                      ].map(({ label, value, unit, highlight }) => (
+                        <div
+                          key={label}
+                          className={`border rounded-xl p-4 text-center transition ${
+                            highlight 
+                              ? 'border-red-600/60 bg-red-600/5' 
+                              : 'border-neutral-800'
+                          }`}
+                        >
+                          <p className="text-xs text-gray-400 tracking-widest">
+                            {label}
+                          </p>
 
-                    <p className="text-[11px] text-gray-500 uppercase">
-                      {unit}
-                    </p>
+                          <p className="text-2xl font-black mt-1">
+                            {unit === "g" ? value.toFixed(1) : Math.round(value)}
+                          </p>
+
+                          <p className="text-[11px] text-gray-500 uppercase">
+                            {unit}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+
+                    {Object.keys(selectedFoods).length > 0 && (
+                      <div className="bg-red-600/5 border border-red-600/30 rounded-xl p-4">
+                        <p className="text-xs tracking-widest text-red-400 mb-2">
+                          SELECTED FOODS (NOT YET ADDED)
+                        </p>
+                        <div className="flex gap-4 text-sm flex-wrap">
+                          <span className="text-gray-300">
+                            <span className="font-bold text-white">{Math.round(selectedNutrition.calories)}</span> kcal
+                          </span>
+                          <span className="text-gray-300">
+                            <span className="font-bold text-white">{selectedNutrition.protein.toFixed(1)}</span>g protein
+                          </span>
+                          <span className="text-gray-300">
+                            <span className="font-bold text-white">{selectedNutrition.carbs.toFixed(1)}</span>g carbs
+                          </span>
+                          <span className="text-gray-300">
+                            <span className="font-bold text-white">{selectedNutrition.fat.toFixed(1)}</span>g fat
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                ))}
-              </div>
+                );
+              })()}
 
               <div className="space-y-2">
                 <p className="text-xs tracking-widest text-gray-400">
@@ -253,18 +323,17 @@ export default function DietModal({ studentId, onClose }) {
                 </p>
                 <div className="flex gap-2">
                   <input
-                    className="flex-1 bg-black border border-neutral-700
-                     px-3 py-2 rounded"
+                    className="flex-1 bg-black border border-neutral-700 px-3 py-2 rounded"
                     value={newFoodName}
                     onChange={(e) => setNewFoodName(e.target.value)}
                     placeholder="e.g. chicken breast"
                   />
                   <button
                     onClick={addNewFood}
-                    className="border border-red-600 px-5 rounded
-                     font-bold tracking-widest"
+                    disabled={addingFood}
+                    className="border border-red-600 px-5 rounded font-bold tracking-widest disabled:opacity-50"
                   >
-                    ADD
+                    {addingFood ? "ADDING..." : "ADD"}
                   </button>
                 </div>
               </div>
@@ -279,26 +348,16 @@ export default function DietModal({ studentId, onClose }) {
                     const selected = food._id in selectedFoods;
 
                     return (
-                      <div
-                        key={food._id}
-                        className={` rounded-xl p-4 transition
-                ${
-                  selected
-                  // ? "border-red-600 bg-red-600/5"
-                  // : "border-neutral-800"
-                }`}
-                      >
+                      <div key={food._id}>
                         <div
                           onClick={() => toggleFood(food._id)}
-                          className={`rounded-xl border p-4 cursor-pointer transition
-    ${
-      selected
-        ? "border-green-600 bg-red-400/10"
-        : "border-neutral-800 hover:border-neutral-600"
-    }`}
+                          className={`rounded-xl border p-4 cursor-pointer transition ${
+                            selected
+                              ? "border-green-600 bg-red-400/10"
+                              : "border-neutral-800 hover:border-neutral-600"
+                          }`}
                         >
                           <div className="flex items-center gap-4">
-
                             <div className="pt-1">
                               <input
                                 type="checkbox"
@@ -307,7 +366,6 @@ export default function DietModal({ studentId, onClose }) {
                                 className="pointer-events-none accent-red-600"
                               />
                             </div>
-
 
                             <div className="flex-1">
                               <p className="font-semibold capitalize text-sm">
@@ -325,7 +383,6 @@ export default function DietModal({ studentId, onClose }) {
                               </p>
                             </div>
 
-
                             <input
                               type="number"
                               min={1}
@@ -335,9 +392,8 @@ export default function DietModal({ studentId, onClose }) {
                               onChange={(e) =>
                                 updateGrams(food._id, e.target.value)
                               }
-                              className="w-20 bg-black border border-neutral-700
-                 px-2 py-1 rounded text-sm
-                 disabled:opacity-40"
+                              placeholder="g"
+                              className="w-20 bg-black border border-neutral-700 px-2 py-1 rounded text-sm disabled:opacity-40"
                             />
                           </div>
                         </div>
@@ -349,10 +405,10 @@ export default function DietModal({ studentId, onClose }) {
 
               <button
                 onClick={submitFoods}
-                className="w-full border border-red-600 py-3 rounded
-                 font-extrabold tracking-widest"
+                disabled={loading || Object.keys(selectedFoods).length === 0}
+                className="w-full border border-red-600 py-3 rounded font-extrabold tracking-widest disabled:opacity-50"
               >
-                ADD SELECTED FOODS
+                {loading ? "ADDING..." : "ADD SELECTED FOODS"}
               </button>
 
               {diet.foods?.length > 0 && (
@@ -365,8 +421,7 @@ export default function DietModal({ studentId, onClose }) {
                     {diet.foods.map((f, i) => (
                       <div
                         key={i}
-                        className="border border-neutral-800
-                         rounded-xl p-4"
+                        className="border border-neutral-800 rounded-xl p-4"
                       >
                         <div className="flex justify-between items-start">
                           <div>
@@ -390,13 +445,22 @@ export default function DietModal({ studentId, onClose }) {
                 </div>
               )}
 
-              <button
-                onClick={approveDiet}
-                className="w-full border border-green-600 py-3 rounded
-                 font-extrabold tracking-widest"
-              >
-                APPROVE DIET
-              </button>
+              {dietStatus === "approved" ? (
+                <button
+                  disabled
+                  className="w-full border border-green-600 bg-green-600/10 py-3 rounded font-extrabold tracking-widest cursor-not-allowed"
+                >
+                  APPROVED ✅
+                </button>
+              ) : (
+                <button
+                  onClick={approveDiet}
+                  disabled={loading}
+                  className="w-full border border-green-600 py-3 rounded font-extrabold tracking-widest hover:bg-green-600/10 transition disabled:opacity-50"
+                >
+                  {loading ? "APPROVING..." : "APPROVE DIET"}
+                </button>
+              )}
             </div>
           )}
         </div>

@@ -6,10 +6,10 @@ import {
   CreditCard,
   Package,
   Coffee,
-  PlusSquare,
   List,
   TicketPercent,
-  BanknoteArrowDown 
+  BanknoteArrowDown,
+  X,
 } from "lucide-react";
 
 const mainMenu = [
@@ -21,7 +21,6 @@ const mainMenu = [
 
 const cafeMenu = [
   { label: "All Items", to: "/admin/cafe/items", icon: List },
-  // { label: "Add Item", to: "/admin/cafe/add-item", icon: PlusSquare },
   { label: "Cafe Admins", to: "/admin/cafe/admins", icon: UserCog },
 ];
 
@@ -31,19 +30,33 @@ const otherMenu = [
   { label: "Expenses", to: "/admin/expenses", icon: BanknoteArrowDown },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ open, onClose }) {
   return (
-    <aside className="hidden md:flex w-72 flex-col
-                     border-r border-white/10 bg-black">
+    <aside
+      className={`fixed md:static inset-y-0 left-0 z-40
+                  w-72 flex flex-col
+                  border-r border-white/10 bg-black
+                  transform transition-transform duration-300
+                  ${open ? "translate-x-0" : "-translate-x-full"}
+                  md:translate-x-0`}
+    >
+      <div className="h-16 flex items-center justify-between px-6
+                      text-xl font-black tracking-widest
+                      border-b border-white/10">
+        <div>
+          ALPHA
+          <span className="text-red-600 ml-1">GYM</span>
+        </div>
 
-      <div className="h-16 flex items-center px-6
-                      text-xl font-black tracking-widest">
-        ALPHA
-        <span className="text-red-600 ml-1">GYM</span>
+        <button
+          onClick={onClose}
+          className="md:hidden text-gray-400 hover:text-red-500"
+        >
+          <X />
+        </button>
       </div>
 
       <nav className="flex-1 px-4 py-6 space-y-6 overflow-y-auto">
-
         <Section title="CORE">
           {mainMenu.map(renderLink)}
         </Section>
@@ -55,7 +68,6 @@ export default function Sidebar() {
         <Section title="INVENTORY">
           {otherMenu.map(renderLink)}
         </Section>
-
       </nav>
     </aside>
   );
@@ -65,15 +77,18 @@ function Section({ title, children, icon: Icon, accent = "red" }) {
   return (
     <div>
       <div className="flex items-center gap-2 px-3 mb-2">
-        {Icon && <Icon size={14} className={`text-${accent}-500`} />}
+        {Icon && (
+          <Icon
+            size={14}
+            className={`text-${accent}-500`}
+          />
+        )}
         <p className="text-xs text-gray-500 tracking-widest font-bold">
           {title}
         </p>
       </div>
 
-      <div className="space-y-1">
-        {children}
-      </div>
+      <div className="space-y-1">{children}</div>
     </div>
   );
 }
