@@ -39,16 +39,16 @@ export default function PTSection({ pt, onAssign, onRenew }) {
 
         <div>
           <p className="text-lg font-extrabold tracking-wide">
-            {current.trainer?.fullName}
+            {current.trainer?.fullName.toUpperCase()}
           </p>
           <p className="text-xs text-gray-400">
-            {current.trainer?.experience || "Trainer"}
+            {current.trainer?.experience.toUpperCase() || "TRAINER"}
           </p>
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4 text-sm">
-        <Info label="PLAN" value={current.plan} />
+        <Info label="PLAN" value={current.plan.toUpperCase()} />
         <Info label="PRICE" value={`₹${current.price}`} />
         <Info
           label="START DATE"
@@ -57,6 +57,10 @@ export default function PTSection({ pt, onAssign, onRenew }) {
         <Info
           label="END DATE"
           value={formatDate(current.endDate)}
+        />
+        <Info
+          label="STATUS"
+          value={(current.status.toUpperCase())}
         />
       </div>
 

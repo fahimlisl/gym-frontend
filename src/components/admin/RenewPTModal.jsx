@@ -101,7 +101,7 @@ export default function RenewPTModal({
           </p>
         </div>
 
-        <form onSubmit={submit} className="space-y-5">
+        <form onSubmit={submit} className="space-y-5 text-black">
 
           <Field label="TRAINER">
             <select
@@ -175,7 +175,7 @@ export default function RenewPTModal({
             <button
               type="button"
               onClick={onClose}
-              className="border border-white/20 px-6 py-3 text-xs font-extrabold tracking-widest"
+              className="border border-white/20 px-6 py-3 text-xs font-extrabold tracking-widest text-white "
             >
               CANCEL
             </button>

@@ -12,11 +12,40 @@ export default function Members() {
   const [loading, setLoading] = useState(true);
   const [openAdd, setOpenAdd] = useState(false);
 
+
+
+  const getLatestSubscription = (user) => {
+    const subs = user?.subscription?.subscription;
+    if (!Array.isArray(subs) || subs.length === 0) return null;
+
+    return [...subs].sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+    )[0];
+  };
+
+
+  const getLatestStatus = (user) => {
+    const latest = getLatestSubscription(user);
+    return latest?.status || "none";
+  };
+
   const loadMembers = async () => {
     try {
       setLoading(true);
       const res = await fetchAllMembers();
-      setUsers(res.data.data || []);
+      const fetchedUsers = res.data.data || [];
+
+
+      const sortedUsers = [...fetchedUsers].sort((a, b) => {
+        const statusA = getLatestStatus(a);
+        const statusB = getLatestStatus(b);
+
+        if (statusA === "expired" && statusB !== "expired") return -1;
+        if (statusA !== "expired" && statusB === "expired") return 1;
+        return 0;
+      });
+
+      setUsers(sortedUsers);
     } catch (err) {
       toast.error("Failed to fetch members");
     } finally {
@@ -63,7 +92,7 @@ export default function Members() {
                           bg-red-600/10 blur-3xl rounded-full" />
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
           <StatBox label="TOTAL MEMBERS" value={users.length} />
           <StatBox
             label="WITH PT"
@@ -73,7 +102,18 @@ export default function Members() {
             label="WITHOUT PT"
             value={users.filter(u => !u.personalTraning).length}
           />
-          <StatBox label="ACTIVE" value={users.length} />
+          <StatBox
+            label="ACTIVE"
+            value={users.filter(
+              u => getLatestStatus(u) === "active"
+            ).length}
+          />
+          <StatBox
+            label="EXPIRED"
+            value={users.filter(
+              u => getLatestStatus(u) === "expired"
+            ).length}
+          />
         </div>
 
         {loading && (
@@ -92,7 +132,12 @@ export default function Members() {
         {!loading && users.length > 0 && (
           <div className="space-y-4">
             {users.map((u) => (
-              <MemberCard key={u._id} user={u} />
+              <MemberCard
+                key={u._id}
+                user={u}
+                latestStatus={getLatestStatus(u)}
+                latestSubscription={getLatestSubscription(u)}
+              />
             ))}
           </div>
         )}
