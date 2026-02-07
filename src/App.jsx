@@ -32,6 +32,7 @@ import Foods from "./pages/trainer/Foods.jsx";
 import TrainerDashboardLayout from "./components/layout/TrainerDashboardLayout.jsx";
 import TrainerDietManager from "./pages/trainer/TrainerDietManager.jsx";
 import AdminInventory from "./pages/admin/AdminInventory.jsx";
+// import TrainerMembers from "./pages/trainer/TrainerMembers.jsx";
 
 export default function App() {
   return (
@@ -73,6 +74,7 @@ export default function App() {
               // {/* </TrainerDashboardLayout> */}
             }
           />
+          {/* <Route path="trainer/trainer-members" element={<TrainerMembers />}/> */}
         </Route>
 
         {/* member dashboard */}

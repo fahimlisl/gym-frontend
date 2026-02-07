@@ -76,7 +76,7 @@ export default function TrainerDashboardLayout({ trainer }) {
 
             <nav className="flex-1 px-4 py-6 space-y-2">
               <NavItem to="/trainer/dashboard" label="DASHBOARD" />
-              <NavItem to="/trainer/students" label="STUDENTS" />
+              <NavItem to="/trainer/trainer-members" label="MEMBERS" />
               <NavItem to="/trainer/foods" label="FOODS" />
               <NavItem to="/trainer/diets" label="DIET PLANS" />
             </nav>
@@ -119,7 +119,7 @@ export default function TrainerDashboardLayout({ trainer }) {
 
           <nav className="flex-1 px-4 py-6 space-y-2">
             <NavItem to="/trainer/dashboard" label="DASHBOARD" />
-            <NavItem to="/trainer/students" label="STUDENTS" />
+            <NavItem to="/trainer/trainer-members" label="MEMBERS" />
             <NavItem to="/trainer/foods" label="FOODS" />
             <NavItem to="/trainer/diets" label="DIET PLANS" />
           </nav>

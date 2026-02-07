@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import axios from "../../api/axios.api.js";
-import AdminDashboardLayout from "../../components/layout/AdminDashboardLayout";
+import AdminDashboardLayout from "../../components/layout/AdminDashboardLayout.jsx";
 
 export default function Coupon() {
   const [coupons, setCoupons] = useState([]);
@@ -17,6 +17,8 @@ export default function Coupon() {
     maxDiscount: "",
     expiryDate: "",
     isActive: true,
+    category:"CAFE",
+    value:0
   });
 
   const fetchCoupons = async () => {
@@ -67,6 +69,8 @@ export default function Coupon() {
       maxDiscount: "",
       expiryDate: "",
       isActive: true,
+      category:"CAFE",
+      value:0
     });
   };
 
@@ -79,6 +83,8 @@ export default function Coupon() {
       maxDiscount: coupon.maxDiscount || "",
       expiryDate: coupon.expiryDate.slice(0, 10),
       isActive: coupon.isActive,
+      category: coupon.category,
+      value: coupon.value
     });
     setShowModal(true);
   };
@@ -111,6 +117,7 @@ export default function Coupon() {
                 <th className="p-3">Min Cart</th>
                 <th className="p-3">Max Discount</th>
                 <th className="p-3">Expiry</th>
+                <th className="p-3">Category</th>
                 <th className="p-3">Status</th>
                 <th className="p-3">Action</th>
               </tr>
@@ -133,6 +140,9 @@ export default function Coupon() {
                   </td>
                   <td className="p-3">
                     {new Date(c.expiryDate).toLocaleDateString("en-IN")}
+                  </td>
+                  <td className="p-3">
+                    {c.category ? c.category : "-" }
                   </td>
                   <td className="p-3">
                     <span
@@ -168,7 +178,6 @@ export default function Coupon() {
         </div>
       </div>
 
-      {/* MODAL */}
       {showModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 text-black">
           <div className="bg-white w-full max-w-lg rounded-xl p-6 space-y-4">
@@ -192,6 +201,19 @@ export default function Coupon() {
             >
               <option value="flat">Flat</option>
               <option value="percentage">Percentage</option>
+            </select>
+
+            <select
+              className="w-full border p-2 rounded"
+              value={form.category}
+              onChange={(e) =>
+                setForm({ ...form, category: e.target.value })
+              }
+            >
+              <option value="CAFE">CAFE</option>
+              <option value="SUBSCRIPTION">SUBSCRIPTION</option>
+              <option value="PERSONAL TRAINING">PERSONAL TRAINING</option>
+              <option value="ADMISSION">ADMISSION</option>
             </select>
 
             <input
