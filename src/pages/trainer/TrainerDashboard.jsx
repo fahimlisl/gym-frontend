@@ -3,7 +3,6 @@ import toast from "react-hot-toast";
 
 import { fetchAssignedStudents } from "../../api/trainer.api";
 import StudentCard from "../../components/trainer/StudentCard";
-import TrainerDashboardLayout from "../../components/layout/TrainerDashboardLayout";
 
 export default function TrainerDashboard() {
   const [students, setStudents] = useState([]);
@@ -25,7 +24,6 @@ export default function TrainerDashboard() {
   }, []);
 
   return (
-    <TrainerDashboardLayout>
     <div className="min-h-screen bg-neutral-950 text-white p-6 space-y-8">
 
       <div className="border border-red-600/30 bg-black p-6">
@@ -64,7 +62,6 @@ export default function TrainerDashboard() {
         </div>
       )}
     </div>
-    </TrainerDashboardLayout>
   );
 }
 

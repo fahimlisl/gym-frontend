@@ -130,6 +130,18 @@ export default function DietModal({ studentId, onClose }) {
     }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
   };
 
+
+  const getAvailableFoods = () => {
+    if (dietStatus !== "approved" || !diet?.foods?.length) {
+      return allFoods;
+    }
+
+    const addedFoodNames = diet.foods.map(f => f.foodName.toLowerCase().trim());
+    return allFoods.filter(food => 
+      !addedFoodNames.includes(food.foodName.toLowerCase().trim())
+    );
+  };
+
   const submitFoods = async () => {
     const foods = Object.entries(selectedFoods)
       .filter(([, g]) => g > 0)
@@ -344,7 +356,7 @@ export default function DietModal({ studentId, onClose }) {
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {allFoods.map((food) => {
+                  {getAvailableFoods().map((food) => {
                     const selected = food._id in selectedFoods;
 
                     return (

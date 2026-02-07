@@ -1,19 +1,29 @@
 import Hero, { PerformanceCafe } from "../components/home/Hero";
+import BMICalculator from "../components/home/BMICalculator";
 
 export default function Home() {
   return (
     <>
       <Hero />
 
+      <section className="bg-neutral-950 text-white py-24">
+        <div className="container mx-auto px-4">
+          <BMICalculator />
+        </div>
+      </section>
+
       <PerformanceCafe />
+
       <section className="bg-neutral-950 text-white py-20">
-        <div className="container grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="container mx-auto px-4
+                        grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {["Modern Equipment", "Certified Trainers", "Flexible Plans"].map(
             (title) => (
               <div
                 key={title}
-                className="p-6 rounded-2xl bg-black border border-white/10 hover:border-red-500 transition"
-
+                className="p-6 rounded-2xl bg-black
+                           border border-white/10
+                           hover:border-red-500 transition"
               >
                 <h3 className="text-2xl font-extrabold mb-3 tracking-wide">
                   {title.toUpperCase()}
@@ -22,7 +32,7 @@ export default function Home() {
                   Built for people who take training seriously — no shortcuts.
                 </p>
               </div>
-            ),
+            )
           )}
         </div>
       </section>

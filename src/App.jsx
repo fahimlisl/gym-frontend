@@ -31,7 +31,7 @@ import Expenses from "./pages/admin/Expenses.jsx";
 import Foods from "./pages/trainer/Foods.jsx";
 import TrainerDashboardLayout from "./components/layout/TrainerDashboardLayout.jsx";
 import TrainerDietManager from "./pages/trainer/TrainerDietManager.jsx";
-
+import AdminInventory from "./pages/admin/AdminInventory.jsx";
 
 export default function App() {
   return (
@@ -62,23 +62,21 @@ export default function App() {
           <Route path="/contacts" element={<Contact />} />
         </Route>
 
-        {/* trainer dashboard  */}
-        <Route path="/trainer/dashboard" element={<TrainerDashboard />} />
-        <Route path="/trainer/foods" element={<Foods />} />
-        <Route
-          path="/trainer/diet/:userId"
-          element={
-            <TrainerDashboardLayout>
+        <Route element={<TrainerDashboardLayout />}>
+          <Route path="/trainer/dashboard" element={<TrainerDashboard />} />
+          <Route path="/trainer/foods" element={<Foods />} />
+          <Route
+            path="/trainer/diet/:userId"
+            element={
+              // <TrainerDashboardLayout>
               <TrainerDietManager />
-            </TrainerDashboardLayout>
-          }
-        />
-
+              // {/* </TrainerDashboardLayout> */}
+            }
+          />
+        </Route>
 
         {/* member dashboard */}
         <Route path="/member/dashboard" element={<UserDashboard />} />
-
-
 
         {/* admin  */}
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
@@ -92,6 +90,7 @@ export default function App() {
         <Route path="/admin/payments" element={<Payments />} />
         <Route path="/admin/coupons" element={<Coupon />} />
         <Route path="/admin/expenses" element={<Expenses />} />
+        <Route path="/admin/inventory" element={<AdminInventory />} />
 
         {/* cafe things starts here  */}
         <Route path="/admin/cafe/items" element={<CafeItems />} />
@@ -101,9 +100,6 @@ export default function App() {
         <Route path="/cafe/dashboard" element={<CafeAdminDashboard />} />
 
         <Route path="/cafe/dashboard" element={<CafeAdminDashboard />} />
-
-
-
       </Routes>
     </>
   );

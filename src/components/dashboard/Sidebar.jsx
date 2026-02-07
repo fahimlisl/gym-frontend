@@ -10,6 +10,7 @@ import {
   TicketPercent,
   BanknoteArrowDown,
   X,
+  Dumbbell,
 } from "lucide-react";
 
 const mainMenu = [
@@ -28,6 +29,7 @@ const otherMenu = [
   { label: "Supplements", to: "/admin/supplements", icon: Package },
   { label: "Coupons", to: "/admin/coupons", icon: TicketPercent },
   { label: "Expenses", to: "/admin/expenses", icon: BanknoteArrowDown },
+  { label: "Inventory", to: "/admin/inventory", icon: Dumbbell },
 ];
 
 export default function Sidebar({ open, onClose }) {
