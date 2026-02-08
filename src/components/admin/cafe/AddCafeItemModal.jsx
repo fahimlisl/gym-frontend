@@ -9,7 +9,9 @@ export default function AddCafeItemModal({ onClose, onSuccess }) {
     name: "",
     category: "protien shake",
     description: "",
+    purchasePrice: "",
     price: "",
+    quantity: "",
     calories: "",
     protien: "",
     carbs: "",
@@ -27,16 +29,33 @@ export default function AddCafeItemModal({ onClose, onSuccess }) {
   const submit = async (e) => {
     e.preventDefault();
 
-    if (!image) {
-      toast.error("Image is required");
-      return;
-    }
+    if (!image) return toast.error("Image is required");
 
     try {
       setLoading(true);
 
       const fd = new FormData();
-      Object.entries(form).forEach(([k, v]) => fd.append(k, v));
+
+      fd.append("name", form.name);
+      fd.append("category", form.category);
+      fd.append("description", form.description);
+      fd.append("purchasePrice", Number(form.purchasePrice));
+      fd.append("price", Number(form.price));
+      fd.append("quantity", Number(form.quantity));
+      fd.append("calories", Number(form.calories));
+      fd.append("protien", Number(form.protien));
+      fd.append("carbs", Number(form.carbs));
+      fd.append("fat", Number(form.fat));
+      fd.append("isVeg", form.isVeg);
+      fd.append("available", form.available);
+
+      // convert comma separated tags → array
+      form.tags
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean)
+        .forEach((tag) => fd.append("tags", tag));
+
       fd.append("image", image);
 
       await addCafeItem(fd);
@@ -74,11 +93,43 @@ export default function AddCafeItemModal({ onClose, onSuccess }) {
           onChange={handleChange}
         />
 
-        <FileInput label="ITEM IMAGE" onChange={(e) => setImage(e.target.files[0])} />
+        <FileInput
+          label="ITEM IMAGE"
+          onChange={(e) => setImage(e.target.files[0])}
+        />
 
         <TwoCol>
-          <Input label="PRICE (₹)" name="price" type="number" onChange={handleChange} required />
-          <Input label="CALORIES" name="calories" type="number" onChange={handleChange} />
+          <Input
+            label="PURCHASE PRICE (₹)"
+            name="purchasePrice"
+            type="number"
+            onChange={handleChange}
+            required
+          />
+          <Input
+            label="SELL PRICE (₹)"
+            name="price"
+            type="number"
+            onChange={handleChange}
+            required
+          />
+        </TwoCol>
+
+        <TwoCol>
+          <Input
+            label="QUANTITY (STOCK)"
+            name="quantity"
+            type="number"
+            onChange={handleChange}
+            required
+          />
+          <Input
+            label="CALORIES"
+            name="calories"
+            type="number"
+            onChange={handleChange}
+            required
+          />
         </TwoCol>
 
         <div className="border border-white/10 p-4 rounded-lg">
@@ -87,9 +138,27 @@ export default function AddCafeItemModal({ onClose, onSuccess }) {
           </p>
 
           <ThreeCol>
-            <Input label="PROTEIN" name="protien" type="number" onChange={handleChange} />
-            <Input label="CARBS" name="carbs" type="number" onChange={handleChange} />
-            <Input label="FATS" name="fat" type="number" onChange={handleChange} />
+            <Input
+              label="PROTEIN"
+              name="protien"
+              type="number"
+              onChange={handleChange}
+              required
+            />
+            <Input
+              label="CARBS"
+              name="carbs"
+              type="number"
+              onChange={handleChange}
+              required
+            />
+            <Input
+              label="FATS"
+              name="fat"
+              type="number"
+              onChange={handleChange}
+              required
+            />
           </ThreeCol>
         </div>
 
@@ -98,6 +167,7 @@ export default function AddCafeItemModal({ onClose, onSuccess }) {
           name="tags"
           placeholder="high-protein, fat-loss"
           onChange={handleChange}
+          required
         />
 
         <TwoCol>
@@ -117,7 +187,9 @@ export default function AddCafeItemModal({ onClose, onSuccess }) {
       </form>
     </Modal>
   );
-};
+}
+
+/* ================= UI COMPONENTS ================= */
 
 function Modal({ title, children, onClose }) {
   return (
@@ -181,8 +253,10 @@ function Select({ label, options, ...props }) {
                    px-4 py-3 text-sm text-white
                    focus:border-red-600 outline-none"
       >
-        {options.map(o => (
-          <option key={o} value={o}>{o.toUpperCase()}</option>
+        {options.map((o) => (
+          <option key={o} value={o}>
+            {o.toUpperCase()}
+          </option>
         ))}
       </select>
     </div>
@@ -193,8 +267,12 @@ function FileInput({ label, onChange }) {
   return (
     <div>
       <label className="text-xs tracking-widest text-gray-400">{label}</label>
-      <input type="file" accept="image/*" onChange={onChange}
-             className="mt-2 text-sm text-gray-300" />
+      <input
+        type="file"
+        accept="image/*"
+        onChange={onChange}
+        className="mt-2 text-sm text-gray-300"
+      />
     </div>
   );
 }
@@ -205,7 +283,9 @@ function Toggle({ label, checked, onChange }) {
       type="button"
       onClick={onChange}
       className={`border px-4 py-3 text-xs font-bold tracking-widest
-                  ${checked ? "border-emerald-500 text-emerald-400" : "border-white/20 text-gray-400"}`}
+        ${checked
+          ? "border-emerald-500 text-emerald-400"
+          : "border-white/20 text-gray-400"}`}
     >
       {label}: {checked ? "YES" : "NO"}
     </button>
@@ -214,12 +294,17 @@ function Toggle({ label, checked, onChange }) {
 
 const Actions = ({ loading, onClose, submitText }) => (
   <div className="flex justify-end gap-4 pt-6">
-    <button type="button" onClick={onClose}
-      className="border border-white/20 px-6 py-3 text-xs font-extrabold">
+    <button
+      type="button"
+      onClick={onClose}
+      className="border border-white/20 px-6 py-3 text-xs font-extrabold"
+    >
       CANCEL
     </button>
-    <button disabled={loading}
-      className="bg-red-600 px-8 py-3 text-xs font-extrabold">
+    <button
+      disabled={loading}
+      className="bg-red-600 px-8 py-3 text-xs font-extrabold"
+    >
       {loading ? "ADDING..." : submitText}
     </button>
   </div>

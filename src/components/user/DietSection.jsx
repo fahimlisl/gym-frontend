@@ -1,19 +1,18 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { X } from "lucide-react";
-import api from "../../api/axios.api.js"; 
+import api from "../../api/axios.api.js";
 
 export default function DietSection() {
   const [diet, setDiet] = useState(null);
-  const [state, setState] = useState("loading"); 
-
+  const [state, setState] = useState("loading"); // loading | approved | pending | error
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    fetchDiet();
+    init();
   }, []);
 
-  const fetchDiet = async () => {
+  const init = async () => {
     try {
       const res = await api.get("/user/diet/my");
       setDiet(res.data.data);
@@ -27,11 +26,7 @@ export default function DietSection() {
     }
   };
 
-
-  if (state === "loading") {
-    return <Skeleton />;
-  }
-
+  if (state === "loading") return <Skeleton />;
 
   if (state === "error") {
     return (
@@ -43,7 +38,6 @@ export default function DietSection() {
       </Card>
     );
   }
-
 
   if (state === "pending") {
     return (
@@ -62,7 +56,6 @@ export default function DietSection() {
     );
   }
 
-
   return (
     <>
       <Card highlight>
@@ -80,8 +73,7 @@ export default function DietSection() {
         <button
           onClick={() => setOpen(true)}
           className="mt-6 w-full bg-green-600 hover:bg-green-700
-                     py-3 rounded-lg font-black tracking-widest
-                     transition"
+                     py-3 rounded-lg font-black tracking-widest transition"
         >
           VIEW FULL DIET
         </button>
@@ -132,7 +124,7 @@ function FullDietModal({ diet, onClose }) {
             FOODS INCLUDED
           </h3>
 
-          {diet.foods?.length === 0 ? (
+          {!diet.foods?.length ? (
             <p className="text-gray-400 text-sm">
               No foods added yet.
             </p>
@@ -148,7 +140,6 @@ function FullDietModal({ diet, onClose }) {
     </div>
   );
 }
-
 
 function Card({ children, highlight }) {
   return (

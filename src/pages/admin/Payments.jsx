@@ -29,14 +29,23 @@ const InfoRow = ({ label, value }) => (
   </div>
 );
 
-
 const TransactionModal = ({ tx, onClose }) => {
   if (!tx) return null;
 
+  const isCafe = tx.source === "cafe" && tx.referenceId;
+
+  const subTotal = isCafe
+    ? tx.referenceId.items.reduce(
+        (sum, i) => sum + i.quantity * i.priceAtPurchase,
+        0,
+      )
+    : 0;
+
+  const discount = tx.referenceId?.discount;
+
   return (
     <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center px-4">
-      <div className="bg-[#0b0b0b] w-full max-w-2xl rounded-2xl border border-white/10 shadow-2xl">
-
+      <div className="bg-[#0b0b0b] w-full max-w-3xl rounded-2xl border border-white/10 shadow-2xl">
         <div className="flex justify-between items-center px-6 py-4 border-b border-white/10">
           <h2 className="text-lg font-black tracking-widest uppercase">
             {tx.source} DETAILS
@@ -49,11 +58,8 @@ const TransactionModal = ({ tx, onClose }) => {
           </button>
         </div>
 
-        <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
-
+        <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
           <div className="bg-black border border-white/10 rounded-xl p-4 space-y-2">
-            <InfoRow label="Amount" value={`₹${tx.amount}`} />
-            <InfoRow label="Type" value={getTransactionType(tx)} />
             <InfoRow label="Payment Method" value={tx.paymentMethod} />
             <InfoRow label="Status" value={tx.status} />
             <InfoRow
@@ -71,42 +77,84 @@ const TransactionModal = ({ tx, onClose }) => {
               <InfoRow label="Price" value={`₹${tx.subDetail.price}`} />
               <InfoRow
                 label="Start"
-                value={new Date(tx.subDetail.startDate).toLocaleDateString()}
+                value={
+                  tx.subDetail.startDate
+                    ? new Date(tx.subDetail.startDate).toLocaleDateString()
+                    : "-"
+                }
               />
               <InfoRow
                 label="End"
-                value={new Date(tx.subDetail.endDate).toLocaleDateString()}
+                value={
+                  tx.subDetail.endDate
+                    ? new Date(tx.subDetail.endDate).toLocaleDateString()
+                    : "-"
+                }
               />
               <InfoRow label="Status" value={tx.subDetail.status} />
             </div>
           )}
 
-          {tx.referenceId && !tx.subDetail && (
+          {tx.source === "expense" && tx.referenceId && (
             <div className="bg-black border border-white/10 rounded-xl p-4 space-y-2">
               <p className="text-xs tracking-widest text-gray-400">
-                REFERENCE DETAILS
+                EXPENSE DETAILS
+              </p>
+              <InfoRow label="Title" value={tx.referenceId.title} />
+              <InfoRow label="Category" value={tx.referenceId.category} />
+              <InfoRow label="Remarks" value={tx.referenceId.remarks} />
+              <InfoRow label="Amount" value={`₹${tx.amount}`} />
+            </div>
+          )}
+
+          {isCafe && (
+            <div className="bg-black border border-white/10 rounded-xl p-4 space-y-4">
+              <p className="text-xs tracking-widest text-gray-400">
+                CAFE ORDER ITEMS
               </p>
 
-              {tx.source === "expense" && (
-                <>
-                  <InfoRow label="Title" value={tx.referenceId.title} />
-                  <InfoRow label="Category" value={tx.referenceId.category} />
-                  <InfoRow label="Remarks" value={tx.referenceId.remarks} />
-                </>
-              )}
+              <div className="space-y-3">
+                {tx.referenceId.items.map((it, idx) => (
+                  <div
+                    key={idx}
+                    className="flex justify-between items-center
+                               border border-white/5 rounded-lg p-3"
+                  >
+                    <div>
+                      <p className="font-bold uppercase tracking-wide">
+                        {it.name}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        Qty: {it.quantity} × ₹{it.priceAtPurchase}
+                      </p>
+                    </div>
 
-              {tx.source === "cafe" && (
-                <>
+                    <p className="font-black text-gray-200">
+                      ₹{it.quantity * it.priceAtPurchase}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="border-t border-white/10 pt-3 space-y-2 text-sm">
+                <InfoRow label="Sub Total" value={`₹${subTotal}`} />
+
+                {discount?.amount > 0 && (
                   <InfoRow
-                    label="Items"
-                    value={tx.referenceId.items?.length}
+                    label={`Discount${discount.code ? ` (${discount.code})` : ""}`}
+                    value={`- ₹${discount.amount}`}
                   />
-                  <InfoRow
-                    label="Total"
-                    value={`₹${tx.referenceId.totalAmount}`}
-                  />
-                </>
-              )}
+                )}
+
+                <div className="flex justify-between font-black text-lg pt-2">
+                  <span className="tracking-widest text-gray-400">
+                    FINAL TOTAL
+                  </span>
+                  <span className="text-green-500">
+                    ₹{tx.referenceId.totalAmount}
+                  </span>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -114,7 +162,6 @@ const TransactionModal = ({ tx, onClose }) => {
     </div>
   );
 };
-
 
 export default function Payments() {
   const [transactions, setTransactions] = useState([]);
@@ -125,6 +172,7 @@ export default function Payments() {
   const [fromDate, setFromDate] = useState(today);
   const [toDate, setToDate] = useState(today);
   const [entryType, setEntryType] = useState("all");
+  const [source, setSource] = useState("all");
 
   useEffect(() => {
     const load = async () => {
@@ -140,23 +188,24 @@ export default function Payments() {
     load();
   }, []);
 
+  const sources = useMemo(() => {
+    const unique = new Set(transactions.map((t) => t.source));
+    return ["all", ...Array.from(unique)];
+  }, [transactions]);
 
   const filtered = useMemo(() => {
     return transactions.filter((t) => {
-      const txDate = new Date(t.createdAt)
-        .toISOString()
-        .split("T")[0];
-
+      const txDate = new Date(t.createdAt).toISOString().split("T")[0];
       const type = getTransactionType(t);
 
       return (
         txDate >= fromDate &&
         txDate <= toDate &&
-        (entryType === "all" || type === entryType)
+        (entryType === "all" || type === entryType) &&
+        (source === "all" || t.source === source)
       );
     });
-  }, [transactions, fromDate, toDate, entryType]);
-
+  }, [transactions, fromDate, toDate, entryType, source]);
 
   const totals = useMemo(() => {
     let credit = 0;
@@ -170,7 +219,6 @@ export default function Payments() {
 
     return { credit, debit, net: credit - debit };
   }, [filtered]);
-
 
   const exportExcel = () => {
     if (!filtered.length) return toast.error("No data to export");
@@ -191,11 +239,9 @@ export default function Payments() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Ledger");
 
-    XLSX.writeFile(
-      wb,
-      `Payments_${fromDate}_to_${toDate}.xlsx`,
-      { bookType: "xlsx" }
-    );
+    XLSX.writeFile(wb, `Payments_${fromDate}_to_${toDate}.xlsx`, {
+      bookType: "xlsx",
+    });
 
     toast.success("Excel exported");
   };
@@ -205,7 +251,6 @@ export default function Payments() {
   return (
     <AdminDashboardLayout>
       <div className="space-y-8">
-
         <div className="border border-red-600/30 bg-black p-6">
           <h1 className="text-3xl font-black tracking-widest">
             PAYMENTS LEDGER
@@ -216,23 +261,70 @@ export default function Payments() {
         </div>
 
         <div className="flex flex-wrap gap-4 items-end">
-          <input type="date" value={fromDate} onChange={e=>setFromDate(e.target.value)} className="bg-black border border-white/20 px-3 py-2"/>
-          <input type="date" value={toDate} onChange={e=>setToDate(e.target.value)} className="bg-black border border-white/20 px-3 py-2"/>
-          <select value={entryType} onChange={e=>setEntryType(e.target.value)} className="bg-black border border-white/20 px-3 py-2">
+          <input
+            type="date"
+            value={fromDate}
+            onChange={(e) => setFromDate(e.target.value)}
+            className="bg-black border border-white/20 px-3 py-2"
+          />
+          <input
+            type="date"
+            value={toDate}
+            onChange={(e) => setToDate(e.target.value)}
+            className="bg-black border border-white/20 px-3 py-2"
+          />
+
+          <select
+            value={entryType}
+            onChange={(e) => setEntryType(e.target.value)}
+            className="bg-black border border-white/20 px-3 py-2"
+          >
             <option value="all">All</option>
             <option value="credit">Credit</option>
             <option value="debit">Debit</option>
           </select>
-          <button onClick={exportExcel} className="ml-auto bg-green-600 px-6 py-2 font-bold">
+
+          <select
+            value={source}
+            onChange={(e) => setSource(e.target.value)}
+            className="bg-black border border-white/20 px-3 py-2 uppercase"
+          >
+            {sources.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+
+          <button
+            onClick={exportExcel}
+            className="ml-auto bg-green-600 px-6 py-2 font-bold"
+          >
             EXPORT EXCEL
           </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <StatCard label="TOTAL CREDIT" value={`₹${totals.credit}`} color="text-green-500"/>
-          <StatCard label="TOTAL DEBIT" value={`₹${totals.debit}`} color="text-red-500"/>
-          <StatCard label="TRANSACTIONS" value={filtered.length} color="text-yellow-500"/>
-          <StatCard label="NET BALANCE" value={`₹${totals.net}`} color={totals.net>=0?"text-green-500":"text-red-500"}/>
+          <StatCard
+            label="TOTAL CREDIT"
+            value={`₹${totals.credit}`}
+            color="text-green-500"
+          />
+          <StatCard
+            label="TOTAL DEBIT"
+            value={`₹${totals.debit}`}
+            color="text-red-500"
+          />
+          <StatCard
+            label="TRANSACTIONS"
+            value={filtered.length}
+            color="text-yellow-500"
+          />
+          <StatCard
+            label="NET BALANCE"
+            value={`₹${totals.net}`}
+            color={totals.net >= 0 ? "text-green-500" : "text-red-500"}
+          />
         </div>
 
         {loading ? (
@@ -257,18 +349,20 @@ export default function Payments() {
                   return (
                     <tr key={tx._id} className="border-t border-white/5">
                       <td className="p-3">{si++}</td>
-                      <td className="p-3">{new Date(tx.createdAt).toLocaleDateString()}</td>
+                      <td className="p-3">
+                        {new Date(tx.createdAt).toLocaleDateString()}
+                      </td>
                       <td className="p-3 uppercase">{tx.source}</td>
                       <td className="p-3 text-right text-green-500">
-                        {type==="credit" ? `₹${tx.amount}` : ""}
+                        {type === "credit" ? `₹${tx.amount}` : ""}
                       </td>
                       <td className="p-3 text-right text-red-500">
-                        {type==="debit" ? `₹${tx.amount}` : ""}
+                        {type === "debit" ? `₹${tx.amount}` : ""}
                       </td>
                       <td className="p-3 uppercase">{tx.paymentMethod}</td>
                       <td className="p-3">
                         <button
-                          onClick={()=>setSelectedTx(tx)}
+                          onClick={() => setSelectedTx(tx)}
                           className="text-blue-400 hover:underline"
                         >
                           View
@@ -283,7 +377,7 @@ export default function Payments() {
         )}
       </div>
 
-      <TransactionModal tx={selectedTx} onClose={()=>setSelectedTx(null)} />
+      <TransactionModal tx={selectedTx} onClose={() => setSelectedTx(null)} />
     </AdminDashboardLayout>
   );
 }

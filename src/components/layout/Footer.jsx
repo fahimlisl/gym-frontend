@@ -1,4 +1,4 @@
-import { Instagram, Youtube, Twitter } from "lucide-react";
+import { Instagram, Youtube, Twitter, Facebook } from "lucide-react";
 
 export default function Footer() {
   return (
@@ -74,22 +74,22 @@ export default function Footer() {
 
           <div className="flex gap-4 mt-6">
             <a
-              href="#"
+              href="https://www.instagram.com/asialpha2026?igsh=djBhejZhaHpxYnEx&utm_source=qr"
               className="p-2 border border-white/20 hover:border-red-600 hover:text-white transition"
             >
               <Instagram size={18} />
             </a>
-            <a
+            {/* <a
               href="#"
               className="p-2 border border-white/20 hover:border-red-600 hover:text-white transition"
             >
               <Youtube size={18} />
-            </a>
+            </a> */}
             <a
-              href="#"
+              href="https://www.facebook.com/people/Asi-Alpha/pfbid02nG2nwzRgRbGy8TY4zfH3nHLdqaq6AuakXBnbRp2Y9KBrTJseNCvb3h8MxjTVpojpl/?mibextid=wwXIfr&rdid=chij3R9FrZ5FmXJ7&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F18GywuH7jX%2F%3Fmibextid%3DwwXIfr%26wa_logging_event%3Dvideo_play_open"
               className="p-2 border border-white/20 hover:border-red-600 hover:text-white transition"
             >
-              <Twitter size={18} />
+              <Facebook size={18} />
             </a>
           </div>
         </div>

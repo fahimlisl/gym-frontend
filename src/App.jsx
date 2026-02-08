@@ -32,6 +32,9 @@ import Foods from "./pages/trainer/Foods.jsx";
 import TrainerDashboardLayout from "./components/layout/TrainerDashboardLayout.jsx";
 import TrainerDietManager from "./pages/trainer/TrainerDietManager.jsx";
 import AdminInventory from "./pages/admin/AdminInventory.jsx";
+import TrainerProfile from "./pages/TrainerProfile.jsx";
+import PublicTrainers from "./pages/PublicTrainers.jsx";
+import CafePayments from "./pages/cafe/CafePayments.jsx";
 // import TrainerMembers from "./pages/trainer/TrainerMembers.jsx";
 
 export default function App() {
@@ -61,6 +64,9 @@ export default function App() {
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/programs" element={<Programs />} />
           <Route path="/contacts" element={<Contact />} />
+          <Route path="/trainers" element={<PublicTrainers />} />
+<Route path="/trainers/:id" element={<TrainerProfile />} />
+
         </Route>
 
         <Route element={<TrainerDashboardLayout />}>
@@ -92,7 +98,7 @@ export default function App() {
         <Route path="/admin/payments" element={<Payments />} />
         <Route path="/admin/coupons" element={<Coupon />} />
         <Route path="/admin/expenses" element={<Expenses />} />
-        <Route path="/admin/inventory" element={<AdminInventory />} />
+        <Route path="/admin/assets" element={<AdminInventory />} />
 
         {/* cafe things starts here  */}
         <Route path="/admin/cafe/items" element={<CafeItems />} />
@@ -100,8 +106,8 @@ export default function App() {
         <Route path="/admin/cafe/admins" element={<CafeAdmins />} />
 
         <Route path="/cafe/dashboard" element={<CafeAdminDashboard />} />
+        <Route path="/cafe/payments" element={<CafePayments />} />
 
-        <Route path="/cafe/dashboard" element={<CafeAdminDashboard />} />
       </Routes>
     </>
   );

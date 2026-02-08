@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import axios from "../../api/axios.api.js";
+import * as XLSX from "xlsx";
 
 import AdminDashboardLayout from "../../components/layout/AdminDashboardLayout";
 
@@ -19,6 +20,11 @@ const categories = [
 export default function Expenses() {
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const today = new Date().toISOString().split("T")[0];
+  const [fromDate, setFromDate] = useState(today);
+  const [toDate, setToDate] = useState(today);
+  const [categoryFilter, setCategoryFilter] = useState("all");
 
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({
@@ -44,6 +50,48 @@ export default function Expenses() {
   useEffect(() => {
     fetchExpenses();
   }, []);
+
+  const filteredExpenses = useMemo(() => {
+    return expenses.filter((e) => {
+      const date = new Date(e.createdAt)
+        .toISOString()
+        .split("T")[0];
+
+      return (
+        date >= fromDate &&
+        date <= toDate &&
+        (categoryFilter === "all" ||
+          e.category === categoryFilter)
+      );
+    });
+  }, [expenses, fromDate, toDate, categoryFilter]);
+
+  const exportExcel = () => {
+    if (!filteredExpenses.length) {
+      return toast.error("No data to export");
+    }
+
+    const data = filteredExpenses.map((e) => ({
+      Date: new Date(e.createdAt).toLocaleDateString(),
+      Title: e.title,
+      Category: e.category,
+      Amount: e.amount,
+      PaymentMethod: e.paymentMethod,
+      Remarks: e.remarks || "",
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Expenses");
+
+    XLSX.writeFile(
+      wb,
+      `Expenses_${fromDate}_to_${toDate}.xlsx`,
+      { bookType: "xlsx" }
+    );
+
+    toast.success("Excel exported");
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -88,6 +136,42 @@ export default function Expenses() {
           </button>
         </div>
 
+        <div className="flex flex-wrap gap-4 items-end">
+          <input
+            type="date"
+            value={fromDate}
+            onChange={(e) => setFromDate(e.target.value)}
+            className="bg-black border border-white/20 px-4 py-2"
+          />
+
+          <input
+            type="date"
+            value={toDate}
+            onChange={(e) => setToDate(e.target.value)}
+            className="bg-black border border-white/20 px-4 py-2"
+          />
+
+          <select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            className="bg-black border border-white/20 px-4 py-2"
+          >
+            <option value="all">All Categories</option>
+            {categories.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+
+          <button
+            onClick={exportExcel}
+            className="ml-auto bg-green-600 hover:bg-green-700 px-6 py-2 font-bold"
+          >
+            EXPORT EXCEL
+          </button>
+        </div>
+
         {loading ? (
           <p className="text-gray-500 tracking-widest">
             LOADING EXPENSES...
@@ -106,7 +190,7 @@ export default function Expenses() {
                 </tr>
               </thead>
               <tbody>
-                {expenses.map((e) => (
+                {filteredExpenses.map((e) => (
                   <tr
                     key={e._id}
                     className="border-t border-white/5 hover:bg-white/5"
@@ -133,6 +217,12 @@ export default function Expenses() {
                 ))}
               </tbody>
             </table>
+
+            {!filteredExpenses.length && (
+              <p className="text-center text-gray-500 py-6">
+                No expenses found for selected filters
+              </p>
+            )}
           </div>
         )}
       </div>

@@ -29,7 +29,7 @@ const otherMenu = [
   { label: "Supplements", to: "/admin/supplements", icon: Package },
   { label: "Coupons", to: "/admin/coupons", icon: TicketPercent },
   { label: "Expenses", to: "/admin/expenses", icon: BanknoteArrowDown },
-  { label: "Inventory", to: "/admin/inventory", icon: Dumbbell },
+  { label: "Assets", to: "/admin/assets", icon: Dumbbell },
 ];
 
 export default function Sidebar({ open, onClose }) {
@@ -42,9 +42,11 @@ export default function Sidebar({ open, onClose }) {
                   ${open ? "translate-x-0" : "-translate-x-full"}
                   md:translate-x-0`}
     >
-      <div className="h-16 flex items-center justify-between px-6
+      <div
+        className="h-16 flex items-center justify-between px-6
                       text-xl font-black tracking-widest
-                      border-b border-white/10">
+                      border-b border-white/10"
+      >
         <div>
           ALPHA
           <span className="text-red-600 ml-1">GYM</span>
@@ -59,17 +61,13 @@ export default function Sidebar({ open, onClose }) {
       </div>
 
       <nav className="flex-1 px-4 py-6 space-y-6 overflow-y-auto">
-        <Section title="CORE">
-          {mainMenu.map(renderLink)}
-        </Section>
+        <Section title="CORE">{mainMenu.map(renderLink)}</Section>
 
         <Section title="CAFE" icon={Coffee} accent="emerald">
           {cafeMenu.map(renderLink)}
         </Section>
 
-        <Section title="INVENTORY">
-          {otherMenu.map(renderLink)}
-        </Section>
+        <Section title="INVENTORY">{otherMenu.map(renderLink)}</Section>
       </nav>
     </aside>
   );
@@ -79,12 +77,7 @@ function Section({ title, children, icon: Icon, accent = "red" }) {
   return (
     <div>
       <div className="flex items-center gap-2 px-3 mb-2">
-        {Icon && (
-          <Icon
-            size={14}
-            className={`text-${accent}-500`}
-          />
-        )}
+        {Icon && <Icon size={14} className={`text-${accent}-500`} />}
         <p className="text-xs text-gray-500 tracking-widest font-bold">
           {title}
         </p>

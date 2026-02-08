@@ -76,9 +76,9 @@ export default function TrainerDashboardLayout({ trainer }) {
 
             <nav className="flex-1 px-4 py-6 space-y-2">
               <NavItem to="/trainer/dashboard" label="DASHBOARD" />
-              <NavItem to="/trainer/trainer-members" label="MEMBERS" />
+              {/* <NavItem to="/trainer/trainer-members" label="MEMBERS" /> */}
               <NavItem to="/trainer/foods" label="FOODS" />
-              <NavItem to="/trainer/diets" label="DIET PLANS" />
+              {/* <NavItem to="/trainer/diets" label="DIET PLANS" /> */}
             </nav>
 
             <div className="px-4 py-4 border-t border-red-600/30">
@@ -97,7 +97,6 @@ export default function TrainerDashboardLayout({ trainer }) {
 
       <div className="hidden md:flex min-h-screen">
 
-        {/* SIDEBAR */}
         <aside className="w-64 bg-black border-r border-red-600/30 flex flex-col">
           <div className="px-6 py-5 border-b border-red-600/30">
             <div className="flex items-center gap-4">
@@ -119,9 +118,9 @@ export default function TrainerDashboardLayout({ trainer }) {
 
           <nav className="flex-1 px-4 py-6 space-y-2">
             <NavItem to="/trainer/dashboard" label="DASHBOARD" />
-            <NavItem to="/trainer/trainer-members" label="MEMBERS" />
+            {/* <NavItem to="/trainer/trainer-members" label="MEMBERS" /> */}
             <NavItem to="/trainer/foods" label="FOODS" />
-            <NavItem to="/trainer/diets" label="DIET PLANS" />
+            {/* <NavItem to="/trainer/diets" label="DIET PLANS" /> */}
           </nav>
 
           <div className="px-4 py-4 border-t border-red-600/30">
