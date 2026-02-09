@@ -12,6 +12,10 @@ export default function CafeAdminDashboard() {
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [upiRef, setUpiRef] = useState("");
 
+  const [name, setName] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [email, setEmail] = useState("");
+
   const [couponCode, setCouponCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [couponLoading, setCouponLoading] = useState(false);
@@ -91,6 +95,10 @@ export default function CafeAdminDashboard() {
     if (!cart || cart.items.length === 0)
       return toast.error("Cart is empty");
 
+    // if (!name.trim()) return toast.error("Customer name is required");
+    if (!phoneNumber.trim())
+      return toast.error("Phone number is required");
+
     if (paymentMethod === "upi" && !upiRef)
       return toast.error("UPI reference required");
 
@@ -98,10 +106,17 @@ export default function CafeAdminDashboard() {
     await axios.post("/cafe/admin/checkout", {
       paymentMethod,
       upiRef,
+      name,
+      phoneNumber,
+      email,
     });
     setCart(null);
     setCouponCode("");
     setUpiRef("");
+    setName("");
+    setPhoneNumber("");
+    setEmail("");
+
     setLoading(false);
     toast.success("Order placed");
   };
@@ -268,6 +283,27 @@ export default function CafeAdminDashboard() {
                     </button>
                   </div>
                 )}
+              </div>
+
+              <div className="mt-3 space-y-2">
+                <input
+                  className="w-full border rounded-xl px-4 py-3"
+                  placeholder="Customer name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+                <input
+                  className="w-full border rounded-xl px-4 py-3"
+                  placeholder="Phone number"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                />
+                <input
+                  className="w-full border rounded-xl px-4 py-3"
+                  placeholder="Email (optional)"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
               </div>
 
               <div className="mt-6 space-y-4">

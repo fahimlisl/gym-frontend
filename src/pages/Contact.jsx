@@ -26,8 +26,9 @@ export default function Contact() {
           </p>
 
           <ul className="space-y-4 text-gray-300">
-            <li>📍 Downtown Fitness Street, City</li>
-            <li>📞 +91 98765 43210</li>
+            <li>📍 Barsatigola chou rasta more (station road), Bhagwangola, Murshidabad</li>
+            <li>📞 +91 8910322642 / 8250717406</li>
+            <li>📞 +91 7719161307 (reception)</li>
             <li>✉️ support@gympro.com</li>
             <li>🕒 Mon – Sun: 5AM – 11PM</li>
           </ul>

@@ -36,7 +36,8 @@ export default function PricingCard({
 
       <div className="my-6">
         <span className="text-4xl font-black">
-          ₹{price}
+          {/* ₹{price} */}
+          ₹ XXXX
         </span>
         <span className="text-gray-400 text-sm">
           {" "}
@@ -60,7 +61,7 @@ export default function PricingCard({
             : "border border-white/20 hover:border-red-600"
         )}
       >
-        START NOW
+        START NOW <span className="text-gray-500">(COMING SOON)</span> 
       </button>
     </div>
   );

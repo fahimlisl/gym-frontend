@@ -1,5 +1,5 @@
 import ProgramCard from "../components/program/ProgramCard";
-
+import { NavLink } from "react-router-dom";
 export default function Programs() {
   const programs = [
     {
@@ -54,9 +54,11 @@ export default function Programs() {
           <h2 className="text-3xl font-black mb-4">
             NOT SURE WHICH PROGRAM FITS YOU?
           </h2>
+          <NavLink to="/trainers">
           <button className="bg-red-600 px-10 py-4 font-extrabold tracking-widest">
             TALK TO A TRAINER
           </button>
+          </NavLink>
         </div>
       </section>
     </div>

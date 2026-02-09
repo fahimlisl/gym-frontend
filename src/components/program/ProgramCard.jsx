@@ -17,9 +17,10 @@ export default function ProgramCard({
         {description}
       </p>
 
-      <button className="mt-6 border border-white/20 px-6 py-3 font-extrabold tracking-widest hover:border-red-600">
+      {/* as of now , hidden */}
+      {/* <button className="mt-6 border border-white/20 px-6 py-3 font-extrabold tracking-widest hover:border-red-600">
         VIEW DETAILS
-      </button>
+      </button> */} 
     </div>
   );
 }

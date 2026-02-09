@@ -1,4 +1,5 @@
 import { Instagram, Youtube, Twitter, Facebook } from "lucide-react";
+import { NavLink } from "react-router-dom";
 
 export default function Footer() {
   return (
@@ -29,30 +30,42 @@ export default function Footer() {
             <p className="text-white font-extrabold tracking-wide">
               COMPANY
             </p>
-            <p className="hover:text-white cursor-pointer">
+            <NavLink to="/about">
+            <p className="hover:text-white cursor-pointer mt-3">
               About Us
             </p>
-            <p className="hover:text-white cursor-pointer">
+            </NavLink>
+            <NavLink to="/programs">
+            <p className="hover:text-white cursor-pointer mt-3">
               Programs
             </p>
-            <p className="hover:text-white cursor-pointer">
+            </NavLink>
+            <NavLink to="/pricing">
+            <p className="hover:text-white cursor-pointer mt-3">
               Pricing
             </p>
+            </NavLink>
           </div>
 
           <div className="space-y-3">
             <p className="text-white font-extrabold tracking-wide">
               SUPPORT
             </p>
-            <p className="hover:text-white cursor-pointer">
+            <NavLink to="/contacts">
+            <p className="hover:text-white cursor-pointer mt-3">
               Contact
             </p>
-            <p className="hover:text-white cursor-pointer">
+            </NavLink>
+            <NavLink to="/about">
+            <p className="hover:text-white cursor-pointer mt-3">
               FAQs
             </p>
-            <p className="hover:text-white cursor-pointer">
+            </NavLink>
+            <NavLink to="/about">
+            <p className="hover:text-white cursor-pointer mt-3">
               Terms & Policy
             </p>
+            </NavLink>
           </div>
         </div>
 
@@ -67,9 +80,12 @@ export default function Footer() {
               Start today.
             </p>
 
+            <NavLink to="/contacts">
+
             <button className="w-full bg-red-600 py-3 font-extrabold tracking-widest hover:bg-red-700">
               JOIN THE GRIND
             </button>
+            </NavLink>
           </div>
 
           <div className="flex gap-4 mt-6">
@@ -102,17 +118,18 @@ export default function Footer() {
             © {new Date().getFullYear()} alphagym. All rights reserved.
           </p>
 
-          <p>
-            Developed & maintained by{" "}
-            <a
-              href="https://fahim.in"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-red-600 font-semibold hover:underline"
-            >
-              Fahim Abdullah
-            </a>
-          </p>
+          <p className="relative z-10">
+  Developed & maintained by{" "}
+  <a
+    href="https://fahim.in"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="text-red-600 font-semibold hover:underline"
+  >
+    Fahim Abdullah
+  </a>
+</p>
+
         </div>
       </div>
     </footer>

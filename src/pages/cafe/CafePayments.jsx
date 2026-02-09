@@ -5,7 +5,6 @@ import axios from "../../api/axios.api";
 import CafeAdminDashboardLayout from "../../components/layout/CafeAdminDashboardLayout";
 
 export default function CafePayments() {
-  let i = 1;
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -32,20 +31,18 @@ export default function CafePayments() {
 
   const filteredPayments = useMemo(() => {
     return payments.filter((p) => {
-      const paymentDate = new Date(p.createdAt);
+      const date = new Date(p.createdAt);
 
       if (methodFilter !== "all" && p.paymentMethod !== methodFilter) {
         return false;
       }
 
-      if (fromDate && paymentDate < new Date(fromDate)) {
-        return false;
-      }
+      if (fromDate && date < new Date(fromDate)) return false;
 
       if (toDate) {
-        const endDate = new Date(toDate);
-        endDate.setHours(23, 59, 59, 999);
-        if (paymentDate > endDate) return false;
+        const end = new Date(toDate);
+        end.setHours(23, 59, 59, 999);
+        if (date > end) return false;
       }
 
       return true;
@@ -53,34 +50,32 @@ export default function CafePayments() {
   }, [payments, fromDate, toDate, methodFilter]);
 
   const exportToExcel = () => {
-    const excelData = filteredPayments.map((order, index) => {
-      const itemsSummary = order.items
+    const excelData = filteredPayments.map((order, index) => ({
+      SlNo: index + 1,
+      OrderID: order._id,
+      Date: new Date(order.createdAt).toLocaleString(),
+
+      CustomerName: order.user?.name || "Walk-in",
+      Phone: order.user?.phoneNumber || "",
+      Email: order.user?.email || "",
+      CustomerType: order.customer ? "Member" : "Walk-in",
+
+      Items: order.items
         .map(
-          (item) =>
-            `${item.name} (${item.quantity} × ₹${item.priceAtPurchase})`,
+          (i) => `${i.name} (${i.quantity} × ₹${i.priceAtPurchase})`
         )
-        .join(", ");
+        .join(", "),
 
-      return {
-        SlNo: index + 1,
-        OrderID: order._id,
-        Date: new Date(order.createdAt).toLocaleString(),
+      TotalAmount: order.totalAmount,
+      PaymentMethod: order.paymentMethod.toUpperCase(),
+      TransactionID: order.paymentMethod === "upi" ? order.upiRef : "-",
+      Status: order.status,
 
-        Items: itemsSummary,
-
-        TotalAmount: order.totalAmount,
-        PaymentMethod: order.paymentMethod.toUpperCase(),
-        TransactionID: order.paymentMethod === "upi" ? order.upiRef : "-",
-        Status: order.status,
-
-        DiscountAmount: order.discount?.amount || 0,
-        DiscountType: order.discount?.typeOfDiscount || "none",
-        DiscountValue: order.discount?.value || 0,
-        DiscountCode: order.discount?.code || "",
-
-        HandledBy: order.handledBy,
-      };
-    });
+      DiscountAmount: order.discount?.amount || 0,
+      DiscountType: order.discount?.typeOfDiscount || "none",
+      DiscountValue: order.discount?.value || 0,
+      DiscountCode: order.discount?.code || "",
+    }));
 
     const worksheet = XLSX.utils.json_to_sheet(excelData);
     const workbook = XLSX.utils.book_new();
@@ -95,17 +90,18 @@ export default function CafePayments() {
       new Blob([buffer], {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       }),
-      "cafe-payments.xlsx",
+      "cafe-payments.xlsx"
     );
   };
 
   return (
     <CafeAdminDashboardLayout title="Cafe Payments">
       <div className="bg-black text-white p-6 rounded-lg">
-        {/* HEADER */}
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-semibold text-red-500">Payments</h2>
 
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-semibold text-red-500">
+            Payments
+          </h2>
           <button
             onClick={exportToExcel}
             className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded"
@@ -128,7 +124,9 @@ export default function CafePayments() {
           </div>
 
           <div>
-            <label className="text-xs text-gray-400 block mb-1">To Date</label>
+            <label className="text-xs text-gray-400 block mb-1">
+              To Date
+            </label>
             <input
               type="date"
               value={toDate}
@@ -163,8 +161,9 @@ export default function CafePayments() {
             <table className="w-full text-sm">
               <thead className="bg-gray-900">
                 <tr>
-                  <th>Si.no</th>
-                  <th className="p-2">Date</th>
+                  <th>Sl.No</th>
+                  <th>Date</th>
+                  <th>Customer</th>
                   <th>Amount</th>
                   <th>Method</th>
                   <th>Txn ID</th>
@@ -174,18 +173,32 @@ export default function CafePayments() {
               </thead>
 
               <tbody>
-                {filteredPayments.map((p) => (
+                {filteredPayments.map((p, index) => (
                   <tr key={p._id} className="border-b border-gray-800">
-                    <td className="p-2">{i++}</td>
+                    <td className="p-2">{index + 1}</td>
                     <td className="p-2">
                       {new Date(p.createdAt).toLocaleString()}
                     </td>
-                    <td className="text-green-400">₹{p.totalAmount}</td>
-                    <td className="uppercase">{p.paymentMethod}</td>
+                    <td className="p-2">
+                      <p className="font-medium">
+                        {p.user?.name || "Walk-in"}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {p.user?.phoneNumber || "-"}
+                      </p>
+                    </td>
+                    <td className="text-green-400">
+                      ₹{p.totalAmount}
+                    </td>
+                    <td className="uppercase">
+                      {p.paymentMethod}
+                    </td>
                     <td className="text-xs">
                       {p.paymentMethod === "upi" ? p.upiRef : "-"}
                     </td>
-                    <td className="text-green-500">{p.status}</td>
+                    <td className="text-green-500">
+                      {p.status}
+                    </td>
                     <td>
                       <button
                         onClick={() => setSelectedPayment(p)}
@@ -205,112 +218,66 @@ export default function CafePayments() {
       {selectedPayment && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
           <div className="bg-gray-900 w-full max-w-2xl rounded-lg p-6 overflow-y-auto max-h-[90vh]">
-            <div className="flex justify-between mb-4">
-              <h3 className="text-red-500 font-semibold">Payment Details</h3>
+
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-red-500">
+                Payment Details
+              </h3>
               <button onClick={() => setSelectedPayment(null)}>✕</button>
             </div>
 
-            {selectedPayment && (
-              <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-                <div className="bg-gray-900 text-white w-full max-w-2xl rounded-lg p-6 overflow-y-auto max-h-[90vh]">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold text-red-500">
-                      Payment Details
-                    </h3>
-                    <button
-                      onClick={() => setSelectedPayment(null)}
-                      className="text-gray-400 hover:text-white"
-                    >
-                      ✕
-                    </button>
-                  </div>
+            <div className="mb-4 text-sm">
+              <h4 className="text-red-400 font-semibold mb-2">
+                Customer
+              </h4>
+              <p><b>Name:</b> {selectedPayment.user?.name || "Walk-in"}</p>
+              <p><b>Phone:</b> {selectedPayment.user?.phoneNumber || "-"}</p>
+              <p><b>Email:</b> {selectedPayment.user?.email || "-"}</p>
+              <p className="text-xs text-gray-400 mt-1">
+                {selectedPayment.customer ? "Registered Member" : "Walk-in Customer"}
+              </p>
+            </div>
 
-                  <div className="grid grid-cols-2 gap-4 text-sm mb-4">
-                    <p>
-                      <span className="text-gray-400">Order ID:</span>
-                      <br />
-                      {selectedPayment._id}
-                    </p>
-                    <p>
-                      <span className="text-gray-400">Date:</span>
-                      <br />
-                      {new Date(selectedPayment.createdAt).toLocaleString()}
-                    </p>
-                    <p>
-                      <span className="text-gray-400">Status:</span>
-                      <br />
-                      {selectedPayment.status}
-                    </p>
-                    <p>
-                      <span className="text-gray-400">Payment Method:</span>
-                      <br />
-                      {selectedPayment.paymentMethod.toUpperCase()}
-                    </p>
-
-                    {selectedPayment.paymentMethod === "upi" && (
-                      <p className="col-span-2">
-                        <span className="text-gray-400">Transaction ID:</span>
-                        <br />
-                        {selectedPayment.upiRef}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="mb-4">
-                    <h4 className="text-red-400 font-semibold mb-2">Items</h4>
-                    <div className="space-y-2">
-                      {selectedPayment.items.map((item) => (
-                        <div
-                          key={item._id}
-                          className="flex justify-between border-b border-gray-700 pb-2 text-sm"
-                        >
-                          <div>
-                            <p>{item.name}</p>
-                            <p className="text-gray-400">
-                              Qty: {item.quantity} × ₹{item.priceAtPurchase}
-                            </p>
-                          </div>
-                          <p className="text-green-400">
-                            ₹{item.quantity * item.priceAtPurchase}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="mb-4 text-sm">
-                    <h4 className="text-red-400 font-semibold mb-2">
-                      Discount
-                    </h4>
-                    <div className="grid grid-cols-2 gap-2">
-                      <p>
-                        <span className="text-gray-400">Type:</span>{" "}
-                        {selectedPayment.discount?.typeOfDiscount || "none"}
-                      </p>
-                      <p>
-                        <span className="text-gray-400">Value:</span>{" "}
-                        {selectedPayment.discount?.value || 0}
-                      </p>
-                      <p>
-                        <span className="text-gray-400">Amount:</span> ₹
-                        {selectedPayment.discount?.amount || 0}
-                      </p>
-                      <p>
-                        <span className="text-gray-400">Code:</span>{" "}
-                        {selectedPayment.discount?.code || "-"}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="border-t border-gray-700 pt-4 flex justify-between text-lg font-semibold">
-                    <span>Total Amount</span>
-                    <span className="text-green-400">
-                      ₹{selectedPayment.totalAmount}
-                    </span>
-                  </div>
+            <div className="mb-4">
+              <h4 className="text-red-400 font-semibold mb-2">Items</h4>
+              {selectedPayment.items.map((item) => (
+                <div
+                  key={item._id}
+                  className="flex justify-between border-b border-gray-700 py-2 text-sm"
+                >
+                  <span>
+                    {item.name} × {item.quantity}
+                  </span>
+                  <span className="text-green-400">
+                    ₹{item.quantity * item.priceAtPurchase}
+                  </span>
                 </div>
-              </div>
-            )}
+              ))}
+            </div>
+
+            <div className="mb-4 text-sm">
+              <p><b>Method:</b> {selectedPayment.paymentMethod.toUpperCase()}</p>
+              {selectedPayment.paymentMethod === "upi" && (
+                <p><b>Txn ID:</b> {selectedPayment.upiRef}</p>
+              )}
+              <p><b>Status:</b> {selectedPayment.status}</p>
+            </div>
+
+            <div className="mb-4 text-sm">
+              <h4 className="text-red-400 font-semibold mb-2">Discount</h4>
+              <p>Type: {selectedPayment.discount?.typeOfDiscount || "none"}</p>
+              <p>Value: {selectedPayment.discount?.value || 0}</p>
+              <p>Amount: ₹{selectedPayment.discount?.amount || 0}</p>
+              <p>Code: {selectedPayment.discount?.code || "-"}</p>
+            </div>
+
+            <div className="border-t border-gray-700 pt-4 flex justify-between text-lg font-semibold">
+              <span>Total Amount</span>
+              <span className="text-green-400">
+                ₹{selectedPayment.totalAmount}
+              </span>
+            </div>
+
           </div>
         </div>
       )}

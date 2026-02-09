@@ -1,88 +1,92 @@
 import { useState } from "react";
 import PricingCard from "../components/pricing/PricingCard";
+import { NavLink } from "react-router-dom";
 
 export default function PricingP() {
-  const [billing, setBilling] = useState("monthly");
+  const [billing, setBilling] = useState("subscription");
 
   const plans = {
-    monthly: [
-      {
-        title: "BASIC",
-        price: 999,
-        duration: "month",
-        subtext: "For beginners",
-        features: [
-          "Gym access",
-          "Locker access",
-          "Free assessment",
-        ],
-      },
-      {
-        title: "PRO",
-        price: 1999,
-        duration: "month",
-        badge: "MOST POPULAR",
-        highlighted: true,
-        subtext: "For serious lifters",
-        features: [
-          "Everything in Basic",
-          "Personal trainer (2x/week)",
-          "Diet consultation",
-          "Priority support",
-        ],
-      },
-      {
-        title: "ELITE",
-        price: 3999,
-        duration: "month",
-        subtext: "For total transformation",
-        features: [
-          "Unlimited trainer access",
-          "Custom diet & workout",
-          "Recovery & supplements",
-          "VIP support",
-        ],
-      },
+    subscription: [
+  {
+    title: "BASIC",
+    price: 999,
+    duration: "month",
+    subtext: "Essential gym access",
+    features: [
+      "Unlimited gym floor access",
+      "Locker and changing room access",
+      "Initial fitness assessment",
     ],
-    yearly: [
-      {
-        title: "BASIC",
-        price: 9999,
-        duration: "year",
-        subtext: "Save ₹2,000 yearly",
-        features: [
-          "Gym access",
-          "Locker access",
-          "Free assessment",
-        ],
-      },
-      {
-        title: "PRO",
-        price: 19999,
-        duration: "year",
-        badge: "BEST VALUE",
-        highlighted: true,
-        subtext: "Save ₹4,000 yearly",
-        features: [
-          "Everything in Basic",
-          "Personal trainer (2x/week)",
-          "Diet consultation",
-          "Priority support",
-        ],
-      },
-      {
-        title: "ELITE",
-        price: 39999,
-        duration: "year",
-        subtext: "Save ₹8,000 yearly",
-        features: [
-          "Unlimited trainer access",
-          "Custom diet & workout",
-          "Recovery & supplements",
-          "VIP support",
-        ],
-      },
+  },
+  {
+    title: "PRO",
+    price: 1999,
+    duration: "quarter",
+    badge: "MOST POPULAR",
+    highlighted: true,
+    subtext: "Enhanced training support",
+    features: [
+      "All Basic plan benefits",
+      "Workout guidance and training support",
+      "Access to structured workout routines",
+      "Priority member assistance",
     ],
+  },
+  {
+    title: "ELITE",
+    price: 3999,
+    duration: "yearly",
+    subtext: "Premium gym experience",
+    features: [
+      "Advanced workout programming support",
+      "Priority equipment and time-slot access",
+      "VIP member assistance",
+    ],
+  },
+],
+
+    personalTraining: [
+  {
+    title: "BASIC",
+    price: 9999,
+    duration: "month",
+    subtext: "Guided personal training",
+    features: [
+      "Dedicated personal training sessions",
+      "Gym access during training hours",
+      "Initial fitness and posture assessment",
+          "Diet planning and nutritional guidance"
+      
+    ],
+  },
+  {
+    title: "PRO",
+    price: 19999,
+    duration: "quarter",
+    badge: "BEST VALUE",
+    highlighted: true,
+    subtext: "Result-focused coaching",
+    features: [
+      "All Basic plan benefits",
+      "Customized workout programming",
+      "Diet planning and nutritional guidance",
+      "Progress tracking and regular reviews",
+    ],
+  },
+  {
+    title: "ELITE",
+    price: 39999,
+    duration: "year",
+    subtext: "Transformation program",
+    features: [
+      "Unlimited personal training sessions",
+      "Fully personalized training and nutrition plans",
+      "Advanced recovery protocols",
+      "Continuous progress monitoring and support",
+    ],
+  },
+],
+
   };
 
   return (
@@ -100,24 +104,24 @@ export default function PricingP() {
 
         <div className="mt-10 inline-flex border border-white/10">
           <button
-            onClick={() => setBilling("monthly")}
+            onClick={() => setBilling("subscription")}
             className={`px-6 py-3 font-bold ${
-              billing === "monthly"
+              billing === "subscription"
                 ? "bg-red-600"
                 : "text-gray-400"
             }`}
           >
-            MONTHLY
+            SUBSCRIPTION
           </button>
           <button
-            onClick={() => setBilling("yearly")}
+            onClick={() => setBilling("personalTraining")}
             className={`px-6 py-3 font-bold ${
-              billing === "yearly"
+              billing === "personalTraining"
                 ? "bg-red-600"
                 : "text-gray-400"
             }`}
           >
-            YEARLY (SAVE MORE)
+            PERSONAL TRAINING
           </button>
         </div>
       </section>
@@ -141,9 +145,11 @@ export default function PricingP() {
           <p className="text-gray-400 mb-8">
             Start today. Quit someday — or never.
           </p>
+          <NavLink to="/contacts">
           <button className="bg-red-600 px-12 py-4 font-extrabold tracking-widest">
             JOIN THE GRIND
           </button>
+          </NavLink>
         </div>
       </section>
     </div>

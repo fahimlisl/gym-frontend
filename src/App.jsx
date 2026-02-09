@@ -35,6 +35,7 @@ import AdminInventory from "./pages/admin/AdminInventory.jsx";
 import TrainerProfile from "./pages/TrainerProfile.jsx";
 import PublicTrainers from "./pages/PublicTrainers.jsx";
 import CafePayments from "./pages/cafe/CafePayments.jsx";
+import AboutUs from "./pages/AboutUs.jsx";
 // import TrainerMembers from "./pages/trainer/TrainerMembers.jsx";
 
 export default function App() {
@@ -64,6 +65,7 @@ export default function App() {
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/programs" element={<Programs />} />
           <Route path="/contacts" element={<Contact />} />
+          <Route path="/about" element={<AboutUs />} />
           <Route path="/trainers" element={<PublicTrainers />} />
 <Route path="/trainers/:id" element={<TrainerProfile />} />
 
