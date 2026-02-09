@@ -16,7 +16,7 @@ import SupplementDetails from "./pages/supplements/SupplementDetails";
 import Pricing from "./pages/PricingP.jsx";
 import Contact from "./pages/Contact.jsx";
 import Programs from "./pages/Programs.jsx";
-import Members from "./pages/admin/members.jsx";
+import Members from "./pages/admin/Members.jsx";
 import UserDetail from "./pages/admin/UserDetail.jsx";
 import Trainers from "./pages/admin/Trainers.jsx";
 import Payments from "./pages/admin/Payments.jsx";
