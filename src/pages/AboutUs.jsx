@@ -88,7 +88,7 @@ export default function AboutUs() {
         </div>
       </section>
 
-      <section className="container py-24 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+      {/* <section className="container py-24 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
         {[
           { value: "500+", label: "ACTIVE MEMBERS" },
           { value: "10+", label: "YEARS EXPERIENCE" },
@@ -102,7 +102,7 @@ export default function AboutUs() {
             </p>
           </div>
         ))}
-      </section>
+      </section> */}
 
       <div className="h-px bg-white/10" />
 
