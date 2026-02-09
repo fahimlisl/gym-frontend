@@ -27,9 +27,9 @@ export default function ContactForm() {
 
       <button
         type="button"
-        className="w-full bg-red-600 py-3 font-extrabold tracking-widest"
+        className="w-full bg-red-600 py-3 font-extrabold tracking-widest hover:text-red-300"
       >
-        SEND MESSAGE
+        SEND MESSAGE <label htmlFor="" className="text-gray-400 hover:text-gray-500">(COMMING SOOON)</label>
       </button>
     </form>
   );
