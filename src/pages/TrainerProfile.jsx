@@ -18,10 +18,8 @@ export default function TrainerProfile() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-zinc-900 to-black text-white px-6 py-16">
       <div className="max-w-5xl mx-auto">
-        {/* PROFILE CARD */}
         <div className="relative bg-white/10 backdrop-blur-xl rounded-3xl shadow-2xl p-10 border border-white/10">
           
-          {/* Avatar */}
           <div className="flex justify-center">
             <div className="relative">
               <img
@@ -33,12 +31,10 @@ export default function TrainerProfile() {
             </div>
           </div>
 
-          {/* Name */}
           <h1 className="text-4xl font-extrabold mt-6 text-center tracking-tight">
             {trainer.fullName}
           </h1>
 
-          {/* Experience */}
           <div className="flex justify-center mt-3">
             <span className="flex items-center gap-2 bg-white/10 px-4 py-1 rounded-full text-sm">
               <BadgeCheck size={16} className="text-green-400" />
@@ -46,7 +42,6 @@ export default function TrainerProfile() {
             </span>
           </div>
 
-          {/* Stats */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-10 text-center">
             <div className="bg-white/5 rounded-xl p-5">
               <Dumbbell className="mx-auto mb-2 text-yellow-400" />
@@ -67,14 +62,12 @@ export default function TrainerProfile() {
             </div>
           </div>
 
-          {/* About */}
           <p className="mt-10 text-center text-gray-300 leading-relaxed max-w-2xl mx-auto">
             Train with a certified professional who focuses on safe techniques,
             progressive overload, and sustainable fitness habits. Whether
             you're a beginner or advanced, your goals are the priority.
           </p>
 
-          {/* CTA */}
           <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
             <a
               href={`tel:${trainer.phoneNumber}`}

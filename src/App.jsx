@@ -67,8 +67,7 @@ export default function App() {
           <Route path="/contacts" element={<Contact />} />
           <Route path="/about" element={<AboutUs />} />
           <Route path="/trainers" element={<PublicTrainers />} />
-<Route path="/trainers/:id" element={<TrainerProfile />} />
-
+          <Route path="/trainers/:id" element={<TrainerProfile />} />
         </Route>
 
         <Route element={<TrainerDashboardLayout />}>
@@ -109,7 +108,6 @@ export default function App() {
 
         <Route path="/cafe/dashboard" element={<CafeAdminDashboard />} />
         <Route path="/cafe/payments" element={<CafePayments />} />
-
       </Routes>
     </>
   );

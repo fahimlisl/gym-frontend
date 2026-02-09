@@ -55,7 +55,7 @@ export default function Navbar() {
 
         <div className="hidden md:block">
           <Link
-            to="/login"
+            to="/pricing"
             className="bg-red-600 hover:bg-red-700 px-6 py-2 text-sm font-extrabold tracking-widest shadow-[0_0_20px_rgba(239,68,68,0.45)]"
           >
             JOIN

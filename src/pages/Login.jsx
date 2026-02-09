@@ -25,7 +25,6 @@ export default function Login() {
     resolver: zodResolver(schema),
   });
 
-
   const onSubmit = async (values) => {
     try {
       const isPhone = /^[0-9]{6,}$/.test(values.identifier);
@@ -49,38 +48,42 @@ export default function Login() {
     }
   };
 
-
   return (
-    <div className="min-h-screen relative flex items-center justify-center bg-black overflow-hidden">
+    <div className="min-h-screen relative flex items-center justify-center bg-black overflow-hidden px-4">
 
-      <div className="absolute inset-0">
-        <div className="absolute -top-40 -left-40 w-[600px] h-[600px] bg-red-700/30 blur-[220px]" />
-        <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-red-600/20 blur-[200px]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,0,0,0.12),transparent_60%)]" />
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute -top-40 -left-40 w-[500px] h-[500px] sm:w-[600px] sm:h-[600px] bg-red-700/30 blur-[200px]" />
+        <div className="absolute bottom-0 right-0 w-[400px] h-[400px] sm:w-[500px] sm:h-[500px] bg-red-600/20 blur-[180px]" />
       </div>
 
-      <div className="relative w-full max-w-md border border-red-600/30
-                      bg-neutral-950 shadow-[0_0_80px_rgba(255,0,0,0.15)]">
-
+      <div
+        className="
+          relative w-full max-w-md
+          border border-red-600/30
+          bg-neutral-950
+          shadow-[0_0_60px_rgba(255,0,0,0.18)]
+          rounded-lg
+        "
+      >
         <div className="h-1 bg-gradient-to-r from-red-700 via-red-500 to-red-700" />
 
-        <div className="p-8 sm:p-10">
+        <div className="p-6 sm:p-10">
 
-          <div className="text-center mb-10">
-            <h1 className="text-4xl font-black tracking-widest">
+          <div className="text-center mb-8 sm:mb-10">
+            <h1 className="text-3xl sm:text-4xl font-black tracking-widest">
               <span className="text-red-600">ALPHA</span> GYM
             </h1>
-            <p className="mt-2 text-xs tracking-[0.3em] text-gray-500">
+            <p className="mt-2 text-[10px] tracking-[0.3em] text-gray-500">
               BUILT FOR THE OBSESSED
             </p>
           </div>
 
-          <div className="mb-10">
+          <div className="mb-8">
             <p className="text-[10px] text-gray-500 font-bold tracking-widest mb-3">
               SELECT ACCESS LEVEL
             </p>
 
-            <div className="grid grid-cols-4 border border-white/10">
+            <div className="grid grid-cols-2 sm:grid-cols-4 border border-white/10">
               {Object.keys(ROLE_MAP).map((key) => (
                 <button
                   key={key}
@@ -89,7 +92,7 @@ export default function Login() {
                   className={clsx(
                     "py-3 text-[11px] font-extrabold tracking-widest transition-all",
                     role === key
-                      ? "bg-red-600 text-black shadow-[inset_0_-2px_0_rgba(0,0,0,0.4)]"
+                      ? "bg-red-600 text-black"
                       : "text-gray-400 hover:text-white hover:bg-white/5"
                   )}
                 >
@@ -99,8 +102,7 @@ export default function Login() {
             </div>
           </div>
 
-
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
 
             <div>
               <label className="block text-[10px] font-bold tracking-[0.25em] text-gray-500 mb-2">
@@ -155,15 +157,14 @@ export default function Login() {
                 text-black
                 hover:brightness-110 transition
                 disabled:opacity-50
-                shadow-[0_0_35px_rgba(255,0,0,0.45)]
+                shadow-[0_0_30px_rgba(255,0,0,0.45)]
               "
             >
               {isSubmitting ? "AUTHORIZING..." : "ENTER THE GYM"}
             </button>
           </form>
 
-          {/* FOOTER */}
-          <p className="mt-8 text-center text-[10px] tracking-widest text-gray-600">
+          <p className="mt-6 sm:mt-8 text-center text-[10px] tracking-widest text-gray-600">
             UNAUTHORIZED ACCESS IS PROHIBITED
           </p>
         </div>
