@@ -1,8 +1,9 @@
 import { useState } from "react";
+import { Outlet } from "react-router-dom";
 import Sidebar from "../dashboard/Sidebar.jsx";
 import Topbar from "../dashboard/Topbar.jsx";
 
-export default function AdminDashboardLayout({ children }) {
+export default function AdminDashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
@@ -24,7 +25,7 @@ export default function AdminDashboardLayout({ children }) {
         <Topbar onMenuClick={() => setSidebarOpen(true)} />
 
         <main className="flex-1 p-4 sm:p-6 md:p-8">
-          {children}
+          <Outlet />
         </main>
       </div>
     </div>

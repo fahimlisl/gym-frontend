@@ -3,7 +3,6 @@ import toast from "react-hot-toast";
 import axios from "../../api/axios.api.js";
 import * as XLSX from "xlsx";
 
-import AdminDashboardLayout from "../../components/layout/AdminDashboardLayout";
 
 const categories = [
   "RENT",
@@ -115,7 +114,7 @@ export default function Expenses() {
   };
 
   return (
-    <AdminDashboardLayout>
+    <>
       <div className="space-y-8">
 
         <div className="border border-red-600/30 bg-black p-6 flex justify-between items-center">
@@ -328,6 +327,6 @@ export default function Expenses() {
           </div>
         </div>
       )}
-    </AdminDashboardLayout>
+    </>
   );
 }

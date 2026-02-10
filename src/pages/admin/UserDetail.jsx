@@ -2,8 +2,6 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 
-import AdminDashboardLayout from "../../components/layout/AdminDashboardLayout";
-
 import UserHeader from "../../components/admin/UserHeader";
 import SubscriptionCard from "../../components/admin/SubscriptionCard";
 import PTSection from "../../components/admin/PTSection";
@@ -45,27 +43,27 @@ export default function UserDetail() {
 
   if (loading) {
     return (
-      <AdminDashboardLayout>
+      <>
         <div className="p-8 text-gray-400 tracking-widest">
           LOADING MEMBER...
         </div>
-      </AdminDashboardLayout>
+      </>
     );
   }
 
   if (!user) {
     return (
-      <AdminDashboardLayout>
+      <>
         <div className="p-8 text-red-500 tracking-widest">
           MEMBER NOT FOUND
         </div>
-      </AdminDashboardLayout>
+      </>
     );
   }
 
 
   return (
-    <AdminDashboardLayout>
+    <>
       <div className="space-y-10">
 
         <div className="border border-red-600/30
@@ -125,6 +123,6 @@ export default function UserDetail() {
           onSuccess={loadUser}
         />
       )}
-    </AdminDashboardLayout>
+    </>
   );
 }

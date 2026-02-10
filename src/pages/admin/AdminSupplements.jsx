@@ -1,6 +1,4 @@
 import { useEffect, useState } from "react";
-import AdminDashboardLayout from "../../components/layout/AdminDashboardLayout";
-
 import { fetchAdminSupplements , deleteSupplement } from "../../api/supplement.api";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
@@ -32,7 +30,7 @@ export default function AdminSupplements() {
   };
 
   return (
-    <AdminDashboardLayout>
+    <>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-extrabold">
           Supplements
@@ -79,6 +77,6 @@ export default function AdminSupplements() {
           ))}
         </div>
       )}
-    </AdminDashboardLayout>
+    </>
   );
 }

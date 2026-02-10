@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
@@ -11,7 +11,10 @@ import {
   BanknoteArrowDown,
   X,
   Dumbbell,
+  ChevronDown,
+  CalendarCog,
 } from "lucide-react";
+import { useState, useEffect } from "react";
 
 const mainMenu = [
   { label: "Dashboard", to: "/admin/dashboard", icon: LayoutDashboard },
@@ -19,6 +22,17 @@ const mainMenu = [
   { label: "Trainers", to: "/admin/trainers", icon: UserCog },
   { label: "Payments", to: "/admin/payments", icon: CreditCard },
 ];
+
+const attendanceMenu = {
+  label: "Attendance",
+  icon: CalendarCog ,
+  base: "/admin/attendence",
+  items: [
+    { label: "Dashboard", to: "/admin/attendence/dashboard" },
+    { label: "Today", to: "/admin/attendence/today" },
+    { label: "Monthly", to: "/admin/attendence/month" },
+  ],
+};
 
 const cafeMenu = [
   { label: "All Items", to: "/admin/cafe/items", icon: List },
@@ -36,38 +50,36 @@ export default function Sidebar({ open, onClose }) {
   return (
     <aside
       className={`fixed md:static inset-y-0 left-0 z-40
-                  w-72 flex flex-col
-                  border-r border-white/10 bg-black
-                  transform transition-transform duration-300
-                  ${open ? "translate-x-0" : "-translate-x-full"}
-                  md:translate-x-0`}
+      w-72 flex flex-col
+      border-r border-white/10 bg-black
+      transform transition-transform duration-300
+      ${open ? "translate-x-0" : "-translate-x-full"}
+      md:translate-x-0`}
     >
-      <div
-        className="h-16 flex items-center justify-between px-6
-                      text-xl font-black tracking-widest
-                      border-b border-white/10"
-      >
-        <div>
-          ALPHA
-          <span className="text-red-600 ml-1">GYM</span>
+      {/* Header */}
+      <div className="h-16 flex items-center justify-between px-6 border-b border-white/10">
+        <div className="text-xl font-black tracking-widest">
+          ALPHA<span className="text-red-600 ml-1">GYM</span>
         </div>
-
-        <button
-          onClick={onClose}
-          className="md:hidden text-gray-400 hover:text-red-500"
-        >
+        <button onClick={onClose} className="md:hidden text-gray-400 hover:text-red-500">
           <X />
         </button>
       </div>
 
+      {/* Menu */}
       <nav className="flex-1 px-4 py-6 space-y-6 overflow-y-auto">
-        <Section title="CORE">{mainMenu.map(renderLink)}</Section>
+        <Section title="CORE">
+          {mainMenu.map(renderLink)}
+          <AttendanceGroup config={attendanceMenu} />
+        </Section>
 
         <Section title="CAFE" icon={Coffee} accent="emerald">
           {cafeMenu.map(renderLink)}
         </Section>
 
-        <Section title="INVENTORY">{otherMenu.map(renderLink)}</Section>
+        <Section title="INVENTORY">
+          {otherMenu.map(renderLink)}
+        </Section>
       </nav>
     </aside>
   );
@@ -82,7 +94,6 @@ function Section({ title, children, icon: Icon, accent = "red" }) {
           {title}
         </p>
       </div>
-
       <div className="space-y-1">{children}</div>
     </div>
   );
@@ -97,16 +108,76 @@ function renderLink(item) {
       to={item.to}
       className={({ isActive }) =>
         `flex items-center gap-3 px-4 py-3
-         text-sm font-bold tracking-wide rounded-lg transition
-         ${
-           isActive
-             ? "bg-red-600 text-white shadow-md shadow-red-600/30"
-             : "text-gray-400 hover:text-white hover:bg-white/5"
-         }`
+        text-sm font-bold tracking-wide rounded-lg transition
+        ${
+          isActive
+            ? "bg-red-600 text-white shadow-md shadow-red-600/30"
+            : "text-gray-400 hover:text-white hover:bg-white/5"
+        }`
       }
     >
       <Icon size={18} />
       {item.label}
     </NavLink>
+  );
+};
+
+function AttendanceGroup({ config }) {
+  const location = useLocation();
+  const isActive = location.pathname.startsWith(config.base);
+  const [open, setOpen] = useState(isActive);
+
+  useEffect(() => {
+    if (isActive) setOpen(true);
+  }, [isActive]);
+
+  const Icon = config.icon;
+
+  return (
+    <div>
+      <NavLink
+        to={`${config.base}/dashboard`}
+        className={() =>
+          `flex items-center justify-between px-4 py-3
+          text-sm font-bold tracking-wide rounded-lg transition
+          ${
+            isActive
+              ? "bg-red-600 text-white shadow-md shadow-red-600/30"
+              : "text-gray-400 hover:text-white hover:bg-white/5"
+          }`
+        }
+        onClick={() => setOpen((p) => !p)}
+      >
+        <div className="flex items-center gap-3">
+          <Icon size={18} />
+          {config.label}
+        </div>
+        <ChevronDown
+          size={16}
+          className={`transition ${open ? "rotate-180" : ""}`}
+        />
+      </NavLink>
+
+      {open && (
+        <div className="ml-6 mt-1 space-y-1">
+          {config.items.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) =>
+                `block px-4 py-2 text-sm rounded-md transition
+                ${
+                  isActive
+                    ? "text-red-400 bg-red-500/10"
+                    : "text-gray-400 hover:text-white hover:bg-white/5"
+                }`
+              }
+            >
+              {item.label}
+            </NavLink>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

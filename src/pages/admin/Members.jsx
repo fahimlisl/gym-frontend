@@ -3,7 +3,7 @@ import toast from "react-hot-toast";
 
 import MemberCard from "../../components/admin/MemberCard";
 import AddMemberModal from "../../components/admin/AddMemberModal";
-import AdminDashboardLayout from "../../components/layout/AdminDashboardLayout";
+
 
 import { fetchAllMembers } from "../../api/admin.api.js";
 
@@ -58,7 +58,7 @@ export default function Members() {
   }, []);
 
   return (
-    <AdminDashboardLayout>
+    <>
       <div className="space-y-12">
 
         <div className="relative overflow-hidden rounded-2xl
@@ -149,7 +149,7 @@ export default function Members() {
           onSuccess={loadMembers}
         />
       )}
-    </AdminDashboardLayout>
+    </>
   );
 }
 

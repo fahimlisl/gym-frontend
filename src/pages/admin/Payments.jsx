@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import * as XLSX from "xlsx";
 
-import AdminDashboardLayout from "../../components/layout/AdminDashboardLayout";
 import { fetchAllTransactions } from "../../api/admin.api";
 
 const getTransactionType = (tx) => {
@@ -249,7 +248,7 @@ export default function Payments() {
   let si = 1;
 
   return (
-    <AdminDashboardLayout>
+    <>
       <div className="space-y-8">
         <div className="border border-red-600/30 bg-black p-6">
           <h1 className="text-3xl font-black tracking-widest">
@@ -378,6 +377,6 @@ export default function Payments() {
       </div>
 
       <TransactionModal tx={selectedTx} onClose={() => setSelectedTx(null)} />
-    </AdminDashboardLayout>
+    </>
   );
 }

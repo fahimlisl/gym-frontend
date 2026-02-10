@@ -1,5 +1,4 @@
 import { useState } from "react";
-import AdminDashboardLayout from "../../components/layout/AdminDashboardLayout";
 import { addSupplement } from "../../api/supplement.api";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
@@ -39,7 +38,7 @@ export default function AddSupplement() {
   };
 
   return (
-    <AdminDashboardLayout>
+    <>
       <h1 className="text-2xl font-extrabold mb-6">
         Add Supplement
       </h1>
@@ -101,6 +100,6 @@ export default function AddSupplement() {
           {loading ? "ADDING..." : "ADD SUPPLEMENT"}
         </button>
       </form>
-    </AdminDashboardLayout>
+    </>
   );
 }

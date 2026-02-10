@@ -189,7 +189,6 @@ export default function AddCafeItemModal({ onClose, onSuccess }) {
   );
 }
 
-/* ================= UI COMPONENTS ================= */
 
 function Modal({ title, children, onClose }) {
   return (

@@ -36,6 +36,11 @@ import TrainerProfile from "./pages/TrainerProfile.jsx";
 import PublicTrainers from "./pages/PublicTrainers.jsx";
 import CafePayments from "./pages/cafe/CafePayments.jsx";
 import AboutUs from "./pages/AboutUs.jsx";
+import AttendanceDashboard from "./pages/admin/attendence/AttendanceDashboard.jsx";
+import MarkAttendance from "./pages/admin/attendence/MarkAttendance.jsx";
+import TodayAttendance from "./pages/admin/Attendence/TodayAttendance.jsx";
+import MonthlyAttendance from "./pages/admin/Attendence/MonthlyAttendance.jsx";
+import AdminDashboardLayout from "./components/layout/AdminDashboardLayout.jsx";
 // import TrainerMembers from "./pages/trainer/TrainerMembers.jsx";
 
 export default function App() {
@@ -67,8 +72,7 @@ export default function App() {
           <Route path="/contacts" element={<Contact />} />
           <Route path="/about" element={<AboutUs />} />
           <Route path="/trainers" element={<PublicTrainers />} />
-<Route path="/trainers/:id" element={<TrainerProfile />} />
-
+          <Route path="/trainers/:id" element={<TrainerProfile />} />
         </Route>
 
         <Route element={<TrainerDashboardLayout />}>
@@ -76,11 +80,7 @@ export default function App() {
           <Route path="/trainer/foods" element={<Foods />} />
           <Route
             path="/trainer/diet/:userId"
-            element={
-              // <TrainerDashboardLayout>
-              <TrainerDietManager />
-              // {/* </TrainerDashboardLayout> */}
-            }
+            element={<TrainerDietManager />}
           />
           {/* <Route path="trainer/trainer-members" element={<TrainerMembers />}/> */}
         </Route>
@@ -88,28 +88,39 @@ export default function App() {
         {/* member dashboard */}
         <Route path="/member/dashboard" element={<UserDashboard />} />
 
-        {/* admin  */}
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        <Route path="/admin/supplements" element={<AdminSupplements />} />
-        <Route path="/admin/supplements/add" element={<AddSupplement />} />
+        <Route path="/admin" element={<AdminDashboardLayout />}>
+          {/* admin  */}
+          <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="supplements" element={<AdminSupplements />} />
+          <Route path="supplements/add" element={<AddSupplement />} />
 
-        <Route path="/admin/members" element={<Members />} />
-        <Route path="/admin/members/:id" element={<UserDetail />} />
+          <Route path="members" element={<Members />} />
+          <Route path="members/:id" element={<UserDetail />} />
 
-        <Route path="/admin/trainers" element={<Trainers />} />
-        <Route path="/admin/payments" element={<Payments />} />
-        <Route path="/admin/coupons" element={<Coupon />} />
-        <Route path="/admin/expenses" element={<Expenses />} />
-        <Route path="/admin/assets" element={<AdminInventory />} />
+          <Route path="trainers" element={<Trainers />} />
+          <Route path="payments" element={<Payments />} />
+          <Route path="coupons" element={<Coupon />} />
+          <Route path="expenses" element={<Expenses />} />
+          <Route path="assets" element={<AdminInventory />} />
 
-        {/* cafe things starts here  */}
-        <Route path="/admin/cafe/items" element={<CafeItems />} />
-        <Route path="/admin/cafe/add-item" element={<AddCafeItemModal />} />
-        <Route path="/admin/cafe/admins" element={<CafeAdmins />} />
+          {/* cafe things starts here  */}
+          <Route path="cafe/items" element={<CafeItems />} />
+          <Route path="cafe/add-item" element={<AddCafeItemModal />} />
+          <Route path="cafe/admins" element={<CafeAdmins />} />
 
+          {/* attendence */}
+          <Route
+            path="attendence/dashboard"
+            element={<AttendanceDashboard />}
+          />
+          <Route path="attendence/mark" element={<MarkAttendance />} />
+          <Route path="attendence/today" element={<TodayAttendance />} />
+          <Route path="attendence/month" element={<MonthlyAttendance />} />
+        </Route>
+
+        {/* cafe stuff things  */}
         <Route path="/cafe/dashboard" element={<CafeAdminDashboard />} />
         <Route path="/cafe/payments" element={<CafePayments />} />
-
       </Routes>
     </>
   );

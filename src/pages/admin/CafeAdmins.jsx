@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Plus, Trash2, Shield } from "lucide-react";
 import toast from "react-hot-toast";
 
-import AdminDashboardLayout from "../../components/layout/AdminDashboardLayout.jsx";
 import AddCafeAdminModal from "../../components/admin/cafe/AddCafeAdminModal.jsx";
 import { fetchAllCafeAdmin, destroyCafeAdmin } from "../../api/admin.api.js";
 
@@ -40,18 +39,16 @@ export default function CafeAdmins() {
   };
 
   return (
-    <AdminDashboardLayout>
+    <>
       <div className="space-y-8">
-
-        <div className="flex justify-between items-center
+        <div
+          className="flex justify-between items-center
                         border border-red-600/30 bg-gradient-to-br
                         from-black via-neutral-900 to-black
-                        p-6 rounded-xl">
-
+                        p-6 rounded-xl"
+        >
           <div>
-            <h1 className="text-3xl font-black tracking-widest">
-              CAFE ADMINS
-            </h1>
+            <h1 className="text-3xl font-black tracking-widest">CAFE ADMINS</h1>
             <p className="text-sm text-gray-400 mt-1">
               Manage cafe staff & permissions
             </p>
@@ -71,9 +68,7 @@ export default function CafeAdmins() {
         </div>
 
         {loading && (
-          <div className="text-gray-500 tracking-widest">
-            LOADING ADMINS...
-          </div>
+          <div className="text-gray-500 tracking-widest">LOADING ADMINS...</div>
         )}
 
         {!loading && admins.length === 0 && (
@@ -101,59 +96,52 @@ export default function CafeAdmins() {
           onSuccess={loadAdmins}
         />
       )}
-    </AdminDashboardLayout>
+    </>
   );
 }
 
 function CafeAdminCard({ admin, onDelete }) {
   return (
-    <div className="border border-white/10 bg-gradient-to-br
+    <div
+      className="border border-white/10 bg-gradient-to-br
                     from-black via-neutral-900 to-black
                     rounded-xl p-6 space-y-4
-                    hover:border-red-600/40 transition">
-
+                    hover:border-red-600/40 transition"
+    >
       <div className="flex justify-between items-start">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full
-                          bg-red-600/20 flex items-center justify-center">
+          <div
+            className="w-10 h-10 rounded-full
+                          bg-red-600/20 flex items-center justify-center"
+          >
             <Shield size={18} className="text-red-500" />
           </div>
 
           <div>
-            <h3 className="font-black tracking-wide">
-              {admin.username}
-            </h3>
-            <p className="text-xs text-gray-400">
-              Cafe Staff
-            </p>
+            <h3 className="font-black tracking-wide">{admin.username}</h3>
+            <p className="text-xs text-gray-400">Cafe Staff</p>
           </div>
         </div>
 
-        <button
-          onClick={onDelete}
-          className="text-gray-400 hover:text-red-500"
-        >
+        <button onClick={onDelete} className="text-gray-400 hover:text-red-500">
           <Trash2 size={16} />
         </button>
       </div>
 
       <div className="text-sm space-y-2 text-gray-300">
         <p>
-          <span className="text-gray-400">Phone:</span>{" "}
-          {admin.phoneNumber}
+          <span className="text-gray-400">Phone:</span> {admin.phoneNumber}
         </p>
 
         {admin.email && (
           <p>
-            <span className="text-gray-400">Email:</span>{" "}
-            {admin.email}
+            <span className="text-gray-400">Email:</span> {admin.email}
           </p>
         )}
 
         {admin.salary && (
           <p>
-            <span className="text-gray-400">Salary:</span>{" "}
-            ₹{admin.salary}
+            <span className="text-gray-400">Salary:</span> ₹{admin.salary}
           </p>
         )}
       </div>
