@@ -41,12 +41,12 @@ import MarkAttendance from "./pages/admin/attendence/MarkAttendance.jsx";
 import TodayAttendance from "./pages/admin/Attendence/TodayAttendance.jsx";
 import MonthlyAttendance from "./pages/admin/Attendence/MonthlyAttendance.jsx";
 import AdminDashboardLayout from "./components/layout/AdminDashboardLayout.jsx";
-// import TrainerMembers from "./pages/trainer/TrainerMembers.jsx";
+import CafePaymentsOfAdmin from "./pages/admin/CafePaymentsOfAdmin.jsx";
 
 export default function App() {
   return (
     <>
-      {/* Global Toast */}
+      {/* global Toast */}
       <Toaster
         position="top-right"
         toastOptions={{
@@ -98,7 +98,6 @@ export default function App() {
           <Route path="members/:id" element={<UserDetail />} />
 
           <Route path="trainers" element={<Trainers />} />
-          <Route path="payments" element={<Payments />} />
           <Route path="coupons" element={<Coupon />} />
           <Route path="expenses" element={<Expenses />} />
           <Route path="assets" element={<AdminInventory />} />
@@ -107,6 +106,9 @@ export default function App() {
           <Route path="cafe/items" element={<CafeItems />} />
           <Route path="cafe/add-item" element={<AddCafeItemModal />} />
           <Route path="cafe/admins" element={<CafeAdmins />} />
+          
+          <Route path="payments/all" element={<Payments />} />
+          <Route path="payments/cafe" element={<CafePaymentsOfAdmin />} />
 
           {/* attendence */}
           <Route

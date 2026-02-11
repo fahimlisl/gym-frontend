@@ -4,7 +4,8 @@ import toast from "react-hot-toast";
 import * as XLSX from "xlsx";
 
 export default function MonthlyAttendanceMatrix() {
-  const [month, setMonth] = useState("");
+  const currentMonth = new Date().toISOString().slice(0, 7);
+const [month, setMonth] = useState(currentMonth);
   const [members, setMembers] = useState({});
   const [daysInMonth, setDaysInMonth] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -90,11 +91,14 @@ export default function MonthlyAttendanceMatrix() {
         </h2>
 
         <div className="flex gap-2">
+
           <input
-            type="month"
-            onChange={(e) => setMonth(e.target.value)}
-            className="bg-black border border-[#2a2a2a] p-2 rounded-md text-white"
-          />
+  type="month"
+  value={month}
+  onChange={(e) => setMonth(e.target.value)}
+  className="bg-black border border-[#2a2a2a] p-2 rounded-md text-white"
+/>
+
 
           <button
             onClick={fetchData}

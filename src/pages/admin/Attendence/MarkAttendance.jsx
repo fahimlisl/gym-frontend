@@ -1,20 +1,24 @@
 import { useState } from "react";
-import { markAttendance } from "../../../api/attendence.api.js";
 import toast from "react-hot-toast";
+import { markAttendance } from "../../../api/attendence.api.js";
 
 export default function MarkAttendance({ onMarked }) {
-  const [memberId, setMemberId] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleMark = async () => {
-    if (!memberId) return toast.error("Enter Member ID");
+    if (!phoneNumber) return toast.error("Enter phone number");
 
     try {
       setLoading(true);
-      await markAttendance({ memberId, source: "MANUAL" });
-      toast.success("Attendance marked");
-      setMemberId("");
 
+      await markAttendance({
+        phoneNumber: Number(phoneNumber), 
+        source: "MANUAL",
+      });
+
+      toast.success("Attendance marked");
+      setPhoneNumber("");
 
       onMarked?.();
     } catch (err) {
@@ -31,9 +35,10 @@ export default function MarkAttendance({ onMarked }) {
       </h2>
 
       <input
-        value={memberId}
-        onChange={(e) => setMemberId(e.target.value)}
-        placeholder="Enter Member ID"
+        type="number"
+        value={phoneNumber}
+        onChange={(e) => setPhoneNumber(e.target.value)}
+        placeholder="Enter Phone Number"
         className="w-full bg-black border border-[#2a2a2a] rounded-md p-3 text-white focus:border-red-500 outline-none"
       />
 

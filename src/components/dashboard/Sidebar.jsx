@@ -16,21 +16,31 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
+
 const mainMenu = [
   { label: "Dashboard", to: "/admin/dashboard", icon: LayoutDashboard },
   { label: "Members", to: "/admin/members", icon: Users },
   { label: "Trainers", to: "/admin/trainers", icon: UserCog },
-  { label: "Payments", to: "/admin/payments", icon: CreditCard },
 ];
 
 const attendanceMenu = {
   label: "Attendance",
-  icon: CalendarCog ,
+  icon: CalendarCog,
   base: "/admin/attendence",
   items: [
     { label: "Dashboard", to: "/admin/attendence/dashboard" },
     { label: "Today", to: "/admin/attendence/today" },
     { label: "Monthly", to: "/admin/attendence/month" },
+  ],
+};
+
+const paymentsMenu = {
+  label: "Payments",
+  icon: CreditCard,
+  base: "/admin/payments",
+  items: [
+    { label: "All Payments", to: "/admin/payments/all" },
+    { label: "Cafe Payments", to: "/admin/payments/cafe" },
   ],
 };
 
@@ -46,6 +56,7 @@ const otherMenu = [
   { label: "Assets", to: "/admin/assets", icon: Dumbbell },
 ];
 
+
 export default function Sidebar({ open, onClose }) {
   return (
     <aside
@@ -56,21 +67,23 @@ export default function Sidebar({ open, onClose }) {
       ${open ? "translate-x-0" : "-translate-x-full"}
       md:translate-x-0`}
     >
-      {/* Header */}
       <div className="h-16 flex items-center justify-between px-6 border-b border-white/10">
         <div className="text-xl font-black tracking-widest">
           ALPHA<span className="text-red-600 ml-1">GYM</span>
         </div>
-        <button onClick={onClose} className="md:hidden text-gray-400 hover:text-red-500">
+        <button
+          onClick={onClose}
+          className="md:hidden text-gray-400 hover:text-red-500"
+        >
           <X />
         </button>
       </div>
 
-      {/* Menu */}
       <nav className="flex-1 px-4 py-6 space-y-6 overflow-y-auto">
         <Section title="CORE">
           {mainMenu.map(renderLink)}
-          <AttendanceGroup config={attendanceMenu} />
+          <CollapsibleGroup config={attendanceMenu} />
+          <CollapsibleGroup config={paymentsMenu} />
         </Section>
 
         <Section title="CAFE" icon={Coffee} accent="emerald">
@@ -120,9 +133,9 @@ function renderLink(item) {
       {item.label}
     </NavLink>
   );
-};
+}
 
-function AttendanceGroup({ config }) {
+function CollapsibleGroup({ config }) {
   const location = useLocation();
   const isActive = location.pathname.startsWith(config.base);
   const [open, setOpen] = useState(isActive);
@@ -136,7 +149,7 @@ function AttendanceGroup({ config }) {
   return (
     <div>
       <NavLink
-        to={`${config.base}/dashboard`}
+        to={`${config.base}/${config.items[0].to.split("/").pop()}`}
         className={() =>
           `flex items-center justify-between px-4 py-3
           text-sm font-bold tracking-wide rounded-lg transition
