@@ -19,6 +19,7 @@ export default function AddCafeItemModal({ onClose, onSuccess }) {
     isVeg: true,
     available: true,
     tags: "",
+    barcode:""
   });
 
   const [image, setImage] = useState(null);
@@ -48,6 +49,7 @@ export default function AddCafeItemModal({ onClose, onSuccess }) {
       fd.append("fat", Number(form.fat));
       fd.append("isVeg", form.isVeg);
       fd.append("available", form.available);
+      fd.append("barcode",form.barcode)
 
       // convert comma separated tags → array
       form.tags
@@ -98,7 +100,7 @@ export default function AddCafeItemModal({ onClose, onSuccess }) {
           onChange={(e) => setImage(e.target.files[0])}
         />
 
-        <TwoCol>
+        <ThreeCol>
           <Input
             label="PURCHASE PRICE (₹)"
             name="purchasePrice"
@@ -113,7 +115,14 @@ export default function AddCafeItemModal({ onClose, onSuccess }) {
             onChange={handleChange}
             required
           />
-        </TwoCol>
+          <Input
+            label="PRODUCT ID (BARCODE)"
+            name="barcode"
+            type="text"
+            onChange={handleChange}
+            required
+          />
+        </ThreeCol>
 
         <TwoCol>
           <Input
