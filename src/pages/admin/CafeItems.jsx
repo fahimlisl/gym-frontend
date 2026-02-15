@@ -74,6 +74,7 @@ function CafeItemCard({ item }) {
             <p>{item.calories} kcal</p>
             <p>Stock: {item.quantity}</p>
             <p>Buy: ₹{item.purchasePrice}</p>
+            <p>Barcode: {item.barcode}</p>
           </div>
         </div>
       </div>

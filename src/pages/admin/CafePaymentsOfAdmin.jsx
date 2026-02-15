@@ -172,7 +172,7 @@ export default function CafePaymentsOfAdmin() {
                 <td className="p-4">
                   {new Date(o.createdAt).toLocaleDateString()}
                 </td>
-                <td className="p-4 text-right text-red-500 font-bold">
+                <td className="p-4 text-right text-green-500 font-bold">
                   ₹{o.totalAmount}
                 </td>
                 <td className="p-4 text-center">
