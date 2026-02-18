@@ -2,7 +2,6 @@ import { useEffect, useState, useMemo } from "react";
 import api from "../../api/axios.api";
 import toast from "react-hot-toast";
 
-// ===== REUSABLE COMPONENTS =====
 const Spinner = ({ size = "md" }) => {
   const sizes = { sm: "w-3 h-3", md: "w-4 h-4", lg: "w-5 h-5" };
   return (
@@ -95,7 +94,6 @@ const FoodItem = ({ food, onRemove, showRemove = false }) => (
   </div>
 );
 
-// ===== MAIN COMPONENT =====
 export default function DietModal({ studentId, onClose }) {
   const [diet, setDiet] = useState(null);
   const [step, setStep] = useState("loading");
@@ -125,7 +123,6 @@ export default function DietModal({ studentId, onClose }) {
   const [showMealInput, setShowMealInput] = useState(false);
   const [newMealName, setNewMealName] = useState("");
 
-  // ===== COMPUTED VALUES =====
   const macroCalories = macroProtein * 4 + macroCarbs * 4 + macroFats * 9;
   const targetCalories = diet?.calories || 0;
   const macroDifference = targetCalories - macroCalories;
@@ -186,7 +183,6 @@ export default function DietModal({ studentId, onClose }) {
     calories: addedMacros.calories + selectedMacros.calories,
   }), [addedMacros, selectedMacros]);
 
-  // ===== EFFECTS =====
   useEffect(() => {
     const init = async () => {
       try {
@@ -232,7 +228,6 @@ export default function DietModal({ studentId, onClose }) {
     init();
   }, [studentId]);
 
-  // ===== HANDLERS =====
   const fetchAllFoods = async () => {
     try {
       const res = await api.get("/trainer/getAllFoods");
@@ -330,6 +325,25 @@ export default function DietModal({ studentId, onClose }) {
     }
   };
 
+  const removeMeal = async (mealId) => {
+    if (!diet?._id) return toast.error("No diet found");
+    
+    try {
+      const res = await api.patch(`/trainer/diet/remove/meal/${mealId}/${diet._id}`);
+      setDiet(res.data.data);
+      
+      // If we deleted the active meal, switch to first available meal
+      if (activeMeal === mealId) {
+        const remainingMeals = res.data.data.meals || [];
+        setActiveMeal(remainingMeals.length > 0 ? remainingMeals[0]._id : null);
+      }
+      
+      toast.success("Meal removed 🗑️");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to remove meal");
+    }
+  };
+
   const addFoodsToDiet = async () => {
     if (!activeMeal) return toast.error("Please select a meal first");
     const foodsArray = Object.values(selectedFoods).map(({ foodId, grams }) => ({ foodId, grams }));
@@ -375,7 +389,6 @@ export default function DietModal({ studentId, onClose }) {
 
   const editDiet = async () => {
     try {
-      // Change status back to draft
       const res = await api.patch(`/trainer/diet/approve/${diet._id}`, { status: "draft" });
       setDiet(res.data.data);
       setStep("food-insertion");
@@ -408,7 +421,6 @@ export default function DietModal({ studentId, onClose }) {
     }
   };
 
-  // ===== RENDER LOADING =====
   if (step === "loading") {
     return (
       <div className="fixed inset-0 z-[9999] bg-black flex items-center justify-center">
@@ -422,12 +434,10 @@ export default function DietModal({ studentId, onClose }) {
     );
   }
 
-  // ===== MAIN RENDER =====
   return (
     <div className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-md flex items-end md:items-center justify-center animate-in fade-in duration-300">
       <div className="relative w-full max-w-lg md:max-w-2xl lg:max-w-4xl h-[95vh] md:h-[90vh] bg-gradient-to-b from-black via-neutral-950 to-black rounded-t-3xl md:rounded-3xl border-t md:border border-red-600/30 shadow-[0_0_100px_rgba(239,68,68,0.1)] flex flex-col overflow-hidden">
         
-        {/* Header */}
         <div className="relative px-5 py-4 border-b border-red-600/30 flex justify-between items-center bg-black/80 backdrop-blur-xl">
           <div className="flex items-center gap-2">
             <div className="text-2xl animate-pulse-slow">⚡</div>
@@ -443,10 +453,8 @@ export default function DietModal({ studentId, onClose }) {
           </button>
         </div>
 
-        {/* Content */}
         <div className="flex-1 overflow-y-auto custom-scrollbar px-4 py-6 space-y-6">
           
-          {/* ===== STEP: CREATE ===== */}
           {step === "create" && (
             <div className="space-y-6">
               <div className="text-center space-y-2">
@@ -537,7 +545,6 @@ export default function DietModal({ studentId, onClose }) {
             </div>
           )}
 
-          {/* ===== STEP: MACROS ===== */}
           {step === "macros" && diet && (
             <div className="space-y-5 sm:space-y-6">
               <StatusBanner icon="⚡" title="DIET STATUS" subtitle="DRAFT · SET MACROS" color="yellow">
@@ -548,7 +555,6 @@ export default function DietModal({ studentId, onClose }) {
                 </div>
               </StatusBanner>
 
-              {/* Progress Circle */}
               <div className="flex justify-center py-1 sm:py-2">
                 <div className="relative w-28 h-28 sm:w-32 sm:h-32">
                   <svg className="w-full h-full -rotate-90 drop-shadow-xl">
@@ -573,14 +579,12 @@ export default function DietModal({ studentId, onClose }) {
                 </div>
               </div>
 
-              {/* Macro Cards */}
               <div className="grid grid-cols-3 gap-2 sm:gap-3">
                 {macros.map((macro) => (
                   <MacroCard key={macro.type} macro={macro} activeMacro={activeMacro} onAdjust={adjustMacro} isApproved={isApproved} />
                 ))}
               </div>
 
-              {/* Presets */}
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <span className="text-[9px] sm:text-[10px] tracking-wider text-gray-500/80">PRESETS</span>
@@ -600,7 +604,6 @@ export default function DietModal({ studentId, onClose }) {
                 </div>
               </div>
 
-              {/* Calorie Balance */}
               <div className={`flex items-center justify-between p-3 sm:p-4 rounded-xl sm:rounded-2xl border transition-all duration-300 ${
                 macroDifference === 0 ? "bg-green-500/10 border-green-500/30" :
                 macroDifference > 0 ? "bg-red-500/10 border-red-500/30" : "bg-yellow-500/10 border-yellow-500/30"
@@ -614,7 +617,6 @@ export default function DietModal({ studentId, onClose }) {
                 </span>
               </div>
 
-              {/* Save Button */}
               <button
                 onClick={saveMacros}
                 disabled={savingMacros || Math.abs(macroDifference) > 50}
@@ -633,12 +635,10 @@ export default function DietModal({ studentId, onClose }) {
             </div>
           )}
 
-          {/* ===== STEP: FOOD INSERTION ===== */}
           {step === "food-insertion" && diet && (
             <div className="space-y-6">
               <StatusBanner icon="🍽️" title="STEP 2/2" subtitle="BUILD YOUR MEALS" color="blue" />
 
-              {/* Macro Summary */}
               <div className="bg-[#1C1C1E] rounded-2xl p-4 border border-white/5 shadow-xl">
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-[11px] font-medium text-white/40 tracking-wide">TARGET</span>
@@ -693,21 +693,35 @@ export default function DietModal({ studentId, onClose }) {
                 </div>
               </div>
 
-              {/* Meal Tabs */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
                   {diet.meals?.map((meal) => (
-                    <button
-                      key={meal._id}
-                      onClick={() => setActiveMeal(meal._id)}
-                      className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold transition-all ${
-                        activeMeal === meal._id
-                          ? "bg-blue-500/20 border border-blue-500/30 text-blue-400"
-                          : "bg-white/5 border border-white/10 text-gray-400 hover:bg-white/10"
-                      }`}
-                    >
-                      {meal.meal}
-                    </button>
+                    <div key={meal._id} className="flex-shrink-0 flex items-center gap-1 bg-white/5 rounded-full border border-white/10 pr-1">
+                      <button
+                        onClick={() => setActiveMeal(meal._id)}
+                        className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${
+                          activeMeal === meal._id
+                            ? "bg-blue-500/20 text-blue-400"
+                            : "text-gray-400 hover:text-white"
+                        }`}
+                      >
+                        {meal.meal}
+                      </button>
+                      {/* as of now keeping the deltation thing when at least one meal is added*/}
+                      {diet.meals.length > 1 && (
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`Delete "${meal.meal}"?`)) {
+                              removeMeal(meal._id);
+                            }
+                          }}
+                          className="w-6 h-6 rounded-full bg-red-500/20 border border-red-500/30 text-red-400 flex items-center justify-center hover:bg-red-500/40 transition-all text-xs"
+                          title="Delete meal"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
                   ))}
                   
                   {!showMealInput ? (
@@ -756,7 +770,6 @@ export default function DietModal({ studentId, onClose }) {
                   )}
                 </div>
 
-                {/* Foods in Active Meal */}
                 {activeMeal && (
                   <div className="space-y-3">
                     {diet.meals?.find((m) => m._id === activeMeal)?.foods?.map((food) => (
@@ -769,7 +782,6 @@ export default function DietModal({ studentId, onClose }) {
                 )}
               </div>
 
-              {/* Food Search */}
               {activeMeal ? (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
@@ -804,7 +816,6 @@ export default function DietModal({ studentId, onClose }) {
                     </button>
                   </div>
 
-                  {/* Selected Foods Preview */}
                   {Object.keys(selectedFoods).length > 0 && (
                     <div className="mt-2 p-2 rounded-xl bg-green-500/5 border border-green-500/30 backdrop-blur-sm">
                       <div className="flex items-center gap-2 mb-1.5">
@@ -832,7 +843,6 @@ export default function DietModal({ studentId, onClose }) {
                     </div>
                   )}
 
-                  {/* Search Results */}
                   {searchResults.length > 0 && (
                     <div className="space-y-3 mt-4">
                       <div className="flex items-center gap-2">
@@ -908,7 +918,6 @@ export default function DietModal({ studentId, onClose }) {
                         })}
                       </div>
 
-                      {/* Add All Selected Foods Button */}
                       {Object.keys(selectedFoods).length > 0 && (
                         <button
                           onClick={addFoodsToDiet}
@@ -928,7 +937,6 @@ export default function DietModal({ studentId, onClose }) {
                     </div>
                   )}
 
-                  {/* No Results */}
                   {searchQuery && searchResults.length === 0 && !searching && (
                     <div className="text-center py-8 bg-white/5 rounded-xl border border-white/10">
                       <span className="text-4xl mb-2 block">🔍</span>
@@ -944,7 +952,6 @@ export default function DietModal({ studentId, onClose }) {
                 </div>
               )}
 
-              {/* Approve Button */}
               <button
                 onClick={approveDiet}
                 disabled={approving}
@@ -960,14 +967,12 @@ export default function DietModal({ studentId, onClose }) {
             </div>
           )}
 
-          {/* ===== STEP: APPROVED ===== */}
           {step === "approved" && diet && (
             <div className="space-y-6">
               <StatusBanner icon="✅" title="APPROVED DIET" subtitle={`${diet.calories} kcal`} color="green">
                 <p className="text-[10px] text-gray-500 mt-1">{diet.goal?.toUpperCase()} · {diet.dietType?.toUpperCase()}</p>
               </StatusBanner>
 
-              {/* Daily Targets */}
               <div className="bg-white/5 rounded-xl p-5 border border-white/10">
                 <p className="text-[10px] tracking-wider text-gray-500 mb-4">DAILY TARGETS</p>
                 <div className="grid grid-cols-3 gap-4 text-center">
@@ -987,7 +992,6 @@ export default function DietModal({ studentId, onClose }) {
                 </div>
               </div>
 
-              {/* Meal Plan */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <p className="text-[10px] tracking-wider text-gray-500">MEAL PLAN</p>
@@ -1023,7 +1027,6 @@ export default function DietModal({ studentId, onClose }) {
                 )}
               </div>
 
-              {/* Total Nutrition */}
               <div className="bg-gradient-to-r from-red-600/10 to-red-500/10 rounded-xl p-4 border border-red-500/30 mt-4">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-xs text-gray-400">TOTAL NUTRITION</span>
@@ -1038,7 +1041,6 @@ export default function DietModal({ studentId, onClose }) {
                 </div>
               </div>
 
-              {/* Edit Buttons */}
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={editMacros}
