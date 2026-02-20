@@ -50,7 +50,7 @@ export default function AddMemberModal({ onClose, onSuccess }) {
     username: "",
     email: "",
     phoneNumber: "",
-    password: "",
+    // password: "",
 
     plan: "monthly",
     price: "",
@@ -104,7 +104,7 @@ export default function AddMemberModal({ onClose, onSuccess }) {
         </TwoCol>
 
         <Input label="EMAIL (OPTIONAL)" name="email" onChange={handleChange} />
-        <Input label="PASSWORD" type="password" name="password" onChange={handleChange} required />
+        {/* <Input label="PASSWORD" type="password" name="password" onChange={handleChange} required /> */}
 
         <FileInput label="AVATAR" onChange={(e) => setAvatar(e.target.files[0])} />
 

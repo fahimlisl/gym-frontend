@@ -4,7 +4,6 @@ import api from "../../api/axios.api.js";
 import { Plus, X, FileSpreadsheet } from "lucide-react";
 import * as XLSX from "xlsx";
 
-import AdminDashboardLayout from "../../components/layout/AdminDashboardLayout.jsx";
 
 export default function AdminInventory() {
   const [expenses, setExpenses] = useState([]);
@@ -111,7 +110,7 @@ export default function AdminInventory() {
   );
 
   return (
-    <AdminDashboardLayout>
+    <>
       <div className="space-y-8">
 
         <div className="flex justify-between items-center">
@@ -286,7 +285,7 @@ export default function AdminInventory() {
           </div>
         )}
       </div>
-    </AdminDashboardLayout>
+    </>
   );
 }
 

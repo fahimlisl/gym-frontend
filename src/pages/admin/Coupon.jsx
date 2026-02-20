@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import axios from "../../api/axios.api.js";
-import AdminDashboardLayout from "../../components/layout/AdminDashboardLayout.jsx";
 
 export default function Coupon() {
   const [coupons, setCoupons] = useState([]);
@@ -90,9 +89,8 @@ export default function Coupon() {
   };
 
   return (
-    <AdminDashboardLayout title="Coupons">
+    <>
       <div className="p-6 bg-white rounded-xl shadow text-black">
-        {/* HEADER */}
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold">Coupon Management</h2>
           <button
@@ -280,6 +278,6 @@ export default function Coupon() {
           </div>
         </div>
       )}
-    </AdminDashboardLayout>
+    </>
   );
 }

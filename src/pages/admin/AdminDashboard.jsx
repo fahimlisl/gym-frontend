@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import AdminDashboardLayout from "../../components/layout/AdminDashboardLayout.jsx";
 import StatCard from "../../components/dashboard/StatCard.jsx";
 import toast from "react-hot-toast";
 
@@ -51,7 +50,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <AdminDashboardLayout>
+    <>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-10">
         <StatCard title="Today Revenue" value={`₹${stats.today.totalAmount}`} />
@@ -115,8 +114,7 @@ export default function AdminDashboard() {
           </table>
         </div>
       </Card>
-
-    </AdminDashboardLayout>
+    </>
   );
 }
 

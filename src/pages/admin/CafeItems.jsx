@@ -8,7 +8,6 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import * as XLSX from "xlsx";
-import AdminDashboardLayout from "../../components/layout/AdminDashboardLayout.jsx";
 import AddCafeItemModal from "../../components/admin/cafe/AddCafeItemModal";
 import {
   fetchAllCafeItem,
@@ -75,6 +74,7 @@ function CafeItemCard({ item }) {
             <p>{item.calories} kcal</p>
             <p>Stock: {item.quantity}</p>
             <p>Buy: ₹{item.purchasePrice}</p>
+            <p>Barcode: {item.barcode}</p>
           </div>
         </div>
       </div>
@@ -172,7 +172,7 @@ export default function CafeItems() {
   };
 
   return (
-    <AdminDashboardLayout>
+    <>
       <div className="space-y-8">
         <div
           className="flex flex-col lg:flex-row gap-6 justify-between
@@ -245,6 +245,6 @@ export default function CafeItems() {
           onSuccess={loadItems}
         />
       )}
-    </AdminDashboardLayout>
+    </>
   );
 }

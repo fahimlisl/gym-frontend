@@ -8,7 +8,6 @@ export default function AddTrainerModal({ onClose, onSuccess }) {
     fullName: "",
     email: "",
     phoneNumber: "",
-    password: "",
     experience: "",
     salary: "",
     avatar: null,
@@ -88,14 +87,6 @@ export default function AddTrainerModal({ onClose, onSuccess }) {
               }
             />
 
-            <Input
-              label="PASSWORD"
-              type="password"
-              value={form.password}
-              onChange={(e) =>
-                setForm({ ...form, password: e.target.value })
-              }
-            />
 
             <Input
               label="EXPERIENCE"

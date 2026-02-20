@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
-import AdminDashboardLayout from "../../components/layout/AdminDashboardLayout";
 import TrainerCard from "../../components/admin/TrainerCard";
 import AddTrainerModal from "../../components/admin/AddTrainerModal";
 
@@ -29,7 +28,7 @@ export default function Trainers() {
   }, []);
 
   return (
-    <AdminDashboardLayout>
+    <>
       <div className="space-y-10">
 
         <div className="border border-red-600/30
@@ -97,7 +96,7 @@ export default function Trainers() {
           onSuccess={loadTrainers}
         />
       )}
-    </AdminDashboardLayout>
+    </>
   );
 }
 

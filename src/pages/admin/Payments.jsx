@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import * as XLSX from "xlsx";
 
-import AdminDashboardLayout from "../../components/layout/AdminDashboardLayout";
 import { fetchAllTransactions } from "../../api/admin.api";
 
 const getTransactionType = (tx) => {
@@ -249,7 +248,7 @@ export default function Payments() {
   let si = 1;
 
   return (
-    <AdminDashboardLayout>
+    <>
       <div className="space-y-8">
         <div className="border border-red-600/30 bg-black p-6">
           <h1 className="text-3xl font-black tracking-widest">
@@ -307,12 +306,12 @@ export default function Payments() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <StatCard
             label="TOTAL CREDIT"
-            value={`₹${totals.credit}`}
+            value={`₹${totals.credit.toFixed(2)}`}
             color="text-green-500"
           />
           <StatCard
             label="TOTAL DEBIT"
-            value={`₹${totals.debit}`}
+            value={`₹${totals.debit.toFixed(2)}`}
             color="text-red-500"
           />
           <StatCard
@@ -322,7 +321,7 @@ export default function Payments() {
           />
           <StatCard
             label="NET BALANCE"
-            value={`₹${totals.net}`}
+            value={`₹${totals.net.toFixed(2)}`}
             color={totals.net >= 0 ? "text-green-500" : "text-red-500"}
           />
         </div>
@@ -378,6 +377,6 @@ export default function Payments() {
       </div>
 
       <TransactionModal tx={selectedTx} onClose={() => setSelectedTx(null)} />
-    </AdminDashboardLayout>
+    </>
   );
 }
