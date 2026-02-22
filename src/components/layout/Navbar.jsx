@@ -29,8 +29,8 @@ export default function Navbar() {
             Home
           </NavLink>
 
-          <NavLink to="/supplements" className={navLinkClass}>
-            Supplements
+          <NavLink to="/store" className={navLinkClass}>
+            Store
           </NavLink>
           <NavLink to="/programs" className={navLinkClass}>
             Programs
@@ -82,11 +82,11 @@ export default function Navbar() {
             </NavLink>
 
             <NavLink
-              to="/supplements"
+              to="/store"
               onClick={() => setOpen(false)}
               className={navLinkClass}
             >
-              Supplements
+              Store
             </NavLink>
           <NavLink to="/programs" onClick={() => setOpen(false)} className={navLinkClass}>
             Programs
