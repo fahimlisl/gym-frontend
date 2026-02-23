@@ -1,0 +1,9 @@
+
+
+{
+  "appId": "fit.alphagym",
+  "appName": "alphagym",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}
+
