@@ -105,3 +105,14 @@ export const fetchAllCafeAdmin = () =>
 
 export const destroyCafeAdmin = (id) =>
   api.delete(`/admin/destroyCafeAdmin/${id}`);
+
+
+export const getCafeCategories = async () => {
+  const { data } = await api.get("/admin/get/cafe/categories");
+  return data.data;
+};
+
+export const addCafeCategory = async (name) => {
+  const { data } = await api.post("/admin/add/cafe/category", { name });
+  return data.data;
+};
