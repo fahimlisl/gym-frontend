@@ -34,7 +34,7 @@ import axios from "axios";
 
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
-  withCredentials: false,
+  withCredentials: true,
 });
 
 // Request interceptor - attach token to every request
@@ -64,16 +64,19 @@ api.interceptors.response.use(
 
 // Login - store token in localStorage
 export const loginRequest = async (endpoint, payload) => {
-  const { data } = await api.post(endpoint, payload);
-  
-  const { accessToken, refreshToken } = data.data;
-  
-  console.log("Got tokens:", accessToken, refreshToken); // debug line
+  const response = await api.post(endpoint, payload);
+
+  console.log("FULL LOGIN RESPONSE:", response.data);
+
+  const accessToken = response.data?.accessToken || response.data?.data?.accessToken;
+  const refreshToken = response.data?.refreshToken || response.data?.data?.refreshToken;
+
+  console.log("Extracted tokens:", accessToken, refreshToken);
 
   if (accessToken) localStorage.setItem("accessToken", accessToken);
   if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
-  
-  return data;
+
+  return response.data;
 };
 
 export const adminLogout = async () => {
