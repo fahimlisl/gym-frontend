@@ -30,104 +30,48 @@
 //   return await api.post(endpoint, payload);
 // };
 
-
 import axios from "axios";
-import { Preferences } from "@capacitor/preferences";
-import { Capacitor } from "@capacitor/core";
 
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
   withCredentials: false,
 });
 
-const isNative = Capacitor.isNativePlatform();
-
-// Helper to get token from appropriate storage
-const getStoredToken = async () => {
-  try {
-    if (isNative) {
-      const { value } = await Preferences.get({ key: "accessToken" });
-      return value;
-    } else {
-      // Web: use localStorage
-      return localStorage.getItem("accessToken");
-    }
-  } catch (error) {
-    console.log("Error retrieving token:", error);
-    return null;
-  }
-};
-
-// Helper to set token in appropriate storage
-const setStoredToken = async (token) => {
-  try {
-    if (isNative) {
-      await Preferences.set({ key: "accessToken", value: token });
-    } else {
-      localStorage.setItem("accessToken", token);
-    }
-  } catch (error) {
-    console.log("Error storing token:", error);
-  }
-};
-
-// Helper to remove token
-const removeStoredToken = async () => {
-  try {
-    if (isNative) {
-      await Preferences.remove({ key: "accessToken" });
-      await Preferences.remove({ key: "refreshToken" });
-    } else {
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-    }
-  } catch (error) {
-    console.log("Error removing token:", error);
-  }
-};
-
-// Request interceptor
+// Request interceptor - attach token to every request
 api.interceptors.request.use(
-  async (config) => {
-    try {
-      const token = await getStoredToken();
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-    } catch (error) {
-      console.log("Error in request interceptor:", error);
+  (config) => {
+    const token = localStorage.getItem("accessToken");
+    console.log("Sending token:", token); // debug line
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
   (error) => Promise.reject(error)
 );
 
-// Response interceptor
+// Response interceptor - clear token on 401
 api.interceptors.response.use(
   (response) => response,
-  async (error) => {
+  (error) => {
     if (error.response?.status === 401) {
-      await removeStoredToken();
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
     }
     return Promise.reject(error);
   }
 );
 
-// Login request
+// Login - store token in localStorage
 export const loginRequest = async (endpoint, payload) => {
   const { data } = await api.post(endpoint, payload);
+  
   const { accessToken, refreshToken } = data.data;
   
-  if (accessToken) {
-    await setStoredToken(accessToken);
-  }
-  if (refreshToken) {
-    if (isNative) {
-      await Preferences.set({ key: "refreshToken", value: refreshToken });
-    } else {
-      localStorage.setItem("refreshToken", refreshToken);
-    }
-  }
+  console.log("Got tokens:", accessToken, refreshToken); // debug line
+
+  if (accessToken) localStorage.setItem("accessToken", accessToken);
+  if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
   
   return data;
 };
@@ -135,10 +79,12 @@ export const loginRequest = async (endpoint, payload) => {
 export const adminLogout = async () => {
   try {
     const response = await api.post("/admin/logout");
-    await removeStoredToken();
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
     return response;
   } catch (error) {
-    await removeStoredToken();
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
     throw error;
   }
 };
@@ -146,17 +92,10 @@ export const adminLogout = async () => {
 export const changePasswordRequest = (payload) =>
   api.patch("/admin/change/password", payload);
 
-export const requestResetToken = async (endpoint, payload) => {
-  return await api.post(endpoint, payload);
-};
+export const requestResetToken = async (endpoint, payload) =>
+  await api.post(endpoint, payload);
 
-export const resetPasswordRequest = async (endpoint, payload) => {
-  return await api.post(endpoint, payload);
-};
+export const resetPasswordRequest = async (endpoint, payload) =>
+  await api.post(endpoint, payload);
 
-export const isUserLoggedIn = async () => {
-  const token = await getStoredToken();
-  return !!token;
-};
-
-export const getStoredAccessToken = getStoredToken;
+export const isUserLoggedIn = () => !!localStorage.getItem("accessToken");
