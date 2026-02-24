@@ -1,5 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
+import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
 
 import PublicLayout from "./components/layout/PublicLayout";
 
@@ -43,6 +45,37 @@ import MonthlyAttendance from "./pages/admin/Attendence/MonthlyAttendance.jsx";
 import AdminDashboardLayout from "./components/layout/AdminDashboardLayout.jsx";
 import CafePaymentsOfAdmin from "./pages/admin/CafePaymentsOfAdmin.jsx";
 
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    const duration = 900; 
+    const start = window.scrollY;
+    const startTime = performance.now();
+
+    const easeInOutCubic = (t) =>
+      t < 0.5
+        ? 4 * t * t * t
+        : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+    const animate = (currentTime) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = easeInOutCubic(progress);
+
+      window.scrollTo(0, start * (1 - eased));
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+
+    requestAnimationFrame(animate);
+  }, [pathname]);
+
+  return null;
+}
+
 export default function App() {
   return (
     <>
@@ -59,6 +92,8 @@ export default function App() {
         }}
       />
 
+      <ScrollToTop />
+
       <Routes>
         {/* public */}
         <Route element={<PublicLayout />}>
@@ -66,7 +101,6 @@ export default function App() {
           <Route path="/login" element={<Login />} />
 
           <Route path="/store" element={<Supplements />} />
-          {/* <Route path="/supplements" element={<Supplements />} />*/}
           <Route path="/supplements/:id" element={<SupplementDetails />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/programs" element={<Programs />} />
@@ -76,6 +110,7 @@ export default function App() {
           <Route path="/trainers/:id" element={<TrainerProfile />} />
         </Route>
 
+        {/* trainer */}
         <Route element={<TrainerDashboardLayout />}>
           <Route path="/trainer/dashboard" element={<TrainerDashboard />} />
           <Route path="/trainer/foods" element={<Foods />} />
@@ -83,14 +118,13 @@ export default function App() {
             path="/trainer/diet/:userId"
             element={<TrainerDietManager />}
           />
-          {/* <Route path="trainer/trainer-members" element={<TrainerMembers />}/> */}
         </Route>
 
-        {/* member dashboard */}
+        {/* member */}
         <Route path="/member/dashboard" element={<UserDashboard />} />
 
+        {/* admin */}
         <Route path="/admin" element={<AdminDashboardLayout />}>
-          {/* admin  */}
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="supplements" element={<AdminSupplements />} />
           <Route path="supplements/add" element={<AddSupplement />} />
@@ -103,15 +137,15 @@ export default function App() {
           <Route path="expenses" element={<Expenses />} />
           <Route path="assets" element={<AdminInventory />} />
 
-          {/* cafe things starts here  */}
+          {/* cafe */}
           <Route path="cafe/items" element={<CafeItems />} />
           <Route path="cafe/add-item" element={<AddCafeItemModal />} />
           <Route path="cafe/admins" element={<CafeAdmins />} />
-          
+
           <Route path="payments/all" element={<Payments />} />
           <Route path="payments/cafe" element={<CafePaymentsOfAdmin />} />
 
-          {/* attendence */}
+          {/* attendance */}
           <Route
             path="attendence/dashboard"
             element={<AttendanceDashboard />}
@@ -121,7 +155,7 @@ export default function App() {
           <Route path="attendence/month" element={<MonthlyAttendance />} />
         </Route>
 
-        {/* cafe stuff things  */}
+        {/* cafe */}
         <Route path="/cafe/dashboard" element={<CafeAdminDashboard />} />
         <Route path="/cafe/payments" element={<CafePayments />} />
       </Routes>

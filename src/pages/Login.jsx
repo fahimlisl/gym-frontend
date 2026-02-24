@@ -55,30 +55,52 @@ export default function Login() {
     resolver: zodResolver(resetSchema),
   });
 
+  // const onSubmit = async (values) => {
+  //   try {
+  //     const isPhone = /^[0-9]{6,}$/.test(values.identifier);
+
+  //     const payload = {
+  //       password: values.password,
+  //       email: isPhone ? undefined : values.identifier,
+  //       phoneNumber: isPhone ? values.identifier : undefined,
+  //     };
+
+  //     const config = ROLE_MAP[role];
+
+  //     await loginRequest(config.loginEndpoint, payload);
+
+  //     toast.success(`${config.label} logged in successfully`);
+  //     navigate(config.redirect);
+  //   } catch (err) {
+  //     toast.error(
+  //       err?.response?.data?.message || "Invalid credentials"
+  //     );
+  //     setShowForgot(true);
+  //   }
+  // };
+
   const onSubmit = async (values) => {
-    try {
-      const isPhone = /^[0-9]{6,}$/.test(values.identifier);
+  try {
+    const isPhone = /^[0-9]{6,}$/.test(values.identifier);
 
-      const payload = {
-        password: values.password,
-        email: isPhone ? undefined : values.identifier,
-        phoneNumber: isPhone ? values.identifier : undefined,
-      };
+    const payload = {
+      password: values.password,
+      email: isPhone ? undefined : values.identifier,
+      phoneNumber: isPhone ? values.identifier : undefined,
+    };
 
-      const config = ROLE_MAP[role];
+    const config = ROLE_MAP[role];
 
-      await loginRequest(config.loginEndpoint, payload);
+    await loginRequest(config.loginEndpoint, payload);
+    // ^ This now stores the token automatically!
 
-      toast.success(`${config.label} logged in successfully`);
-      navigate(config.redirect);
-    } catch (err) {
-      toast.error(
-        err?.response?.data?.message || "Invalid credentials"
-      );
-      setShowForgot(true);
-    }
-  };
-
+    toast.success(`${config.label} logged in successfully`);
+    navigate(config.redirect);
+  } catch (err) {
+    toast.error(err?.response?.data?.message || "Invalid credentials");
+    setShowForgot(true);
+  }
+};
 
   const handleSendOTP = async () => {
     try {
