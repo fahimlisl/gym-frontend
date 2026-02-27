@@ -103,6 +103,9 @@ export default function DietModal({ studentId, onClose }) {
   const [addingFood, setAddingFood] = useState(false);
   const [creatingMeal, setCreatingMeal] = useState(false);
   const [activeMacro, setActiveMacro] = useState(null);
+  const [editingCalories, setEditingCalories] = useState(false);
+  const [tempCalories, setTempCalories] = useState("");
+  const [savingCalories, setSavingCalories] = useState(false);
 
   const [goal, setGoal] = useState("");
   const [dietType, setDietType] = useState("");
@@ -269,6 +272,24 @@ export default function DietModal({ studentId, onClose }) {
     toast.success("Preset applied", { icon: "⚡" });
   };
 
+  const saveCalories = async () => {
+    const newCal = Number(tempCalories);
+    if (!newCal || newCal < 500 || newCal > 10000) {
+      return toast.error("Enter a valid calorie value (500–10000)");
+    }
+    try {
+      setSavingCalories(true);
+      const res = await api.patch(`/trainer/diet/edit/calories/${diet._id}`, { calories: newCal });
+      setDiet((prev) => ({ ...prev, calories: newCal }));
+      setEditingCalories(false);
+      toast.success(`Target updated to ${newCal} kcal 🔥`);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to update calories");
+    } finally {
+      setSavingCalories(false);
+    }
+  };
+
   const createDiet = async () => {
     if (!goal || !dietType || !weight) return toast.error("All fields required");
     try {
@@ -332,7 +353,6 @@ export default function DietModal({ studentId, onClose }) {
       const res = await api.patch(`/trainer/diet/remove/meal/${mealId}/${diet._id}`);
       setDiet(res.data.data);
       
-      // If we deleted the active meal, switch to first available meal
       if (activeMeal === mealId) {
         const remainingMeals = res.data.data.meals || [];
         setActiveMeal(remainingMeals.length > 0 ? remainingMeals[0]._id : null);
@@ -555,6 +575,74 @@ export default function DietModal({ studentId, onClose }) {
                 </div>
               </StatusBanner>
 
+              <div className="relative rounded-2xl border border-orange-500/30 bg-gradient-to-br from-orange-500/8 to-amber-500/5 backdrop-blur-sm p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">🔥</span>
+                    <span className="text-[10px] tracking-wider text-orange-400/80 font-bold">TARGET CALORIES</span>
+                  </div>
+                  {!editingCalories && (
+                    <button
+                      onClick={() => {
+                        setTempCalories(String(diet.calories));
+                        setEditingCalories(true);
+                      }}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-500/15 border border-orange-500/30 text-orange-400 text-[10px] font-bold tracking-wider hover:bg-orange-500/25 transition-all active:scale-95"
+                    >
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                      EDIT
+                    </button>
+                  )}
+                </div>
+
+                {editingCalories ? (
+                  <div className="space-y-3">
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min="500"
+                        max="10000"
+                        step="50"
+                        value={tempCalories}
+                        onChange={(e) => setTempCalories(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") saveCalories();
+                          if (e.key === "Escape") setEditingCalories(false);
+                        }}
+                        autoFocus
+                        className="w-full bg-black/80 border border-orange-500/50 rounded-xl px-4 py-3 text-2xl font-black text-orange-400 tabular-nums placeholder:text-gray-700 focus:border-orange-400 focus:ring-2 focus:ring-orange-500/20 outline-none transition-all text-center"
+                        placeholder="e.g. 2200"
+                      />
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[11px] text-gray-500 font-medium">kcal</span>
+                    </div>
+                    <p className="text-[9px] text-gray-600 text-center">Recommended: 1200–5000 kcal · Press Enter to save</p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={saveCalories}
+                        disabled={savingCalories}
+                        className="flex-1 py-2.5 rounded-xl bg-orange-500/20 border border-orange-500/40 text-orange-400 text-xs font-black tracking-wider hover:bg-orange-500/30 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+                      >
+                        {savingCalories ? <><Spinner size="sm" /> SAVING...</> : "✓ CONFIRM"}
+                      </button>
+                      <button
+                        onClick={() => setEditingCalories(false)}
+                        className="px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-gray-400 text-xs font-bold hover:bg-white/10 transition-all active:scale-[0.98]"
+                      >
+                        CANCEL
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-end gap-2">
+                    <span className="text-5xl font-black text-orange-400 tabular-nums leading-none">{diet.calories}</span>
+                    <span className="text-sm text-gray-500 font-medium mb-1">kcal / day</span>
+                  </div>
+                )}
+              </div>
+
               <div className="flex justify-center py-1 sm:py-2">
                 <div className="relative w-28 h-28 sm:w-32 sm:h-32">
                   <svg className="w-full h-full -rotate-90 drop-shadow-xl">
@@ -707,7 +795,6 @@ export default function DietModal({ studentId, onClose }) {
                       >
                         {meal.meal}
                       </button>
-                      {/* as of now keeping the deltation thing when at least one meal is added*/}
                       {diet.meals.length > 1 && (
                         <button
                           onClick={() => {
