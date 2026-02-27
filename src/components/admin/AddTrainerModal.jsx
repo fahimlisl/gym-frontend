@@ -31,6 +31,7 @@ export default function AddTrainerModal({ onClose, onSuccess }) {
       onSuccess();
       onClose();
     } catch (err) {
+      console.log("erorr is ", err)
       toast.error(
         err?.response?.data?.message || "Failed to add trainer"
       );
