@@ -1,22 +1,21 @@
 import { useEffect, useState } from "react";
 import StatCard from "../../components/dashboard/StatCard.jsx";
 import toast from "react-hot-toast";
+import { TrendingUp } from "lucide-react";
 
 import {
   fetchDashboardRevenue,
   fetchRevenueBySource,
   fetchRecentTransactions,
-} from "../../api/admin.api.js"
-import RevenueTimeline from "./RevenueTimeline.jsx"
+} from "../../api/admin.api.js";
 
-
+import RevenueTimeline from "./RevenueTimeline.jsx";
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
   const [sources, setSources] = useState([]);
   const [recent, setRecent] = useState([]);
   const [loading, setLoading] = useState(true);
-  let i = 1;
 
   useEffect(() => {
     const load = async () => {
@@ -42,112 +41,147 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center
-                      text-gray-500 tracking-widest">
-        LOADING DASHBOARD...
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-red-600 mx-auto mb-4"></div>
+          <p className="text-gray-400 tracking-widest text-sm">
+            LOADING DASHBOARD...
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <>
+    <div className="min-h-screen bg-black p-4 md:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto space-y-10">
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-10">
-        <StatCard title="Today Revenue" value={`₹${stats.today.totalAmount}`} />
-        <StatCard title="Weekly Revenue" value={`₹${stats.weekly.totalAmount}`} />
-        <StatCard title="Monthly Revenue" value={`₹${stats.monthly.totalAmount}`} />
-        <StatCard title="Yearly Revenue" value={`₹${stats.yearly.totalAmount}`} />
-      </div>
+        {/* HEADER */}
+        <div>
+          <h1 className="text-3xl md:text-5xl font-black tracking-tight text-white">
+            DASHBOARD
+          </h1>
+          <p className="text-gray-400 mt-2 text-sm md:text-base">
+            Performance overview & revenue analytics
+          </p>
+        </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+          <StatCard
+            title="Today Revenue"
+            value={`₹${stats.today.totalAmount}`}
+            icon={<TrendingUp className="w-5 h-5 text-red-500" />}
+          />
+          <StatCard
+            title="Weekly Revenue"
+            value={`₹${stats.weekly.totalAmount}`}
+            icon={<TrendingUp className="w-5 h-5 text-red-500" />}
+          />
+          <StatCard
+            title="Monthly Revenue"
+            value={`₹${stats.monthly.totalAmount}`}
+            icon={<TrendingUp className="w-5 h-5 text-red-500" />}
+          />
+          <StatCard
+            title="Yearly Revenue"
+            value={`₹${stats.yearly.totalAmount}`}
+            icon={<TrendingUp className="w-5 h-5 text-red-500" />}
+          />
+        </div>
 
-        <Card title="REVENUE OVERVIEW">
-  <RevenueTimeline data={stats} />
-</Card>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
+          <Card title="REVENUE OVERVIEW" className="lg:col-span-2">
+            <RevenueTimeline data={stats} />
+          </Card>
 
-        <Card title="PAYMENT SOURCES">
-          <div className="space-y-4">
-            {sources.map((s) => (
-              <Progress
-                key={s._id}
-                label={formatSource(s._id)}
-                value={s.totalAmount}
-                max={stats.monthly.totalAmount || 1}
-              />
-            ))}
+          <Card title="PAYMENT SOURCES">
+            <div className="space-y-5 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
+              {sources.map((s) => (
+                <Progress
+                  key={s._id}
+                  label={formatSource(s._id)}
+                  value={s.totalAmount}
+                  max={stats.monthly.totalAmount || 1}
+                />
+              ))}
+            </div>
+          </Card>
+        </div>
+
+        <Card title="RECENT TRANSACTIONS">
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs md:text-sm">
+              <thead className="text-gray-400 border-b border-red-600/20">
+                <tr>
+                  <th className="py-4 text-left">S.No</th>
+                  <th className="text-left">USER</th>
+                  <th className="text-left hidden sm:table-cell">SOURCE</th>
+                  <th className="text-left">AMOUNT</th>
+                  <th className="text-left hidden md:table-cell">METHOD</th>
+                  <th className="text-left">DATE</th>
+                </tr>
+              </thead>
+
+              <tbody className="divide-y divide-white/5">
+                {recent.map((t, idx) => (
+                  <tr
+                    key={t._id}
+                    className="hover:bg-red-600/5 transition"
+                  >
+                    <td className="py-4 text-gray-400">{idx + 1}</td>
+                    <td className="font-medium text-white truncate max-w-xs">
+                      {t.user?.username || "—"}
+                    </td>
+                    <td className="hidden sm:table-cell text-xs">
+                      <span className="bg-red-600/10 text-red-400 px-2 py-1 rounded">
+                        {formatSource(t.source)}
+                      </span>
+                    </td>
+                    <td className="font-bold text-red-500">
+                      ₹{t.amount}
+                    </td>
+                    <td className="hidden md:table-cell text-gray-400 uppercase text-xs">
+                      {t.paymentMethod}
+                    </td>
+                    <td className="text-gray-400">
+                      {new Date(t.paidAt).toLocaleDateString("en-IN")}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </Card>
+
       </div>
 
-      <Card title="RECENT TRANSACTIONS">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="text-gray-400 border-b border-white/10">
-              <tr>
-                <th className="py-2 text-left">S.No</th>
-                <th className="py-2 text-left">USER</th>
-                <th className="text-left">SOURCE</th>
-                <th className="text-left">AMOUNT</th>
-                <th className="text-left">METHOD</th>
-                <th className="text-left">DATE</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {recent.map((t) => (
-                <tr
-                  key={t._id}
-                  className="border-b border-white/5 hover:bg-white/5"
-                >
-                  <td>{i++}</td>
-                  <td className="py-3">
-                    {t.user?.username || "—"}
-                  </td>
-                  <td>{formatSource(t.source)}</td>
-                  <td className="font-bold">₹{t.amount}</td>
-                  <td className="uppercase text-xs">{t.paymentMethod}</td>
-                  <td>{new Date(t.paidAt).toLocaleDateString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
-    </>
-  );
-}
-
-
-function Card({ title, children }) {
-  return (
-    <div className="border border-red-600/30 bg-black p-6 rounded-xl">
-      <h3 className="font-extrabold tracking-widest mb-6">
-        {title}
-      </h3>
-      {children}
+      <style jsx>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(220, 38, 38, 0.6);
+          border-radius: 10px;
+        }
+      `}</style>
     </div>
   );
 }
 
 
-function Bars({ values, labels }) {
-  const max = Math.max(...values, 1);
-
+function Card({ title, children, className = "" }) {
   return (
-    <div className="flex items-end gap-4 h-48">
-      {values.map((v, i) => (
-        <div key={i} className="flex-1 text-center">
-          <div
-            style={{ height: `${(v / max) * 160}px` }}
-            className="bg-gradient-to-t from-red-700 to-red-500
-                       rounded-t transition-all"
-          />
-          <p className="text-xs text-gray-400 mt-2">
-            {labels[i]}
-          </p>
-        </div>
-      ))}
+    <div
+      className={`border border-red-600/20 bg-black p-6 rounded-2xl
+                  shadow-[0_0_30px_rgba(220,38,38,0.08)]
+                  hover:border-red-600/40 transition
+                  ${className}`}
+    >
+      <h3 className="font-black tracking-widest mb-6 text-white text-lg">
+        {title}
+      </h3>
+      {children}
     </div>
   );
 }
@@ -158,21 +192,20 @@ function Progress({ label, value, max }) {
 
   return (
     <div>
-      <div className="flex justify-between text-xs mb-1">
+      <div className="flex justify-between text-xs mb-2">
         <span className="text-gray-400">{label}</span>
-        <span className="font-bold">₹{value}</span>
+        <span className="font-bold text-white">₹{Math.round(value)}</span>
       </div>
 
-      <div className="w-full h-2 bg-white/10 rounded">
+      <div className="w-full h-2.5 bg-white/10 rounded-full overflow-hidden">
         <div
           style={{ width: `${percent}%` }}
-          className="h-full bg-red-600 rounded transition-all"
+          className="h-full bg-gradient-to-r from-red-700 to-red-500 rounded-full transition-all duration-500"
         />
       </div>
     </div>
   );
 }
-
 
 const formatSource = (s) => {
   if (s === "personal-training") return "PERSONAL TRAINING";

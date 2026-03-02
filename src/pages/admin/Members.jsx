@@ -1,10 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import toast from "react-hot-toast";
 
 import MemberCard from "../../components/admin/MemberCard";
 import AddMemberModal from "../../components/admin/AddMemberModal";
-
-
 import { fetchAllMembers } from "../../api/admin.api.js";
 
 export default function Members() {
@@ -12,7 +10,8 @@ export default function Members() {
   const [loading, setLoading] = useState(true);
   const [openAdd, setOpenAdd] = useState(false);
 
-
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("all");
 
   const getLatestSubscription = (user) => {
     const subs = user?.subscription?.subscription;
@@ -23,7 +22,6 @@ export default function Members() {
     )[0];
   };
 
-
   const getLatestStatus = (user) => {
     const latest = getLatestSubscription(user);
     return latest?.status || "none";
@@ -33,20 +31,8 @@ export default function Members() {
     try {
       setLoading(true);
       const res = await fetchAllMembers();
-      const fetchedUsers = res.data.data || [];
-
-
-      const sortedUsers = [...fetchedUsers].sort((a, b) => {
-        const statusA = getLatestStatus(a);
-        const statusB = getLatestStatus(b);
-
-        if (statusA === "expired" && statusB !== "expired") return -1;
-        if (statusA !== "expired" && statusB === "expired") return 1;
-        return 0;
-      });
-
-      setUsers(sortedUsers);
-    } catch (err) {
+      setUsers(res.data.data || []);
+    } catch {
       toast.error("Failed to fetch members");
     } finally {
       setLoading(false);
@@ -57,22 +43,60 @@ export default function Members() {
     loadMembers();
   }, []);
 
+
+  const filteredUsers = useMemo(() => {
+    return users.filter((u) => {
+      const status = getLatestStatus(u);
+      const hasPT = Boolean(u.personalTraning);
+
+      const matchesSearch =
+        u.username?.toLowerCase().includes(search.toLowerCase());
+
+      let matchesFilter = true;
+
+      switch (filter) {
+        case "expired":
+          matchesFilter = status === "expired";
+          break;
+        case "active":
+          matchesFilter = status === "active";
+          break;
+        case "withPT":
+          matchesFilter = hasPT;
+          break;
+        case "withoutPT":
+          matchesFilter = !hasPT;
+          break;
+        case "expiredWithPT":
+          matchesFilter = status === "expired" && hasPT;
+          break;
+        case "expiredWithoutPT":
+          matchesFilter = status === "expired" && !hasPT;
+          break;
+        default:
+          matchesFilter = true;
+      }
+
+      return matchesSearch && matchesFilter;
+    });
+  }, [users, search, filter]);
+
   return (
     <>
-      <div className="space-y-12">
+      <div className="space-y-10">
 
         <div className="relative overflow-hidden rounded-2xl
                         bg-gradient-to-br from-black via-neutral-900 to-black
-                        border border-red-600/25 p-8">
+                        border border-red-600/25 p-6 sm:p-8">
 
-          <div className="relative z-10 flex flex-col md:flex-row
-                          md:items-center md:justify-between gap-6">
+          <div className="relative z-10 flex flex-col lg:flex-row
+                          lg:items-center lg:justify-between gap-6">
 
             <div>
-              <h1 className="text-4xl font-black tracking-widest">
+              <h1 className="text-2xl sm:text-4xl font-black tracking-widest">
                 MEMBERS
               </h1>
-              <p className="text-sm text-gray-400 mt-3 max-w-xl">
+              <p className="text-xs sm:text-sm text-gray-400 mt-3 max-w-xl">
                 Manage gym members, memberships and personal training
                 from a single control panel.
               </p>
@@ -81,7 +105,9 @@ export default function Members() {
             <button
               onClick={() => setOpenAdd(true)}
               className="bg-red-600 hover:bg-red-700
-                         px-10 py-4 text-xs font-extrabold tracking-widest
+                         px-6 sm:px-10 py-3 sm:py-4
+                         text-[10px] sm:text-xs
+                         font-extrabold tracking-widest
                          shadow-[0_0_40px_rgba(239,68,68,0.35)]"
             >
               ADD MEMBER
@@ -92,7 +118,38 @@ export default function Members() {
                           bg-red-600/10 blur-3xl rounded-full" />
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
+        <div className="flex flex-col sm:flex-row gap-4">
+
+          <input
+            type="text"
+            placeholder="Search by member name..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="flex-1 bg-black border border-white/10
+                       px-4 py-3 text-sm text-white
+                       rounded-lg focus:outline-none
+                       focus:border-red-500 transition"
+          />
+
+          <select
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            className="bg-black border border-white/10
+                       px-4 py-3 text-sm text-white
+                       rounded-lg focus:outline-none
+                       focus:border-red-500 transition"
+          >
+            <option value="all">All Members</option>
+            <option value="active">Active</option>
+            <option value="expired">Expired</option>
+            <option value="withPT">With PT</option>
+            <option value="withoutPT">Without PT</option>
+            <option value="expiredWithPT">Expired + PT</option>
+            <option value="expiredWithoutPT">Expired + No PT</option>
+          </select>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 sm:gap-6">
           <StatBox label="TOTAL MEMBERS" value={users.length} />
           <StatBox
             label="WITH PT"
@@ -104,15 +161,11 @@ export default function Members() {
           />
           <StatBox
             label="ACTIVE"
-            value={users.filter(
-              u => getLatestStatus(u) === "active"
-            ).length}
+            value={users.filter(u => getLatestStatus(u) === "active").length}
           />
           <StatBox
             label="EXPIRED"
-            value={users.filter(
-              u => getLatestStatus(u) === "expired"
-            ).length}
+            value={users.filter(u => getLatestStatus(u) === "expired").length}
           />
         </div>
 
@@ -122,21 +175,20 @@ export default function Members() {
           </div>
         )}
 
-        {!loading && users.length === 0 && (
+        {!loading && filteredUsers.length === 0 && (
           <div className="rounded-xl border border-white/10
-                          bg-neutral-900/40 p-14 text-center text-gray-500">
+                          bg-neutral-900/40 p-10 text-center text-gray-500">
             NO MEMBERS FOUND
           </div>
         )}
 
-        {!loading && users.length > 0 && (
+        {!loading && filteredUsers.length > 0 && (
           <div className="space-y-4">
-            {users.map((u) => (
+            {filteredUsers.map((u) => (
               <MemberCard
                 key={u._id}
                 user={u}
                 latestStatus={getLatestStatus(u)}
-                latestSubscription={getLatestSubscription(u)}
               />
             ))}
           </div>
@@ -158,13 +210,13 @@ function StatBox({ label, value }) {
   return (
     <div className="relative overflow-hidden rounded-xl
                     bg-gradient-to-br from-black via-neutral-900 to-black
-                    border border-white/10 p-5">
+                    border border-white/10 p-4 sm:p-5">
 
-      <p className="text-[11px] text-gray-400 tracking-widest">
+      <p className="text-[10px] sm:text-[11px] text-gray-400 tracking-widest">
         {label}
       </p>
 
-      <p className="text-3xl font-black mt-3">
+      <p className="text-xl sm:text-3xl font-black mt-2 sm:mt-3">
         {value}
       </p>
 
