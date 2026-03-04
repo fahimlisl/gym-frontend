@@ -33,84 +33,95 @@ function CafeItemCard({ item }) {
 
   return (
     <div
-      className="group relative flex flex-col rounded-2xl overflow-hidden
-                 bg-gradient-to-br from-black via-neutral-900 to-black
-                 border border-white/10 hover:border-red-600/40 transition"
+      className="group relative flex flex-col rounded-xl overflow-hidden
+      bg-gradient-to-br from-black via-neutral-900 to-black
+      border border-white/10 hover:border-red-600/40 transition"
     >
-      <div className="relative h-52 overflow-hidden">
+
+      <div className="relative h-36 sm:h-44 md:h-48 overflow-hidden">
         <img
           src={item.image?.url}
           alt={item.name}
           className="w-full h-full object-cover
-                     group-hover:scale-105 transition duration-300"
+          group-hover:scale-105 transition duration-300"
         />
 
         <span
-          className="absolute top-3 right-3 bg-black/70 px-3 py-1
-                     text-[10px] tracking-widest uppercase rounded-full"
+          className="absolute top-2 right-2 bg-black/70 px-2 py-1
+          text-[9px] tracking-widest uppercase rounded-full"
         >
           {item.category}
         </span>
       </div>
 
-      <div className="flex-1 p-5 space-y-4">
-        <h3 className="text-lg font-black">{item.name}</h3>
+      <div className="flex-1 p-4 space-y-3">
 
-        <p className="text-sm text-gray-400 line-clamp-2">{item.description}</p>
+        <h3 className="text-base sm:text-lg font-black">
+          {item.name}
+        </h3>
 
-        <div className="grid grid-cols-3 gap-2 text-xs text-gray-400">
+        <p className="text-xs text-gray-400 line-clamp-2">
+          {item.description}
+        </p>
+
+        <div className="grid grid-cols-3 gap-2">
           <Macro label="PROTEIN" value={`${item.macros?.protein || 0}g`} />
           <Macro label="CARBS" value={`${item.macros?.carbs || 0}g`} />
           <Macro label="FATS" value={`${item.macros?.fats || 0}g`} />
         </div>
 
         <div className="flex justify-between items-end">
+
           <div>
-            <p className="text-xs text-gray-500">SELL PRICE</p>
-            <p className="text-2xl font-black text-red-500">₹{item.price}</p>
+            <p className="text-[10px] text-gray-500">SELL</p>
+            <p className="text-lg sm:text-xl font-black text-red-500">
+              ₹{item.price}
+            </p>
           </div>
 
-          <div className="text-right text-xs text-gray-300">
+          <div className="text-right text-[10px] text-gray-300 space-y-0.5">
             <p>{item.calories} kcal</p>
             <p>Stock: {item.quantity}</p>
             <p>Buy: ₹{item.purchasePrice}</p>
-            <p>Barcode: {item.barcode}</p>
           </div>
+
         </div>
       </div>
 
       <div
-        className={`flex items-center justify-between px-5 py-4
-        text-xs font-extrabold tracking-widest
+        className={`flex items-center justify-between px-4 py-3
+        text-[10px] font-extrabold tracking-widest
         ${available ? "bg-emerald-500 text-black" : "bg-red-600 text-white"}`}
       >
-        <div className="flex items-center gap-2">
-          {available ? <CheckCircle size={16} /> : <XCircle size={16} />}
-          {available ? "AVAILABLE" : "OUT OF STOCK"}
+        <div className="flex items-center gap-1">
+          {available ? <CheckCircle size={14} /> : <XCircle size={14} />}
+          {available ? "AVAILABLE" : "OUT"}
         </div>
 
         <button
           onClick={toggle}
           disabled={loading}
-          className="border px-4 py-2"
+          className="border px-3 py-1 text-[9px]"
         >
-          {loading ? "UPDATING..." : "TOGGLE"}
+          {loading ? "..." : "TOGGLE"}
         </button>
       </div>
+
     </div>
   );
 }
 
 function Macro({ label, value }) {
   return (
-    <div className="bg-black/40 border border-white/5 rounded-lg p-2 text-center">
-      <p className="text-[10px] tracking-widest text-gray-500">{label}</p>
-      <p className="font-bold text-gray-300">{value}</p>
+    <div className="bg-black/40 border border-white/5 rounded-md p-2 text-center">
+      <p className="text-[9px] tracking-widest text-gray-500">{label}</p>
+      <p className="font-bold text-xs text-gray-300">{value}</p>
     </div>
   );
 }
 
 export default function CafeItems() {
+
   const [items, setItems] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -143,6 +154,7 @@ export default function CafeItems() {
   }, [search, items]);
 
   const exportExcel = () => {
+
     if (!filtered.length) return toast.error("No items to export");
 
     const data = filtered.map((i) => ({
@@ -165,7 +177,9 @@ export default function CafeItems() {
 
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
+
     XLSX.utils.book_append_sheet(wb, ws, "Cafe Items");
+
     XLSX.writeFile(wb, "Cafe_Items.xlsx");
 
     toast.success("Cafe items exported");
@@ -173,37 +187,45 @@ export default function CafeItems() {
 
   return (
     <>
-      <div className="space-y-8">
+      <div className="space-y-6">
+
         <div
-          className="flex flex-col lg:flex-row gap-6 justify-between
-                     border border-red-600/30 bg-gradient-to-br
-                     from-black via-neutral-900 to-black
-                     p-6 rounded-xl"
+          className="flex flex-col lg:flex-row gap-4 justify-between
+          border border-red-600/30 bg-gradient-to-br
+          from-black via-neutral-900 to-black
+          p-5 rounded-xl"
         >
+
           <div>
-            <h1 className="text-3xl font-black tracking-widest">CAFE ITEMS</h1>
-            <p className="text-sm text-gray-400">Manage gym cafe products</p>
+            <h1 className="text-2xl sm:text-3xl font-black tracking-widest">
+              CAFE ITEMS
+            </h1>
+            <p className="text-xs sm:text-sm text-gray-400">
+              Manage gym cafe products
+            </p>
           </div>
 
-          <div className="flex gap-4 w-full lg:w-auto">
-            <div className="relative flex-1 lg:w-72">
+          <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+
+            <div className="relative w-full sm:w-64">
               <Search
                 size={16}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
               />
+
               <input
-                placeholder="Search item, category, tag..."
+                placeholder="Search..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full bg-neutral-900 border border-white/10
-                           pl-10 pr-4 py-3 text-sm text-white rounded-lg"
+                pl-9 pr-3 py-2 text-sm text-white rounded-lg"
               />
             </div>
 
             <button
               onClick={exportExcel}
-              className="flex items-center gap-2 bg-emerald-600
-                         px-6 py-3 text-xs font-extrabold rounded-lg"
+              className="flex items-center justify-center gap-2 bg-emerald-600
+              px-4 py-2 text-[11px] font-extrabold rounded-lg w-full sm:w-auto"
             >
               <FileSpreadsheet size={16} />
               EXPORT
@@ -211,32 +233,36 @@ export default function CafeItems() {
 
             <button
               onClick={() => setOpenAdd(true)}
-              className="flex items-center gap-2 bg-red-600
-                         px-6 py-3 text-xs font-extrabold rounded-lg"
+              className="flex items-center justify-center gap-2 bg-red-600
+              px-4 py-2 text-[11px] font-extrabold rounded-lg w-full sm:w-auto"
             >
               <Plus size={16} />
               ADD ITEM
             </button>
+
           </div>
         </div>
 
         {loading && (
-          <p className="text-gray-500 tracking-widest">LOADING ITEMS...</p>
+          <p className="text-gray-500 tracking-widest">
+            LOADING ITEMS...
+          </p>
         )}
 
         {!loading && filtered.length === 0 && (
-          <div className="border border-white/10 p-12 text-center text-gray-500">
+          <div className="border border-white/10 p-10 text-center text-gray-500">
             NO CAFE ITEMS FOUND
           </div>
         )}
 
         {!loading && filtered.length > 0 && (
-          <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filtered.map((item) => (
               <CafeItemCard key={item._id} item={item} />
             ))}
           </div>
         )}
+
       </div>
 
       {openAdd && (

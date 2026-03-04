@@ -7,21 +7,22 @@ export default function Navbar() {
 
   const navLinkClass = ({ isActive }) =>
     `relative text-sm font-bold tracking-wide transition
-     ${
-       isActive
-         ? "text-red-600"
-         : "text-white hover:text-red-500"
-     }`;
+     ${isActive ? "text-red-600" : "text-white hover:text-red-500"}`;
 
   return (
     <header className="sticky top-0 z-50 bg-black border-b border-white/10">
       <nav className="container flex items-center justify-between h-16">
-        
-        <Link
-          to="/"
-          className="text-xl font-extrabold tracking-widest"
-        >
-         <span className="text-red-600">ALPHA</span> GYM
+        <Link to="/" className="text-xl font-extrabold tracking-widest">
+          <span className="inline-flex items-center gap-1">
+            <img
+              src="https://res.cloudinary.com/dkrwq4wvi/image/upload/v1772311625/gym/gam3nt7czytzycq9uruu.png"
+              alt="logo"
+              className="h-6 w-auto"
+            />
+            <span>
+              <span className="text-red-600">ALPHA</span> GYM
+            </span>
+          </span>
         </Link>
 
         <ul className="hidden md:flex items-center gap-8">
@@ -62,10 +63,7 @@ export default function Navbar() {
           </Link>
         </div>
 
-        <button
-          onClick={() => setOpen(!open)}
-          className="md:hidden text-white"
-        >
+        <button onClick={() => setOpen(!open)} className="md:hidden text-white">
           {open ? <X size={26} /> : <Menu size={26} />}
         </button>
       </nav>
@@ -88,21 +86,41 @@ export default function Navbar() {
             >
               Store
             </NavLink>
-          <NavLink to="/programs" onClick={() => setOpen(false)} className={navLinkClass}>
-            Programs
-          </NavLink>
-          <NavLink to="/pricing" onClick={() => setOpen(false)} className={navLinkClass}>
-            Pricing
-          </NavLink>
-          <NavLink to="/contacts" onClick={() => setOpen(false)} className={navLinkClass}>
-            Contacts
-          </NavLink>
-          <NavLink to="/about" onClick={() => setOpen(false)} className={navLinkClass}>
-            About Us
-          </NavLink>
-          <NavLink to="/trainers" onClick={() => setOpen(false)} className={navLinkClass}>
-            Trainer
-          </NavLink>
+            <NavLink
+              to="/programs"
+              onClick={() => setOpen(false)}
+              className={navLinkClass}
+            >
+              Programs
+            </NavLink>
+            <NavLink
+              to="/pricing"
+              onClick={() => setOpen(false)}
+              className={navLinkClass}
+            >
+              Pricing
+            </NavLink>
+            <NavLink
+              to="/contacts"
+              onClick={() => setOpen(false)}
+              className={navLinkClass}
+            >
+              Contacts
+            </NavLink>
+            <NavLink
+              to="/about"
+              onClick={() => setOpen(false)}
+              className={navLinkClass}
+            >
+              About Us
+            </NavLink>
+            <NavLink
+              to="/trainers"
+              onClick={() => setOpen(false)}
+              className={navLinkClass}
+            >
+              Trainer
+            </NavLink>
 
             <NavLink
               to="/login"
@@ -111,7 +129,6 @@ export default function Navbar() {
             >
               Login
             </NavLink>
-
 
             <Link
               to="/pricing"

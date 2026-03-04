@@ -7,6 +7,7 @@ import {
 } from "../../../api/admin.api.js";
 
 export default function AddCafeItemModal({ onClose, onSuccess }) {
+
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState([]);
   const [showAddCategory, setShowAddCategory] = useState(false);
@@ -34,13 +35,19 @@ export default function AddCafeItemModal({ onClose, onSuccess }) {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
+
         const data = await getCafeCategories();
+
         setCategories(data);
 
         if (data.length > 0) {
-          setForm((prev) => ({ ...prev, category: data[0].name }));
+          setForm((prev) => ({
+            ...prev,
+            category: data[0].name,
+          }));
         }
-      } catch (err) {
+
+      } catch {
         toast.error("Failed to load categories");
       }
     };
@@ -52,46 +59,58 @@ export default function AddCafeItemModal({ onClose, onSuccess }) {
     setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleAddCategory = async () => {
+
     if (!newCategory.trim())
       return toast.error("Category name required");
 
     try {
+
       const created = await addCafeCategory(newCategory.trim());
 
       setCategories((prev) => [...prev, created]);
-      setForm((prev) => ({ ...prev, category: created.name }));
+
+      setForm((prev) => ({
+        ...prev,
+        category: created.name,
+      }));
 
       toast.success("Category added");
+
       setNewCategory("");
       setShowAddCategory(false);
+
     } catch (err) {
+
       toast.error(
         err?.response?.data?.message ||
           "Failed to add category"
       );
+
     }
   };
 
   const submit = async (e) => {
+
     e.preventDefault();
 
     if (!image) return toast.error("Image is required");
 
     try {
+
       setLoading(true);
 
       const fd = new FormData();
 
       Object.entries(form).forEach(([key, value]) => {
+
         if (
-          ["purchasePrice", "price", "quantity", "calories", "protien", "carbs", "fat"].includes(
-            key
-          )
+          ["purchasePrice","price","quantity","calories","protien","carbs","fat"].includes(key)
         ) {
           fd.append(key, Number(value));
         } else {
           fd.append(key, value);
         }
+
       });
 
       form.tags
@@ -105,21 +124,31 @@ export default function AddCafeItemModal({ onClose, onSuccess }) {
       await addCafeItem(fd);
 
       toast.success("Cafe item added");
+
       onSuccess?.();
       onClose();
+
     } catch (err) {
+
       toast.error(
         err?.response?.data?.message ||
           "Failed to add item"
       );
+
     } finally {
+
       setLoading(false);
+
     }
   };
+
   return (
     <Modal title="ADD CAFE ITEM" onClose={onClose}>
+
       <form onSubmit={submit} className="space-y-6">
+
         <TwoCol>
+
           <Input
             label="ITEM NAME"
             name="name"
@@ -134,13 +163,13 @@ export default function AddCafeItemModal({ onClose, onSuccess }) {
             </label>
 
             <div className="flex gap-2 mt-2">
+
               <select
                 name="category"
                 value={form.category}
                 onChange={handleChange}
                 className="w-full bg-neutral-900 border border-white/10
-                           px-4 py-3 text-sm text-white
-                           focus:border-red-600 outline-none"
+                px-4 py-3 text-sm text-white focus:border-red-600 outline-none rounded-md"
               >
                 {categories.map((c) => (
                   <option key={c._id} value={c.name}>
@@ -152,21 +181,26 @@ export default function AddCafeItemModal({ onClose, onSuccess }) {
               <button
                 type="button"
                 onClick={() => setShowAddCategory(!showAddCategory)}
-                className="bg-red-600 px-4 text-xl font-bold"
+                className="bg-red-600 px-4 text-xl font-bold rounded-md"
               >
                 +
               </button>
+
             </div>
           </div>
+
         </TwoCol>
 
         {showAddCategory && (
+
           <div className="border border-white/10 p-4 rounded-lg bg-neutral-900">
+
             <p className="text-xs tracking-widest text-red-500 mb-3">
               ADD NEW CATEGORY
             </p>
 
             <div className="flex gap-3">
+
               <input
                 value={newCategory}
                 onChange={(e) =>
@@ -174,17 +208,21 @@ export default function AddCafeItemModal({ onClose, onSuccess }) {
                 }
                 placeholder="Enter category name"
                 className="flex-1 bg-black border border-white/20
-                           px-4 py-3 text-sm text-white"
+                px-4 py-3 text-sm text-white rounded-md"
               />
+
               <button
                 type="button"
                 onClick={handleAddCategory}
-                className="bg-emerald-600 px-6 text-xs font-bold"
+                className="bg-emerald-600 px-6 text-xs font-bold rounded-md"
               >
                 ADD
               </button>
+
             </div>
+
           </div>
+
         )}
 
         <Textarea
@@ -202,6 +240,7 @@ export default function AddCafeItemModal({ onClose, onSuccess }) {
         />
 
         <ThreeCol>
+
           <Input
             label="PURCHASE PRICE (₹)"
             name="purchasePrice"
@@ -210,6 +249,7 @@ export default function AddCafeItemModal({ onClose, onSuccess }) {
             onChange={handleChange}
             required
           />
+
           <Input
             label="SELL PRICE (₹)"
             name="price"
@@ -218,6 +258,7 @@ export default function AddCafeItemModal({ onClose, onSuccess }) {
             onChange={handleChange}
             required
           />
+
           <Input
             label="PRODUCT ID (BARCODE)"
             name="barcode"
@@ -225,9 +266,11 @@ export default function AddCafeItemModal({ onClose, onSuccess }) {
             onChange={handleChange}
             required
           />
+
         </ThreeCol>
 
         <TwoCol>
+
           <Input
             label="QUANTITY"
             name="quantity"
@@ -236,6 +279,7 @@ export default function AddCafeItemModal({ onClose, onSuccess }) {
             onChange={handleChange}
             required
           />
+
           <Input
             label="CALORIES"
             name="calories"
@@ -244,14 +288,17 @@ export default function AddCafeItemModal({ onClose, onSuccess }) {
             onChange={handleChange}
             required
           />
+
         </TwoCol>
 
         <div className="border border-white/10 p-4 rounded-lg">
+
           <p className="text-xs tracking-widest text-red-500 mb-3">
             MACROS (GRAMS)
           </p>
 
           <ThreeCol>
+
             <Input
               label="PROTEIN"
               name="protien"
@@ -260,6 +307,7 @@ export default function AddCafeItemModal({ onClose, onSuccess }) {
               onChange={handleChange}
               required
             />
+
             <Input
               label="CARBS"
               name="carbs"
@@ -268,6 +316,7 @@ export default function AddCafeItemModal({ onClose, onSuccess }) {
               onChange={handleChange}
               required
             />
+
             <Input
               label="FATS"
               name="fat"
@@ -276,7 +325,9 @@ export default function AddCafeItemModal({ onClose, onSuccess }) {
               onChange={handleChange}
               required
             />
+
           </ThreeCol>
+
         </div>
 
         <Input
@@ -288,6 +339,7 @@ export default function AddCafeItemModal({ onClose, onSuccess }) {
         />
 
         <TwoCol>
+
           <Toggle
             label="VEGETARIAN"
             checked={form.isVeg}
@@ -298,6 +350,7 @@ export default function AddCafeItemModal({ onClose, onSuccess }) {
               })
             }
           />
+
           <Toggle
             label="AVAILABLE"
             checked={form.available}
@@ -308,6 +361,7 @@ export default function AddCafeItemModal({ onClose, onSuccess }) {
               })
             }
           />
+
         </TwoCol>
 
         <Actions
@@ -315,56 +369,72 @@ export default function AddCafeItemModal({ onClose, onSuccess }) {
           onClose={onClose}
           submitText="ADD ITEM"
         />
+
       </form>
+
     </Modal>
   );
 }
 
 function Modal({ title, children, onClose }) {
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur flex items-center justify-center">
-      <div className="w-full max-w-3xl bg-gradient-to-br from-black via-neutral-900 to-black
-                      border border-red-600/30 rounded-2xl p-8 max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between mb-6">
-          <h2 className="text-xl font-black tracking-widest">
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm
+    flex items-start sm:items-center justify-center
+    p-3 sm:p-6 overflow-y-auto">
+
+      <div className="w-full max-w-3xl
+      bg-gradient-to-br from-black via-neutral-900 to-black
+      border border-red-600/30 rounded-xl
+      flex flex-col max-h-[95vh]">
+
+        <div className="flex items-center justify-between
+        px-4 sm:px-6 py-4 border-b border-white/10">
+
+          <h2 className="text-lg sm:text-xl font-black tracking-widest">
             {title}
           </h2>
+
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-red-500"
+            className="text-gray-400 hover:text-red-500 text-xl"
           >
             ✕
           </button>
+
         </div>
-        {children}
+
+        <div className="overflow-y-auto px-4 sm:px-6 py-5 space-y-6">
+          {children}
+        </div>
+
       </div>
     </div>
   );
 }
 
 const TwoCol = ({ children }) => (
-  <div className="grid md:grid-cols-2 gap-4">
+  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
     {children}
   </div>
 );
 
 const ThreeCol = ({ children }) => (
-  <div className="grid md:grid-cols-3 gap-4">
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
     {children}
   </div>
 );
 
 function Input({ label, ...props }) {
   return (
-    <div>
-      <label className="text-xs tracking-widest text-gray-400">
+    <div className="space-y-1">
+      <label className="text-[11px] tracking-widest text-gray-400">
         {label}
       </label>
+
       <input
         {...props}
-        className="mt-2 w-full bg-neutral-900 border border-white/10
-                   px-4 py-3 text-sm text-white
-                   focus:border-red-600 outline-none"
+        className="w-full bg-neutral-900 border border-white/10
+        px-4 py-3 text-sm text-white focus:border-red-600 outline-none rounded-md"
       />
     </div>
   );
@@ -372,16 +442,16 @@ function Input({ label, ...props }) {
 
 function Textarea({ label, ...props }) {
   return (
-    <div>
-      <label className="text-xs tracking-widest text-gray-400">
+    <div className="space-y-1">
+      <label className="text-[11px] tracking-widest text-gray-400">
         {label}
       </label>
+
       <textarea
         {...props}
         rows={3}
-        className="mt-2 w-full bg-neutral-900 border border-white/10
-                   px-4 py-3 text-sm text-white
-                   focus:border-red-600 outline-none"
+        className="w-full bg-neutral-900 border border-white/10
+        px-4 py-3 text-sm text-white focus:border-red-600 outline-none rounded-md"
       />
     </div>
   );
@@ -389,15 +459,16 @@ function Textarea({ label, ...props }) {
 
 function FileInput({ label, onChange }) {
   return (
-    <div>
-      <label className="text-xs tracking-widest text-gray-400">
+    <div className="space-y-1">
+      <label className="text-[11px] tracking-widest text-gray-400">
         {label}
       </label>
+
       <input
         type="file"
         accept="image/*"
         onChange={onChange}
-        className="mt-2 text-sm text-gray-300"
+        className="text-sm text-gray-300"
       />
     </div>
   );
@@ -408,12 +479,12 @@ function Toggle({ label, checked, onChange }) {
     <button
       type="button"
       onClick={onChange}
-      className={`border px-4 py-3 text-xs font-bold tracking-widest
-        ${
-          checked
-            ? "border-emerald-500 text-emerald-400"
-            : "border-white/20 text-gray-400"
-        }`}
+      className={`w-full border px-4 py-3 text-xs font-bold tracking-widest rounded-md
+      ${
+        checked
+          ? "border-emerald-500 text-emerald-400"
+          : "border-white/20 text-gray-400"
+      }`}
     >
       {label}: {checked ? "YES" : "NO"}
     </button>
@@ -421,19 +492,22 @@ function Toggle({ label, checked, onChange }) {
 }
 
 const Actions = ({ loading, onClose, submitText }) => (
-  <div className="flex justify-end gap-4 pt-6">
+  <div className="flex flex-col sm:flex-row justify-end gap-3 pt-6">
+
     <button
       type="button"
       onClick={onClose}
-      className="border border-white/20 px-6 py-3 text-xs font-extrabold"
+      className="border border-white/20 px-6 py-3 text-xs font-extrabold w-full sm:w-auto"
     >
       CANCEL
     </button>
+
     <button
       disabled={loading}
-      className="bg-red-600 px-8 py-3 text-xs font-extrabold"
+      className="bg-red-600 px-8 py-3 text-xs font-extrabold w-full sm:w-auto"
     >
       {loading ? "ADDING..." : submitText}
     </button>
+
   </div>
 );

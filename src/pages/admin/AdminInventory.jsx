@@ -4,7 +4,6 @@ import api from "../../api/axios.api.js";
 import { Plus, X, FileSpreadsheet } from "lucide-react";
 import * as XLSX from "xlsx";
 
-
 export default function AdminInventory() {
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -63,6 +62,7 @@ export default function AdminInventory() {
 
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
+
     XLSX.utils.book_append_sheet(wb, ws, "Equipment Expenses");
 
     XLSX.writeFile(
@@ -75,7 +75,9 @@ export default function AdminInventory() {
 
   const addExpense = async () => {
     if (!title || !amount || !paymentMethod) {
-      return toast.error("Title, amount & payment method required");
+      return toast.error(
+        "Title, amount & payment method required"
+      );
     }
 
     if (paymentMethod === "UPI" && !transactionId) {
@@ -93,11 +95,13 @@ export default function AdminInventory() {
       });
 
       toast.success("Expense added");
+
       setOpen(false);
       setTitle("");
       setAmount("");
       setRemarks("");
       setTransactionId("");
+
       fetchExpenses();
     } catch {
       toast.error("Failed to add expense");
@@ -113,23 +117,26 @@ export default function AdminInventory() {
     <>
       <div className="space-y-8">
 
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+
           <div>
-            <h1 className="text-3xl font-black tracking-widest">
+            <h1 className="text-2xl md:text-3xl font-black tracking-widest">
               ASSETS
             </h1>
+
             <p className="text-sm text-gray-400">
               Equipment expenses & purchases
             </p>
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+
             <button
               onClick={exportExcel}
-              className="flex items-center gap-2
-                         border border-emerald-600 px-5 py-2
-                         font-extrabold tracking-widest
-                         hover:bg-emerald-600 transition"
+              className="flex items-center justify-center gap-2
+              border border-emerald-600 px-5 py-2
+              font-extrabold tracking-widest
+              hover:bg-emerald-600 transition w-full sm:w-auto"
             >
               <FileSpreadsheet size={16} />
               EXPORT
@@ -137,41 +144,57 @@ export default function AdminInventory() {
 
             <button
               onClick={() => setOpen(true)}
-              className="flex items-center gap-2
-                         border border-red-600 px-5 py-2
-                         font-extrabold tracking-widest
-                         hover:bg-red-600 transition"
+              className="flex items-center justify-center gap-2
+              border border-red-600 px-5 py-2
+              font-extrabold tracking-widest
+              hover:bg-red-600 transition w-full sm:w-auto"
             >
-              <Plus size={16} /> ADD EXPENSE
+              <Plus size={16} />
+              ADD EXPENSE
             </button>
+
           </div>
         </div>
 
-        <div className="flex gap-4 flex-wrap">
+        <div className="flex flex-col sm:flex-row gap-4">
+
           <input
             type="date"
             value={fromDate}
-            onChange={(e) => setFromDate(e.target.value)}
-            className="bg-black border px-3 py-2"
+            onChange={(e) =>
+              setFromDate(e.target.value)
+            }
+            className="bg-black border px-3 py-2 w-full sm:w-auto"
           />
+
           <input
             type="date"
             value={toDate}
-            onChange={(e) => setToDate(e.target.value)}
-            className="bg-black border px-3 py-2"
+            onChange={(e) =>
+              setToDate(e.target.value)
+            }
+            className="bg-black border px-3 py-2 w-full sm:w-auto"
           />
+
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+
           <Stat
             label="TOTAL EQUIPMENT EXPENSES"
             value={`₹ ${totalSpent}`}
           />
+
           <Stat
             label="ITEMS BOUGHT"
             value={filteredExpenses.length}
           />
-          <Stat label="CATEGORY" value="EQUIPMENT" />
+
+          <Stat
+            label="CATEGORY"
+            value="EQUIPMENT"
+          />
+
         </div>
 
         {loading && (
@@ -188,44 +211,56 @@ export default function AdminInventory() {
 
         {!loading && filteredExpenses.length > 0 && (
           <div className="space-y-3">
+
             {filteredExpenses.map((e) => (
               <div
                 key={e._id}
                 className="border border-neutral-800 rounded-xl
-                           bg-black p-5 flex justify-between"
+                bg-black p-5 flex flex-col sm:flex-row
+                sm:items-center sm:justify-between gap-3"
               >
+
                 <div>
                   <p className="font-bold tracking-wide">
                     {e.title}
                   </p>
+
                   <p className="text-xs text-gray-400 mt-1">
                     {e.remarks || "—"}
                   </p>
+
                   <p className="text-[11px] text-gray-500 mt-1">
-                    {new Date(e.createdAt).toLocaleDateString()} ·{" "}
-                    {e.paymentMethod}
+                    {new Date(
+                      e.createdAt
+                    ).toLocaleDateString()}{" "}
+                    · {e.paymentMethod}
                   </p>
                 </div>
 
                 <p className="text-xl font-black text-red-500">
                   ₹ {e.amount}
                 </p>
+
               </div>
             ))}
+
           </div>
         )}
 
         {open && (
           <div className="fixed inset-0 z-50 bg-black/80
-                          flex items-center justify-center px-4">
+          flex items-center justify-center p-4">
+
             <div className="w-full max-w-md bg-black
-                            border border-red-600/40
-                            rounded-2xl p-6 space-y-5">
+            border border-red-600/40
+            rounded-2xl p-6 space-y-5
+            max-h-[90vh] overflow-y-auto">
 
               <div className="flex justify-between items-center">
-                <h2 className="font-black tracking-widest">
+                <h2 className="font-black tracking-widest text-sm sm:text-base">
                   ADD EQUIPMENT EXPENSE
                 </h2>
+
                 <button onClick={() => setOpen(false)}>
                   <X />
                 </button>
@@ -234,7 +269,9 @@ export default function AdminInventory() {
               <input
                 placeholder="Title"
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(e) =>
+                  setTitle(e.target.value)
+                }
                 className="w-full bg-black border px-3 py-2"
               />
 
@@ -242,33 +279,54 @@ export default function AdminInventory() {
                 type="number"
                 placeholder="Amount"
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                onChange={(e) =>
+                  setAmount(e.target.value)
+                }
                 className="w-full bg-black border px-3 py-2"
               />
 
               <textarea
                 placeholder="Remarks (optional)"
                 value={remarks}
-                onChange={(e) => setRemarks(e.target.value)}
+                onChange={(e) =>
+                  setRemarks(e.target.value)
+                }
                 className="w-full bg-black border px-3 py-2"
               />
 
               <select
                 value={paymentMethod}
-                onChange={(e) => setPaymentMethod(e.target.value)}
+                onChange={(e) =>
+                  setPaymentMethod(e.target.value)
+                }
                 className="w-full bg-black border px-3 py-2"
               >
-                <option value="CASH">Cash</option>
-                <option value="UPI">UPI</option>
-                <option value="CARD">Card</option>
-                <option value="NETBANKING">Net Banking</option>
+                <option value="CASH">
+                  Cash
+                </option>
+
+                <option value="UPI">
+                  UPI
+                </option>
+
+                <option value="CARD">
+                  Card
+                </option>
+
+                <option value="NETBANKING">
+                  Net Banking
+                </option>
               </select>
 
               {paymentMethod === "UPI" && (
                 <input
                   placeholder="UPI Transaction ID"
                   value={transactionId}
-                  onChange={(e) => setTransactionId(e.target.value)}
+                  onChange={(e) =>
+                    setTransactionId(
+                      e.target.value
+                    )
+                  }
                   className="w-full bg-black border px-3 py-2"
                 />
               )}
@@ -276,14 +334,16 @@ export default function AdminInventory() {
               <button
                 onClick={addExpense}
                 className="w-full border border-red-600 py-3
-                           font-extrabold tracking-widest
-                           hover:bg-red-600"
+                font-extrabold tracking-widest
+                hover:bg-red-600"
               >
                 ADD EXPENSE
               </button>
+
             </div>
           </div>
         )}
+
       </div>
     </>
   );
@@ -292,12 +352,15 @@ export default function AdminInventory() {
 function Stat({ label, value }) {
   return (
     <div className="border border-white/10 bg-black p-5 rounded-xl">
+
       <p className="text-xs text-gray-400 tracking-widest">
         {label}
       </p>
-      <p className="text-2xl font-black mt-2">
+
+      <p className="text-xl sm:text-2xl font-black mt-2">
         {value}
       </p>
+
     </div>
   );
 }
