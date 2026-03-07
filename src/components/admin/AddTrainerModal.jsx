@@ -76,7 +76,7 @@ export default function AddTrainerModal({ onClose, onSuccess }) {
 
         </div>
 
-        <form onSubmit={submit} className="space-y-6 sm:space-y-8">=
+        <form onSubmit={submit} className="space-y-6 sm:space-y-8">
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
 

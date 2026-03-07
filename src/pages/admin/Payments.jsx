@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import * as XLSX from "xlsx";
+import { X, Download, Eye } from "lucide-react";
 
 import { fetchAllTransactions } from "../../api/admin.api";
 
@@ -14,17 +15,24 @@ const getTransactionType = (tx) => {
   return creditSources.includes(tx.source) ? "credit" : "debit";
 };
 
-const StatCard = ({ label, value, color }) => (
-  <div className="bg-black p-5 border border-white/10">
-    <p className="text-xs text-gray-400 tracking-widest">{label}</p>
-    <p className={`text-2xl font-black mt-2 ${color}`}>{value}</p>
+const StatCard = ({ label, value, color, trend }) => (
+  <div className="group relative flex flex-col rounded-xl overflow-hidden bg-gradient-to-br from-black via-neutral-900 to-black border border-white/10 hover:border-red-600/40 transition p-4 md:p-6">
+    <p className="text-[9px] md:text-xs text-gray-500 tracking-widest uppercase font-semibold">
+      {label}
+    </p>
+    <p className={`text-2xl md:text-3xl font-black mt-3 ${color} tracking-tight`}>
+      {value}
+    </p>
+    {trend && (
+      <p className="text-xs text-gray-500 mt-2 font-medium">{trend}</p>
+    )}
   </div>
 );
 
 const InfoRow = ({ label, value }) => (
-  <div className="flex justify-between text-sm">
-    <span className="text-gray-400">{label}</span>
-    <span className="font-semibold">{value || "-"}</span>
+  <div className="flex justify-between items-center py-2.5 border-b border-white/5 last:border-0">
+    <span className="text-gray-400 text-sm font-medium">{label}</span>
+    <span className="font-semibold text-gray-100 text-sm">{value || "—"}</span>
   </div>
 );
 
@@ -36,31 +44,40 @@ const TransactionModal = ({ tx, onClose }) => {
   const subTotal = isCafe
     ? tx.referenceId.items.reduce(
         (sum, i) => sum + i.quantity * i.priceAtPurchase,
-        0,
+        0
       )
     : 0;
 
   const discount = tx.referenceId?.discount;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center px-4">
-      <div className="bg-[#0b0b0b] w-full max-w-3xl rounded-2xl border border-white/10 shadow-2xl">
-        <div className="flex justify-between items-center px-6 py-4 border-b border-white/10">
-          <h2 className="text-lg font-black tracking-widest uppercase">
-            {tx.source} DETAILS
+    <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center px-4 py-6">
+      <div className="bg-gradient-to-br from-black via-neutral-900 to-black w-full max-w-2xl rounded-2xl border border-white/10 shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 flex justify-between items-center px-5 md:px-7 py-5 border-b border-white/10 bg-black/95 backdrop-blur">
+          <h2 className="text-base md:text-lg font-black tracking-widest uppercase text-white">
+            {tx.source} <span className="text-red-600">Details</span>
           </h2>
+
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white text-xl"
+            className="p-1.5 hover:bg-white/10 rounded-lg transition-colors duration-200"
           >
-            ✕
+            <X className="w-5 h-5 text-gray-400" />
           </button>
         </div>
 
-        <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
-          <div className="bg-black border border-white/10 rounded-xl p-4 space-y-2">
+        <div className="p-5 md:p-7 space-y-6">
+          <div className="bg-neutral-900/50 border border-white/10 rounded-xl p-5 space-y-0">
             <InfoRow label="Payment Method" value={tx.paymentMethod} />
-            <InfoRow label="Status" value={tx.status} />
+            <InfoRow label="Status" value={
+              <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${
+                tx.status === 'success' ? 'bg-green-900/30 text-green-400' :
+                tx.status === 'pending' ? 'bg-yellow-900/30 text-yellow-400' :
+                'bg-red-900/30 text-red-400'
+              }`}>
+                {tx.status}
+              </span>
+            } />
             <InfoRow
               label="Date"
               value={new Date(tx.createdAt).toLocaleString()}
@@ -68,89 +85,102 @@ const TransactionModal = ({ tx, onClose }) => {
           </div>
 
           {tx.subDetail && (
-            <div className="bg-black border border-white/10 rounded-xl p-4 space-y-2">
-              <p className="text-xs tracking-widest text-gray-400">
-                SUBSCRIPTION DETAILS
+            <div className="bg-neutral-900/50 border border-white/10 rounded-xl p-5 space-y-0">
+              <p className="text-xs tracking-widest text-gray-500 font-bold mb-4 uppercase">
+                📋 Subscription Details
               </p>
+
               <InfoRow label="Plan" value={tx.subDetail.plan} />
-              <InfoRow label="Price" value={`₹${tx.subDetail.price}`} />
+              <InfoRow label="Price" value={`₹${tx.subDetail.price.toLocaleString('en-IN')}`} />
+
               <InfoRow
-                label="Start"
+                label="Start Date"
                 value={
                   tx.subDetail.startDate
                     ? new Date(tx.subDetail.startDate).toLocaleDateString()
-                    : "-"
+                    : "—"
                 }
               />
+
               <InfoRow
-                label="End"
+                label="End Date"
                 value={
                   tx.subDetail.endDate
                     ? new Date(tx.subDetail.endDate).toLocaleDateString()
-                    : "-"
+                    : "—"
                 }
               />
-              <InfoRow label="Status" value={tx.subDetail.status} />
+
+              <InfoRow label="Status" value={
+                <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${
+                  tx.subDetail.status === 'active' ? 'bg-green-900/30 text-green-400' :
+                  'bg-neutral-700/30 text-gray-300'
+                }`}>
+                  {tx.subDetail.status}
+                </span>
+              } />
             </div>
           )}
 
           {tx.source === "expense" && tx.referenceId && (
-            <div className="bg-black border border-white/10 rounded-xl p-4 space-y-2">
-              <p className="text-xs tracking-widest text-gray-400">
-                EXPENSE DETAILS
+            <div className="bg-neutral-900/50 border border-white/10 rounded-xl p-5 space-y-0">
+              <p className="text-xs tracking-widest text-gray-500 font-bold mb-4 uppercase">
+                💰 Expense Details
               </p>
+
               <InfoRow label="Title" value={tx.referenceId.title} />
               <InfoRow label="Category" value={tx.referenceId.category} />
               <InfoRow label="Remarks" value={tx.referenceId.remarks} />
-              <InfoRow label="Amount" value={`₹${tx.amount}`} />
+              <InfoRow label="Amount" value={`₹${tx.amount.toLocaleString('en-IN')}`} />
             </div>
           )}
 
           {isCafe && (
-            <div className="bg-black border border-white/10 rounded-xl p-4 space-y-4">
-              <p className="text-xs tracking-widest text-gray-400">
-                CAFE ORDER ITEMS
+            <div className="bg-neutral-900/50 border border-white/10 rounded-xl p-5 space-y-4">
+              <p className="text-xs tracking-widest text-gray-500 font-bold uppercase">
+                ☕ Cafe Order Items
               </p>
 
               <div className="space-y-3">
                 {tx.referenceId.items.map((it, idx) => (
                   <div
                     key={idx}
-                    className="flex justify-between items-center
-                               border border-white/5 rounded-lg p-3"
+                    className="flex justify-between items-start md:items-center gap-3 bg-black/40 border border-white/5 rounded-lg p-4 hover:bg-black/60 transition-colors"
                   >
-                    <div>
-                      <p className="font-bold uppercase tracking-wide">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold uppercase tracking-wide text-sm md:text-base text-white break-words">
                         {it.name}
                       </p>
-                      <p className="text-xs text-gray-400">
-                        Qty: {it.quantity} × ₹{it.priceAtPurchase}
+
+                      <p className="text-xs text-gray-400 mt-1">
+                        Qty: {it.quantity} × ₹{it.priceAtPurchase.toLocaleString('en-IN')}
                       </p>
                     </div>
 
-                    <p className="font-black text-gray-200">
-                      ₹{it.quantity * it.priceAtPurchase}
+                    <p className="font-black text-gray-100 whitespace-nowrap">
+                      ₹{(it.quantity * it.priceAtPurchase).toLocaleString('en-IN')}
                     </p>
                   </div>
                 ))}
               </div>
 
-              <div className="border-t border-white/10 pt-3 space-y-2 text-sm">
-                <InfoRow label="Sub Total" value={`₹${subTotal}`} />
+              <div className="bg-neutral-900/40 border-t border-white/10 pt-4 space-y-3 text-sm">
+                <InfoRow label="Sub Total" value={`₹${subTotal.toLocaleString('en-IN')}`} />
 
                 {discount?.amount > 0 && (
                   <InfoRow
                     label={`Discount${discount.code ? ` (${discount.code})` : ""}`}
-                    value={`- ₹${discount.amount}`}
+                    value={`−₹${discount.amount.toLocaleString('en-IN')}`}
                   />
                 )}
 
-                <div className="flex justify-between font-black text-lg pt-2">
-                  <span className="tracking-widest text-gray-400">
-                    FINAL TOTAL
+                <div className="flex justify-between items-center font-black text-base md:text-lg pt-3 border-t border-white/10">
+                  <span className="tracking-widest text-gray-500 uppercase">
+                    Total
                   </span>
-                  <span className="text-green-500">
-                    ₹{tx.referenceId.totalAmount}
+
+                  <span className="text-red-600">
+                    ₹{tx.referenceId.totalAmount.toLocaleString('en-IN')}
                   </span>
                 </div>
               </div>
@@ -216,14 +246,21 @@ export default function Payments() {
       else debit += t.amount;
     });
 
-    return { credit, debit, net: credit - debit };
+    return {
+      credit,
+      debit,
+      net: credit - debit,
+    };
   }, [filtered]);
 
   const exportExcel = () => {
-    if (!filtered.length) return toast.error("No data to export");
+    if (!filtered.length) {
+      return toast.error("No data to export");
+    }
 
     const data = filtered.map((t) => {
       const type = getTransactionType(t);
+
       return {
         Date: new Date(t.createdAt).toLocaleDateString(),
         Source: t.source,
@@ -236,147 +273,281 @@ export default function Payments() {
 
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
+
     XLSX.utils.book_append_sheet(wb, ws, "Ledger");
 
-    XLSX.writeFile(wb, `Payments_${fromDate}_to_${toDate}.xlsx`, {
-      bookType: "xlsx",
-    });
+    XLSX.writeFile(
+      wb,
+      `Payments_${fromDate}_to_${toDate}.xlsx`,
+      { bookType: "xlsx" }
+    );
 
-    toast.success("Excel exported");
+    toast.success("Excel exported successfully!");
   };
 
   let si = 1;
 
   return (
-    <>
-      <div className="space-y-8">
-        <div className="border border-red-600/30 bg-black p-6">
-          <h1 className="text-3xl font-black tracking-widest">
-            PAYMENTS LEDGER
-          </h1>
-          <p className="text-sm text-gray-400 mt-2">
-            Credit & Debit accounting view
-          </p>
-        </div>
-
-        <div className="flex flex-wrap gap-4 items-end">
-          <input
-            type="date"
-            value={fromDate}
-            onChange={(e) => setFromDate(e.target.value)}
-            className="bg-black border border-white/20 px-3 py-2"
-          />
-          <input
-            type="date"
-            value={toDate}
-            onChange={(e) => setToDate(e.target.value)}
-            className="bg-black border border-white/20 px-3 py-2"
-          />
-
-          <select
-            value={entryType}
-            onChange={(e) => setEntryType(e.target.value)}
-            className="bg-black border border-white/20 px-3 py-2"
-          >
-            <option value="all">All</option>
-            <option value="credit">Credit</option>
-            <option value="debit">Debit</option>
-          </select>
-
-          <select
-            value={source}
-            onChange={(e) => setSource(e.target.value)}
-            className="bg-black border border-white/20 px-3 py-2 uppercase"
-          >
-            {sources.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
+    <div className="min-h-screen bg-black py-4 md:py-8 space-y-6">
+      <div className="px-4 md:px-6 lg:px-8 max-w-7xl mx-auto space-y-6">
+        
+        <div className="flex flex-col lg:flex-row gap-4 justify-between border border-white/10 bg-gradient-to-br from-black via-neutral-900 to-black p-5 md:p-8 rounded-xl">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-black tracking-widest">
+              PAYMENTS <span className="text-red-600">LEDGER</span>
+            </h1>
+            <p className="text-xs sm:text-sm text-gray-400 mt-2">
+              Credit & Debit Accounting Overview
+            </p>
+          </div>
 
           <button
             onClick={exportExcel}
-            className="ml-auto bg-green-600 px-6 py-2 font-bold"
+            className="flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 transition px-4 py-2 text-[11px] font-extrabold rounded-lg w-full sm:w-auto h-fit"
           >
+            <Download size={16} />
             EXPORT EXCEL
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="border border-white/10 bg-gradient-to-br from-black via-neutral-900 to-black rounded-xl p-4 md:p-6 space-y-4">
+          <h3 className="text-xs sm:text-sm font-extrabold text-white tracking-widest uppercase">
+            Filters
+          </h3>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs text-gray-400 font-semibold uppercase">From</label>
+              <input
+                type="date"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+                className="w-full bg-neutral-900 border border-white/10 px-3 py-2.5 rounded-lg text-sm text-white focus:outline-none focus:border-red-600/40 transition-colors"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs text-gray-400 font-semibold uppercase">To</label>
+              <input
+                type="date"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+                className="w-full bg-neutral-900 border border-white/10 px-3 py-2.5 rounded-lg text-sm text-white focus:outline-none focus:border-red-600/40 transition-colors"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs text-gray-400 font-semibold uppercase">Type</label>
+              <select
+                value={entryType}
+                onChange={(e) => setEntryType(e.target.value)}
+                className="w-full bg-neutral-900 border border-white/10 px-3 py-2.5 rounded-lg text-sm text-white focus:outline-none focus:border-red-600/40 transition-colors appearance-none cursor-pointer"
+              >
+                <option value="all">All Entries</option>
+                <option value="credit">Credit Only</option>
+                <option value="debit">Debit Only</option>
+              </select>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs text-gray-400 font-semibold uppercase">Source</label>
+              <select
+                value={source}
+                onChange={(e) => setSource(e.target.value)}
+                className="w-full bg-neutral-900 border border-white/10 px-3 py-2.5 rounded-lg text-sm text-white focus:outline-none focus:border-red-600/40 transition-colors appearance-none cursor-pointer uppercase"
+              >
+                {sources.map((s) => (
+                  <option key={s} value={s}>
+                    {s === "all" ? "All Sources" : s}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-end">
+              <button
+                onClick={exportExcel}
+                className="w-full bg-red-600 hover:bg-red-700 transition px-4 py-2.5 text-[11px] font-extrabold rounded-lg flex items-center justify-center gap-2"
+              >
+                <Download size={14} />
+                EXPORT
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
           <StatCard
-            label="TOTAL CREDIT"
+            label="Total Credit"
             value={`₹${totals.credit.toFixed(2)}`}
             color="text-green-500"
+            trend={`${filtered.filter(t => getTransactionType(t) === 'credit').length} txns`}
           />
+
           <StatCard
-            label="TOTAL DEBIT"
+            label="Total Debit"
             value={`₹${totals.debit.toFixed(2)}`}
-            color="text-red-500"
+            color="text-red-600"
+            trend={`${filtered.filter(t => getTransactionType(t) === 'debit').length} txns`}
           />
+
           <StatCard
-            label="TRANSACTIONS"
+            label="Transactions"
             value={filtered.length}
             color="text-yellow-500"
+            trend="in range"
           />
+
           <StatCard
-            label="NET BALANCE"
+            label="Net Balance"
             value={`₹${totals.net.toFixed(2)}`}
-            color={totals.net >= 0 ? "text-green-500" : "text-red-500"}
+            color={totals.net >= 0 ? "text-green-500" : "text-red-600"}
+            trend={totals.net >= 0 ? "↑ Positive" : "↓ Negative"}
           />
         </div>
 
         {loading ? (
-          <p className="text-gray-500">LOADING...</p>
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <div className="inline-block w-8 h-8 border-3 border-white/20 border-t-white rounded-full animate-spin" />
+              <p className="text-gray-400 mt-3 font-medium">Loading transactions...</p>
+            </div>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="border border-white/10 bg-gradient-to-br from-black via-neutral-900 to-black rounded-xl p-8 md:p-12 text-center">
+            <p className="text-gray-500 font-semibold">NO TRANSACTIONS FOUND</p>
+          </div>
         ) : (
-          <div className="overflow-x-auto border border-white/10">
-            <table className="w-full">
-              <thead>
-                <tr className="text-xs text-gray-400 border-b border-white/10">
-                  <th className="p-3">SI</th>
-                  <th className="p-3">DATE</th>
-                  <th className="p-3">SOURCE</th>
-                  <th className="p-3 text-right">CREDIT</th>
-                  <th className="p-3 text-right">DEBIT</th>
-                  <th className="p-3">METHOD</th>
-                  <th className="p-3">VIEW</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((tx) => {
-                  const type = getTransactionType(tx);
-                  return (
-                    <tr key={tx._id} className="border-t border-white/5">
-                      <td className="p-3">{si++}</td>
-                      <td className="p-3">
-                        {new Date(tx.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="p-3 uppercase">{tx.source}</td>
-                      <td className="p-3 text-right text-green-500">
-                        {type === "credit" ? `₹${tx.amount}` : ""}
-                      </td>
-                      <td className="p-3 text-right text-red-500">
-                        {type === "debit" ? `₹${tx.amount}` : ""}
-                      </td>
-                      <td className="p-3 uppercase">{tx.paymentMethod}</td>
-                      <td className="p-3">
-                        <button
-                          onClick={() => setSelectedTx(tx)}
-                          className="text-blue-400 hover:underline"
-                        >
-                          View
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div className="overflow-hidden border border-white/10 bg-gradient-to-br from-black via-neutral-900 to-black rounded-xl">
+            <div className="lg:hidden space-y-3 p-4">
+              {filtered.map((tx) => {
+                const type = getTransactionType(tx);
+                si++;
+
+                return (
+                  <div
+                    key={tx._id}
+                    className="group relative flex flex-col rounded-xl overflow-hidden bg-gradient-to-br from-black via-neutral-900 to-black border border-white/10 hover:border-red-600/40 transition"
+                  >
+                    <div className="p-4 space-y-3">
+                      <div className="flex justify-between items-start gap-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[10px] text-gray-400 tracking-widest uppercase font-semibold">
+                            {new Date(tx.createdAt).toLocaleDateString()}
+                          </p>
+                          <p className="text-base sm:text-lg font-black text-white mt-1 truncate uppercase">
+                            {tx.source}
+                          </p>
+                        </div>
+
+                        <span className={`inline-block px-2 py-1 rounded text-xs font-bold uppercase whitespace-nowrap ${
+                          type === 'credit' ? 'bg-green-900/40 text-green-400' : 'bg-red-900/40 text-red-600'
+                        }`}>
+                          {type === "credit" ? `+₹${tx.amount}` : `-₹${tx.amount}`}
+                        </span>
+                      </div>
+
+                      <div className="text-xs text-gray-400 space-y-1">
+                        <p>Method: <span className="text-gray-300">{tx.paymentMethod}</span></p>
+                        <p>Status: <span className={`font-semibold ${
+                          tx.status === 'success' ? 'text-green-400' :
+                          tx.status === 'pending' ? 'text-yellow-400' :
+                          'text-red-600'
+                        }`}>{tx.status}</span></p>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => setSelectedTx(tx)}
+                      className="flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white py-2 text-[11px] font-extrabold rounded-none transition"
+                    >
+                      <Eye size={14} />
+                      VIEW
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="hidden lg:block overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-[10px] uppercase text-gray-500 border-b border-white/10 bg-neutral-900 font-extrabold tracking-wider">
+                    <th className="p-4 text-left">SI</th>
+                    <th className="p-4 text-left">Date</th>
+                    <th className="p-4 text-left">Source</th>
+                    <th className="p-4 text-right">Credit</th>
+                    <th className="p-4 text-right">Debit</th>
+                    <th className="p-4 text-left">Method</th>
+                    <th className="p-4 text-center">Action</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {filtered.map((tx) => {
+                    const type = getTransactionType(tx);
+
+                    return (
+                      <tr
+                        key={tx._id}
+                        className="border-b border-white/5 hover:bg-white/[0.03] transition"
+                      >
+                        <td className="p-4 text-gray-400 font-medium">{si++}</td>
+
+                        <td className="p-4 text-gray-300">
+                          {new Date(tx.createdAt).toLocaleDateString()}
+                        </td>
+
+                        <td className="p-4 uppercase font-semibold text-gray-300">
+                          {tx.source}
+                        </td>
+
+                        <td className="p-4 text-right">
+                          {type === "credit" ? (
+                            <span className="font-bold text-green-500">
+                              ₹{tx.amount.toLocaleString('en-IN')}
+                            </span>
+                          ) : (
+                            <span className="text-gray-600">—</span>
+                          )}
+                        </td>
+
+                        <td className="p-4 text-right">
+                          {type === "debit" ? (
+                            <span className="font-bold text-red-600">
+                              ₹{tx.amount.toLocaleString('en-IN')}
+                            </span>
+                          ) : (
+                            <span className="text-gray-600">—</span>
+                          )}
+                        </td>
+
+                        <td className="p-4 uppercase text-gray-300 text-xs font-semibold">
+                          {tx.paymentMethod}
+                        </td>
+
+                        <td className="p-4 text-center">
+                          <button
+                            onClick={() => setSelectedTx(tx)}
+                            className="bg-red-600/20 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-[9px] font-extrabold transition"
+                          >
+                            <Eye size={14} />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
 
-      <TransactionModal tx={selectedTx} onClose={() => setSelectedTx(null)} />
-    </>
+      <TransactionModal
+        tx={selectedTx}
+        onClose={() => setSelectedTx(null)}
+      />
+    </div>
   );
 }

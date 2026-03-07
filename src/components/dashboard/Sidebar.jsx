@@ -118,7 +118,16 @@ export default function Sidebar({ open, onClose }) {
       >
         <div className="h-16 flex items-center justify-between px-6 border-b border-white/10">
           <div className="text-xl font-black tracking-widest">
-            ALPHA<span className="text-red-600 ml-1">GYM</span>
+            <span className="inline-flex items-center gap-1">
+            <img
+              src="https://res.cloudinary.com/dkrwq4wvi/image/upload/v1772311625/gym/gam3nt7czytzycq9uruu.png"
+              alt="logo"
+              className="h-6 w-auto"
+            />
+            <span>
+              <span className="text-red-600">ALPHA</span> GYM
+            </span>
+          </span>
           </div>
           <button
             onClick={onClose}
