@@ -5,18 +5,24 @@ import {
   FileSpreadsheet,
   CheckCircle,
   XCircle,
+  Pencil,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import * as XLSX from "xlsx";
+
 import AddCafeItemModal from "../../components/admin/cafe/AddCafeItemModal";
+import EditCafeItemModal from "../../components/admin/cafe/EditCafeItemModal";
+
 import {
   fetchAllCafeItem,
   toggleCafeItemAvailability,
 } from "../../api/admin.api.js";
 
-function CafeItemCard({ item }) {
+function CafeItemCard({ item, onEdit }) {
   const [available, setAvailable] = useState(item.available);
   const [loading, setLoading] = useState(false);
+
+  const isLowStock = item.quantity < 5;
 
   const toggle = async () => {
     try {
@@ -37,8 +43,7 @@ function CafeItemCard({ item }) {
       bg-gradient-to-br from-black via-neutral-900 to-black
       border border-white/10 hover:border-red-600/40 transition"
     >
-
-      <div className="relative h-36 sm:h-44 md:h-48 overflow-hidden">
+      <div className="relative h-28 sm:h-32 md:h-36 overflow-hidden">
         <img
           src={item.image?.url}
           alt={item.name}
@@ -52,15 +57,21 @@ function CafeItemCard({ item }) {
         >
           {item.category}
         </span>
+        {isLowStock && (
+          <span
+            className="absolute bottom-2 left-2
+            bg-red-600 text-white px-2 py-1
+            text-[9px] font-bold rounded"
+          >
+            LOW STOCK
+          </span>
+        )}
       </div>
 
-      <div className="flex-1 p-4 space-y-3">
+      <div className="flex-1 p-3 sm:p-4 space-y-2">
+        <h3 className="text-sm sm:text-base font-black">{item.name}</h3>
 
-        <h3 className="text-base sm:text-lg font-black">
-          {item.name}
-        </h3>
-
-        <p className="text-xs text-gray-400 line-clamp-2">
+        <p className="text-[11px] text-gray-400 line-clamp-2">
           {item.description}
         </p>
 
@@ -71,7 +82,6 @@ function CafeItemCard({ item }) {
         </div>
 
         <div className="flex justify-between items-end">
-
           <div>
             <p className="text-[10px] text-gray-500">SELL</p>
             <p className="text-lg sm:text-xl font-black text-red-500">
@@ -79,17 +89,22 @@ function CafeItemCard({ item }) {
             </p>
           </div>
 
-          <div className="text-right text-[10px] text-gray-300 space-y-0.5">
+          <div className="text-right text-[11px] text-gray-300 space-y-0.5">
             <p>{item.calories} kcal</p>
-            <p>Stock: {item.quantity}</p>
+
+            <p className={`${isLowStock ? "text-red-500 font-bold" : ""}`}>
+              Stock: {item.quantity}
+            </p>
+
+            <p>Barcode: {item.barcode}</p>
+
             <p>Buy: ₹{item.purchasePrice}</p>
           </div>
-
         </div>
       </div>
 
       <div
-        className={`flex items-center justify-between px-4 py-3
+        className={`flex items-center justify-between px-4 py-2
         text-[10px] font-extrabold tracking-widest
         ${available ? "bg-emerald-500 text-black" : "bg-red-600 text-white"}`}
       >
@@ -98,15 +113,24 @@ function CafeItemCard({ item }) {
           {available ? "AVAILABLE" : "OUT"}
         </div>
 
-        <button
-          onClick={toggle}
-          disabled={loading}
-          className="border px-3 py-1 text-[9px]"
-        >
-          {loading ? "..." : "TOGGLE"}
-        </button>
-      </div>
+        <div className="flex gap-2">
+          <button
+            onClick={toggle}
+            disabled={loading}
+            className="border px-2 py-1 text-[9px]"
+          >
+            {loading ? "..." : "TOGGLE"}
+          </button>
 
+          <button
+            onClick={() => onEdit(item)}
+            className="border border-yellow-400 text-yellow-400 px-2 py-1 text-[9px] flex items-center gap-1"
+          >
+            <Pencil size={12} />
+            EDIT
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -121,11 +145,13 @@ function Macro({ label, value }) {
 }
 
 export default function CafeItems() {
-
   const [items, setItems] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+
   const [openAdd, setOpenAdd] = useState(false);
+  const [openEdit, setOpenEdit] = useState(false);
+  const [editItem, setEditItem] = useState(null);
 
   const loadItems = async () => {
     try {
@@ -145,16 +171,16 @@ export default function CafeItems() {
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
+
     return items.filter(
       (i) =>
         i.name.toLowerCase().includes(q) ||
         i.category.toLowerCase().includes(q) ||
-        i.tags?.join(" ").toLowerCase().includes(q),
+        i.tags?.join(" ").toLowerCase().includes(q)
     );
   }, [search, items]);
 
   const exportExcel = () => {
-
     if (!filtered.length) return toast.error("No items to export");
 
     const data = filtered.map((i) => ({
@@ -188,25 +214,23 @@ export default function CafeItems() {
   return (
     <>
       <div className="space-y-6">
-
         <div
           className="flex flex-col lg:flex-row gap-4 justify-between
           border border-red-600/30 bg-gradient-to-br
           from-black via-neutral-900 to-black
           p-5 rounded-xl"
         >
-
           <div>
             <h1 className="text-2xl sm:text-3xl font-black tracking-widest">
               CAFE ITEMS
             </h1>
+
             <p className="text-xs sm:text-sm text-gray-400">
               Manage gym cafe products
             </p>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-
             <div className="relative w-full sm:w-64">
               <Search
                 size={16}
@@ -239,14 +263,11 @@ export default function CafeItems() {
               <Plus size={16} />
               ADD ITEM
             </button>
-
           </div>
         </div>
 
         {loading && (
-          <p className="text-gray-500 tracking-widest">
-            LOADING ITEMS...
-          </p>
+          <p className="text-gray-500 tracking-widest">LOADING ITEMS...</p>
         )}
 
         {!loading && filtered.length === 0 && (
@@ -258,16 +279,29 @@ export default function CafeItems() {
         {!loading && filtered.length > 0 && (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filtered.map((item) => (
-              <CafeItemCard key={item._id} item={item} />
+              <CafeItemCard
+                key={item._id}
+                item={item}
+                onEdit={(item) => {
+                  setEditItem(item);
+                  setOpenEdit(true);
+                }}
+              />
             ))}
           </div>
         )}
-
       </div>
 
       {openAdd && (
         <AddCafeItemModal
           onClose={() => setOpenAdd(false)}
+          onSuccess={loadItems}
+        />
+      )}
+      {openEdit && (
+        <EditCafeItemModal
+          item={editItem}
+          onClose={() => setOpenEdit(false)}
           onSuccess={loadItems}
         />
       )}

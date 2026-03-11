@@ -89,7 +89,6 @@ export const destroyCafeItem = (id) =>
 export const editCafeItem = (id, data) =>
   api.post(`/admin/edit-item/${id}`, data);
 
-// api/admin.api.js
 export const addCafeItem = (formData) =>
   api.post("/admin/add-item", formData);
 
