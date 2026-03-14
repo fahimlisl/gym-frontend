@@ -115,3 +115,12 @@ export const addCafeCategory = async (name) => {
   const { data } = await api.post("/admin/add/cafe/category", { name });
   return data.data;
 };
+
+// plans
+export const fetchAllPlans = () => api.get("/admin/plan/fetch/all");
+export const addPlan = (data) => api.post("/admin/plan/add", data);
+export const destroyPlan = (id) => api.delete(`/admin/plan/destroy/${id}`);
+export const addBenefit = (id, data) => api.patch(`/admin/plan/add/benefit/${id}`, data);
+export const removeBenefit = (planId, benefitId) =>
+  api.patch(`/admin/plan/remove/benefit/${planId}/${benefitId}`);
+export const editPlan = (id,data) => api.patch(`/admin/plan/edit/${id}`,data)

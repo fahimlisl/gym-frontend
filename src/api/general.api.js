@@ -6,3 +6,9 @@ export const getAllPublicTrainers = () => {
 export const getPublicTrainerDetails = (id) => {
   return api.get(`/general/fetchParticularTrainer/${id}`);
 };
+
+
+export const fetchAllPlans = async () => {
+  const res = await api.get("/general/plan/fetch/all");
+  return res.data.data;
+};

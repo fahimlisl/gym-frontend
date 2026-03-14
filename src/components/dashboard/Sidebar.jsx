@@ -15,6 +15,8 @@ import {
   CalendarCog,
   LogOut,
   KeyRound,
+  Layers,
+  GitPullRequestCreateArrow,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
@@ -25,6 +27,7 @@ const mainMenu = [
   { label: "Dashboard", to: "/admin/dashboard", icon: LayoutDashboard },
   { label: "Members", to: "/admin/members", icon: Users },
   { label: "Trainers", to: "/admin/trainers", icon: UserCog },
+  { label: "PT Requests", to: "/admin/pt/requests", icon: GitPullRequestCreateArrow },
 ];
 
 const attendanceMenu = {
@@ -59,6 +62,10 @@ const otherMenu = [
   { label: "Expenses", to: "/admin/expenses", icon: BanknoteArrowDown },
   { label: "Assets", to: "/admin/assets", icon: Dumbbell },
 ];
+
+const settings = [
+  { label: "Plans", to: "/admin/plans", icon: Layers },
+]
 
 export default function Sidebar({ open, onClose }) {
   const navigate = useNavigate();
@@ -154,6 +161,11 @@ export default function Sidebar({ open, onClose }) {
 
           <Section title="INVENTORY">
             {otherMenu.map((item) => (
+              <SidebarLink key={item.to} item={item} onClose={onClose} />
+            ))}
+          </Section>
+          <Section title="SETTINGS">
+            {settings.map((item) => (
               <SidebarLink key={item.to} item={item} onClose={onClose} />
             ))}
           </Section>

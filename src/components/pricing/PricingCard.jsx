@@ -1,68 +1,109 @@
 import clsx from "clsx";
 
 export default function PricingCard({
-  title,
-  price,
-  duration,
-  features,
-  highlighted,
-  badge,
-  subtext,
+title,
+price,
+basePrice,
+duration,
+features = [],
+highlighted,
+badge,
+subtext,
 }) {
-  return (
-    <div
-      className={clsx(
-        "relative border bg-black p-8 flex flex-col transition-all duration-300",
-        highlighted
-          ? "border-red-600 scale-105 shadow-[0_0_50px_rgba(239,68,68,0.35)]"
-          : "border-white/10 hover:border-red-600 hover:-translate-y-2"
-      )}
-    >
-      {badge && (
-        <span className="absolute -top-4 left-1/2 -translate-x-1/2 bg-red-600 px-4 py-1 text-xs font-extrabold tracking-widest">
-          {badge}
+
+const discount =
+basePrice && price
+? Math.round(((basePrice - price) / basePrice) * 100)
+: null;
+
+return (
+<div
+className={clsx(
+"group relative flex flex-col rounded-2xl border bg-gradient-to-b from-neutral-900 to-black p-6 sm:p-8 transition-all duration-500",
+highlighted
+? "border-red-600 shadow-[0_0_60px_rgba(239,68,68,0.35)] scale-[1.02] sm:scale-105"
+: "border-white/10 hover:border-red-500 hover:-translate-y-3"
+)}
+>
+  <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition pointer-events-none bg-[radial-gradient(circle_at_top,rgba(239,68,68,0.18),transparent_60%)]"></div>
+  {badge && (
+    <span className="absolute -top-4 left-1/2 -translate-x-1/2 bg-red-600 text-white px-4 py-1 text-xs font-extrabold tracking-widest rounded-full shadow-lg">
+      {badge}
+    </span>
+  )}
+
+  <h3 className="text-xl sm:text-2xl font-extrabold tracking-wide text-white">
+    {title}
+  </h3>
+
+  {subtext && (
+    <p className="text-sm text-gray-400 mt-1">
+      {subtext}
+    </p>
+  )}
+
+  <div className="my-7 flex flex-col gap-1">
+
+    <div className="flex items-end gap-2 flex-wrap">
+
+      {basePrice && (
+        <span className="text-gray-500 line-through text-sm sm:text-lg">
+          ₹{basePrice}
         </span>
       )}
 
-      <h3 className="text-xl font-extrabold tracking-wide">
-        {title}
-      </h3>
+      <span className="text-4xl sm:text-5xl font-black text-white tracking-tight">
+        ₹{price}
+      </span>
 
-      {subtext && (
-        <p className="text-xs text-gray-400 mt-1">
-          {subtext}
-        </p>
+      {discount && (
+        <span className="bg-red-600/10 text-red-500 text-xs font-bold px-2 py-1 rounded">
+          SAVE {discount}%
+        </span>
       )}
 
-      <div className="my-6">
-        <span className="text-4xl font-black">
-          {/* ₹{price} */}
-          ₹ XXXX
-        </span>
-        <span className="text-gray-400 text-sm">
-          {" "}
-          / {duration}
-        </span>
-      </div>
-
-      <ul className="space-y-3 text-sm flex-1">
-        {features.map((f, i) => (
-          <li key={i} className="text-gray-300">
-            ✓ {f}
-          </li>
-        ))}
-      </ul>
-
-      <button
-        className={clsx(
-          "mt-8 py-3 font-extrabold tracking-widest transition",
-          highlighted
-            ? "bg-red-600 hover:bg-red-700"
-            : "border border-white/20 hover:border-red-600"
-        )}
-      >
-        START NOW <span className="text-gray-500">(COMING SOON)</span> 
-      </button>
     </div>
-  );
+
+    <span className="text-gray-400 text-sm">
+      / {duration}
+    </span>
+
+  </div>
+
+
+  <ul className="space-y-3 text-sm flex-1">
+
+    {features.length > 0 ? (
+      features.map((f, i) => (
+        <li
+          key={i}
+          className="flex items-start gap-3 text-gray-300"
+        >
+          <span className="text-red-500 mt-[2px]">✔</span>
+          <span className="leading-relaxed">{f}</span>
+        </li>
+      ))
+    ) : (
+      <li className="text-gray-500">
+        Benefits coming soon
+      </li>
+    )}
+
+  </ul>
+
+  <button
+    className={clsx(
+      "mt-8 py-3 rounded-lg font-extrabold tracking-widest text-sm transition-all duration-300",
+      highlighted
+        ? "bg-red-600 hover:bg-red-700 shadow-lg shadow-red-600/40"
+        : "border border-white/20 hover:border-red-500 hover:bg-red-600/10"
+    )}
+  >
+    START NOW
+    <span className="text-gray-500 ml-1">(COMING SOON)</span>
+  </button>
+
+</div>
+
+);
 }

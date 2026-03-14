@@ -44,19 +44,22 @@ import TodayAttendance from "./pages/admin/Attendence/TodayAttendance.jsx";
 import MonthlyAttendance from "./pages/admin/Attendence/MonthlyAttendance.jsx";
 import AdminDashboardLayout from "./components/layout/AdminDashboardLayout.jsx";
 import CafePaymentsOfAdmin from "./pages/admin/CafePaymentsOfAdmin.jsx";
+import Plan from "./pages/admin/plans/Plan.jsx";
+import PTBilling from "./pages/user/PTBilling.jsx";
+import PTPlans from "./pages/user/PTPlans.jsx";
+import AdminPTRequests from "./pages/admin/pt/AdminPTRequests.jsx";
+import AdminPTRequestDetails from "./pages/admin/pt/AdminPTRequestDetails.jsx";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
 
   useEffect(() => {
-    const duration = 900; 
+    const duration = 900;
     const start = window.scrollY;
     const startTime = performance.now();
 
     const easeInOutCubic = (t) =>
-      t < 0.5
-        ? 4 * t * t * t
-        : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
     const animate = (currentTime) => {
       const elapsed = currentTime - startTime;
@@ -122,6 +125,8 @@ export default function App() {
 
         {/* member */}
         <Route path="/member/dashboard" element={<UserDashboard />} />
+        <Route path="/member/pt-plans" element={<PTPlans />} />
+        <Route path="/member/pt-billing/:planId" element={<PTBilling />} />
 
         {/* admin */}
         <Route path="/admin" element={<AdminDashboardLayout />}>
@@ -153,6 +158,12 @@ export default function App() {
           <Route path="attendence/mark" element={<MarkAttendance />} />
           <Route path="attendence/today" element={<TodayAttendance />} />
           <Route path="attendence/month" element={<MonthlyAttendance />} />
+
+          <Route path="plans" element={<Plan />} />
+
+          <Route path="pt/requests" element={<AdminPTRequests />} />
+
+          <Route path="pt/request/:reqId" element={<AdminPTRequestDetails />} />
         </Route>
 
         {/* cafe */}

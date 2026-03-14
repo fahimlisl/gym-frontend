@@ -15,8 +15,6 @@ export const fetchPublicSupplementById = async (id) => {
   return res.data.data;
 };
 
-/* ========= ADMIN ========= */
-
 export const fetchAdminSupplements = async () => {
   const res = await api.get(
     "/admin/fetch-supplements"
