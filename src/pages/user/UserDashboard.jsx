@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
 import api from "../../api/axios.api";
-import UserDashboardLayout from "../../components/layout/UserDashboardLayout";
 import UserHeader from "../../components/user/UserHeader";
 import SubscriptionSection from "../../components/user/SubscriptionSection";
 import PTSection from "../../components/user/PTSection";
@@ -46,7 +45,7 @@ export default function UserDashboard() {
   }
 
   return (
-    <UserDashboardLayout>
+    <>
       <UserHeader user={user} />
 
       <div className="grid lg:grid-cols-2 gap-6 mt-8">
@@ -57,6 +56,6 @@ export default function UserDashboard() {
       <div className="mt-6">
         <DietSection />
       </div>
-    </UserDashboardLayout>
+    </>
   );
 }
