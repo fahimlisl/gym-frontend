@@ -24,12 +24,13 @@ export const fetchAllTrainers = () => {
   return api.get("/admin/fetchAllTrainer");
 };
 
-export const assignPT = (memberId, trainerId, payload) => {
+export const assignPT = (memberId, trainerId, planId, payload) => {
   return api.post(
-    `/admin/personal-training/${memberId}/${trainerId}`,
+    `/admin/personal-training/${memberId}/${trainerId}/${planId}`,
     payload
   );
 };
+ 
 
 
 export const fetchParticularTrainer = (id) => {
@@ -41,9 +42,9 @@ export const renewMembership = (userId, data) =>
 
 
 // personal training
-export const renewPT = (memberId, trainerId, payload) => {
+export const renewPT = (memberId, trainerId, planId, payload) => {
   return api.post(
-    `/admin/personal-training-renewal/${memberId}/${trainerId}`,
+    `/admin/personal-training-renewal/${memberId}/${trainerId}/${planId}`,
     payload
   );
 };
