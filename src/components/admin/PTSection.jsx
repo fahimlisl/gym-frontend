@@ -25,6 +25,7 @@ export default function PTSection({ pt, onAssign, onRenew }) {
   const current =
     pt.subscription?.[pt.subscription.length - 1];
 
+      const isActive = current?.status?.toLowerCase() === "active";
   return (
     <div className="rounded-xl border border-white/10
                     bg-gradient-to-br from-black via-neutral-900 to-black
@@ -65,7 +66,7 @@ export default function PTSection({ pt, onAssign, onRenew }) {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 pt-4">
-        <button
+        {/* <button
           onClick={onRenew}
           className="flex-1 border border-red-600
                      hover:bg-red-600 hover:text-black
@@ -73,17 +74,19 @@ export default function PTSection({ pt, onAssign, onRenew }) {
                      transition"
         >
           RENEW PT
-        </button>
-
+        </button> */}
         <button
-          onClick={onAssign}
-          className="flex-1 border border-white/20
-                     hover:border-red-600 hover:text-red-500
-                     px-6 py-3 text-xs font-extrabold tracking-widest
-                     transition"
-        >
-          CHANGE TRAINER
-        </button>
+  onClick={!isActive ? onRenew : undefined}
+  disabled={isActive}
+  className={`flex-1 border border-red-600
+              px-6 py-3 text-xs font-extrabold tracking-widest transition
+              ${isActive
+                ? "opacity-40 cursor-not-allowed"
+                : "hover:bg-red-600 hover:text-black"
+              }`}
+>
+  RENEW PT
+</button>
       </div>
     </div>
   );

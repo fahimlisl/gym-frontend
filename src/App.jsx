@@ -50,6 +50,7 @@ import PTPlans from "./pages/user/PTPlans.jsx";
 import AdminPTRequests from "./pages/admin/pt/AdminPTRequests.jsx";
 import AdminPTRequestDetails from "./pages/admin/pt/AdminPTRequestDetails.jsx";
 import UserDashboardLayout from "./components/layout/UserDashboardLayout.jsx";
+import DietChart from "./pages/user/DietChart.jsx";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -130,7 +131,7 @@ export default function App() {
           <Route path="/member/pt-plans" element={<PTPlans />} />
           <Route path="/member/pt-billing/:planId" element={<PTBilling />} />
 
-          {/* <Route path="/member/diet-chart" element={<DietChart />} /> */}
+          <Route path="/member/diet-chart" element={<DietChart />} />
           {/* <Route path="/member/workout-plans" element={<WorkoutPlans />} /> */}
         </Route>
 

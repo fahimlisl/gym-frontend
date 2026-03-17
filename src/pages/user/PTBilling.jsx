@@ -475,16 +475,19 @@ export default function PTBilling() {
                     </label>
                     <div className="file-input-wrapper">
                       <input
+                        id="payment-proof-input"
                         type="file"
                         onChange={(e) => {
-                          setImage(e.target.files[0]);
-                          setPreview(URL.createObjectURL(e.target.files[0]));
+                          if (e.target.files && e.target.files[0]) {
+                            setImage(e.target.files[0]);
+                            setPreview(URL.createObjectURL(e.target.files[0]));
+                          }
                         }}
-                        className="file-input"
+                        className="hidden"
                         accept="image/*"
                       />
                       <label
-                        htmlFor="file-input"
+                        htmlFor="payment-proof-input"
                         className="file-upload-zone block border-2 border-dashed border-red-600/30 bg-red-500/5 p-6 sm:p-8 rounded-xl text-center cursor-pointer transition-all duration-300"
                       >
                         {preview ? (
@@ -512,6 +515,7 @@ export default function PTBilling() {
                       </label>
                     </div>
                   </div>
+
                   <div className="bg-neutral-800/30 border border-white/5 rounded-xl p-4 sm:p-6 mb-6">
                     <p className="text-xs uppercase font-bold text-gray-500 tracking-widest mb-4">
                       Price Breakdown

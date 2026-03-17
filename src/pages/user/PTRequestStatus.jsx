@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../../api/axios.api";
 import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
@@ -27,27 +28,32 @@ import {
   BarChart3
 } from "lucide-react";
 
-export default function PTRequestStatus() {
-  const [status, setStatus] = useState(null);
-  const [loading, setLoading] = useState(true);
+export default function PTRequestStatus({ status: initialStatus }) {
+  const [status, setStatus] = useState(initialStatus);
+  const [loading, setLoading] = useState(!initialStatus);
   const [trainers, setTrainers] = useState([]);
   const [openTrainerModal, setOpenTrainerModal] = useState(false);
   const [assigning, setAssigning] = useState(false);
   const [hoveredTrainer, setHoveredTrainer] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    loadStatus();
-  }, []);
+    if (!initialStatus) {
+      loadStatus();
+    }
+  }, [initialStatus]);
+
+  useEffect(() => {
+    if (status?.isApproved && trainers.length === 0) {
+      loadTrainers();
+    }
+  }, [status?.isApproved, trainers.length]);
 
   const loadStatus = async () => {
     try {
       const res = await api.get("/user/pt/request/status");
       const data = res.data.data;
       setStatus(data);
-
-      if (data.isApproved) {
-        loadTrainers();
-      }
     } catch (err) {
       if (err.response?.status === 400) {
         setStatus(null);
@@ -74,7 +80,7 @@ export default function PTRequestStatus() {
       await api.patch(`/user/pt/assign/trainer/${trainerId}`);
       toast.success("Trainer assigned successfully");
       setOpenTrainerModal(false);
-      loadStatus();
+      setTimeout(() => window.location.reload(), 1500);
     } catch (err) {
       toast.error(err?.response?.data?.message || "Failed to assign trainer");
     } finally {
@@ -289,82 +295,90 @@ export default function PTRequestStatus() {
           <Award className="w-24 h-24" />
         </motion.div>
 
-        <div className="relative z-10 flex flex-col lg:flex-row items-center gap-8 lg:gap-16">
-          <div className="relative">
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
-              className="w-36 h-36 rounded-full bg-gradient-to-br from-green-500/30 to-green-600/30 border-4 border-green-500/50 flex items-center justify-center"
-            >
-              <CheckCircle2 className="w-20 h-20 text-green-400" />
-            </motion.div>
-            
-            {[...Array(8)].map((_, i) => (
+        <div className="relative z-10 flex flex-col gap-8">
+          {/* Top section: Circle + Text */}
+          <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
+            {/* Circle */}
+            <div className="relative flex-shrink-0">
               <motion.div
-                key={i}
-                initial={{ opacity: 0, scale: 0 }}
-                animate={{ opacity: [0, 1, 0], scale: [0, 1, 0] }}
-                transition={{ delay: i * 0.1, duration: 1 }}
-                className="absolute top-1/2 left-1/2 w-2 h-2 bg-green-400 rounded-full"
-                style={{
-                  transform: `rotate(${i * 45}deg) translateX(60px)`
-                }}
-              />
-            ))}
-          </div>
-
-          <div className="flex-1 text-center lg:text-left">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="inline-flex items-center gap-2 bg-green-500/20 px-4 py-2 rounded-full border border-green-500/30 mb-4"
-            >
-              <Crown className="w-4 h-4 text-green-400" />
-              <span className="text-xs tracking-widest text-green-400 font-black">ELITE ACCESS GRANTED</span>
-            </motion.div>
-
-            <h3 className="text-4xl md:text-5xl font-black mb-4 bg-gradient-to-r from-green-400 via-green-300 to-green-400 bg-clip-text text-transparent">
-              REQUEST APPROVED
-            </h3>
-            
-            <p className="text-gray-300 text-lg max-w-2xl mb-8 leading-relaxed">
-              Congratulations! Your personal training request has been approved. 
-              Select your elite trainer to begin your transformation journey.
-            </p>
-
-            <div className="grid grid-cols-3 gap-4 max-w-md mb-8">
-              {[
-                { icon: Users, label: "Elite Trainers", value: trainers.length },
-                { icon: Star, label: "Avg Rating", value: "4.9" },
-                { icon: Award, label: "Certified", value: "100%" }
-              ].map((stat, i) => (
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
+                className="w-36 h-36 rounded-full bg-gradient-to-br from-green-500/30 to-green-600/30 border-4 border-green-500/50 flex items-center justify-center"
+              >
+                <CheckCircle2 className="w-20 h-20 text-green-400" />
+              </motion.div>
+              
+              {[...Array(8)].map((_, i) => (
                 <motion.div
                   key={i}
-                  whileHover={{ scale: 1.05 }}
-                  className="text-center p-3 bg-white/5 rounded-xl border border-white/10"
-                >
-                  <stat.icon className="w-5 h-5 text-green-400 mx-auto mb-2" />
-                  <div className="text-lg font-black text-white">{stat.value}</div>
-                  <div className="text-xs text-gray-500">{stat.label}</div>
-                </motion.div>
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{ opacity: [0, 1, 0], scale: [0, 1, 0] }}
+                  transition={{ delay: i * 0.1, duration: 1 }}
+                  className="absolute top-1/2 left-1/2 w-2 h-2 bg-green-400 rounded-full"
+                  style={{
+                    transform: `rotate(${i * 45}deg) translateX(60px)`
+                  }}
+                />
               ))}
+            </div>
+
+            {/* Text + Stats */}
+            <div className="flex-1 text-center lg:text-left">
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="inline-flex items-center gap-2 bg-green-500/20 px-4 py-2 rounded-full border border-green-500/30 mb-4"
+              >
+                <Crown className="w-4 h-4 text-green-400" />
+                <span className="text-xs tracking-widest text-green-400 font-black">ELITE ACCESS GRANTED</span>
+              </motion.div>
+
+              <h3 className="text-4xl md:text-5xl font-black mb-4 bg-gradient-to-r from-green-400 via-green-300 to-green-400 bg-clip-text text-transparent">
+                REQUEST APPROVED
+              </h3>
+              
+              <p className="text-gray-300 text-lg max-w-2xl mb-8 leading-relaxed">
+                Congratulations! Your personal training request has been approved. 
+                Select your elite trainer to begin your transformation journey.
+              </p>
+
+              <div className="grid grid-cols-3 gap-4 max-w-md mb-8">
+                {[
+                  { icon: Users, label: "Elite Trainers", value: trainers.length },
+                  { icon: Star, label: "Avg Rating", value: "4.9" },
+                  { icon: Award, label: "Certified", value: "100%" }
+                ].map((stat, i) => (
+                  <motion.div
+                    key={i}
+                    whileHover={{ scale: 1.05 }}
+                    className="text-center p-3 bg-white/5 rounded-xl border border-white/10"
+                  >
+                    <stat.icon className="w-5 h-5 text-green-400 mx-auto mb-2" />
+                    <div className="text-lg font-black text-white">{stat.value}</div>
+                    <div className="text-xs text-gray-500">{stat.label}</div>
+                  </motion.div>
+                ))}
+              </div>
             </div>
           </div>
 
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setOpenTrainerModal(true)}
-            className="group relative px-10 py-5 bg-gradient-to-r from-green-600 to-green-800 rounded-2xl font-black tracking-widest text-sm overflow-hidden"
-          >
-            <span className="absolute inset-0 bg-gradient-to-r from-green-800 to-green-600 opacity-0 group-hover:opacity-100 transition-opacity" />
-            <span className="relative z-10 flex items-center gap-3">
-              <UserCheck className="w-5 h-5" />
-              SELECT YOUR TRAINER
-              <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </span>
-          </motion.button>
+          {/* Button - separate row, always visible */}
+          <div className="flex justify-center lg:justify-start">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setOpenTrainerModal(true)}
+              className="group relative px-10 py-5 bg-gradient-to-r from-green-600 to-green-800 rounded-2xl font-black tracking-widest text-sm overflow-hidden flex-shrink-0"
+            >
+              <span className="absolute inset-0 bg-gradient-to-r from-green-800 to-green-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <span className="relative z-10 flex items-center gap-3">
+                <UserCheck className="w-5 h-5" />
+                SELECT YOUR TRAINER
+                <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </span>
+            </motion.button>
+          </div>
         </div>
       </motion.div>
 
@@ -457,7 +471,6 @@ function TrainerModal({ trainers, onClose, onSelect, assigning, hoveredTrainer, 
     </div>
   );
 }
-
 
 const styles = `
   @keyframes blob {

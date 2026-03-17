@@ -3,7 +3,10 @@ import toast from "react-hot-toast";
 import api from "../../api/axios.api";
 import { GetTrainerUI } from "./GetTrainerUI";
 import PTRequestStatus from "../../pages/user/PTRequestStatus";
-import { Dumbbell, Calendar, CreditCard, Award, User, Shield, ChevronRight } from "lucide-react";
+import { Dumbbell, Calendar, CreditCard, Award, User, Shield, ChevronRight, RotateCcw } from "lucide-react";
+
+const IS_TESTING = process.env.NODE_ENV === "testing";
+// const IS_TESTING = true
 
 export default function PTSection({ pt }) {
   const [status, setStatus] = useState(null);
@@ -29,14 +32,12 @@ export default function PTSection({ pt }) {
   if (loading) {
     return <PTSkeleton />;
   }
-
+  if (status) {
+    return <PTRequestStatus status={status} />;
+  }
   if (pt && pt.subscription?.length && pt.subscription[pt.subscription.length - 1].trainer) {
     const current = pt.subscription.at(-1);
     return <ActivePTSubscription subscription={current} />;
-  }
-
-  if (status) {
-    return <PTRequestStatus status={status} />;
   }
 
   return <GetTrainerUI />;
@@ -44,6 +45,8 @@ export default function PTSection({ pt }) {
 
 function ActivePTSubscription({ subscription }) {
   const trainer = subscription.trainer;
+  const isExpired = subscription.status?.toLowerCase() === "expired";
+  const showRenewalBtn = IS_TESTING || isExpired;
   
   const statusConfig = {
     active: { 
@@ -77,6 +80,10 @@ function ActivePTSubscription({ subscription }) {
   };
 
   const status = statusConfig[subscription.status?.toLowerCase()] || statusConfig.active;
+
+  const handleRenewal = () => {
+    window.location.href = "/member/pt-plans";
+  };
 
   return (
     <div className="relative group">
@@ -166,6 +173,20 @@ function ActivePTSubscription({ subscription }) {
               value={fmt(subscription.endDate)}
             />
           </div>
+
+          {showRenewalBtn && (
+            <button
+              onClick={handleRenewal}
+              className="w-full mt-6 px-4 py-3 bg-gradient-to-r from-orange-600 to-red-600 
+                       hover:from-orange-500 hover:to-red-500 text-white font-bold text-sm
+                       rounded-lg transition-all duration-300 flex items-center justify-center gap-2
+                       border border-orange-500/50 hover:border-orange-500
+                       shadow-lg hover:shadow-orange-500/20"
+            >
+              <RotateCcw className="w-4 h-4" />
+              RENEW PLAN
+            </button>
+          )}
 
         </div>
       </div>

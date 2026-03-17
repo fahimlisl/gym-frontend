@@ -10,6 +10,7 @@ export default function SubscriptionCard({ subscription, onRenew }) {
   const subs = subscription.subscription;
   const current = subs[subs.length - 1];
   const isFirstSubscription = subs.length === 1;
+  const isActive = current?.status?.toLowerCase() === "active";
 
   return (
     <div className="border border-red-600/30 bg-black p-6 rounded-xl space-y-6">
@@ -71,13 +72,24 @@ export default function SubscriptionCard({ subscription, onRenew }) {
           value={`${fmt(current.startDate)} → ${fmt(current.endDate)}`}
         />
 
-        <button
+        {/* <button
           onClick={onRenew}
           className="w-full mt-4 border border-red-600 py-3
                font-extrabold tracking-widest
                hover:bg-red-600 transition"
         >
           RENEW MEMBERSHIP
+        </button> */}
+        <button
+          onClick={!isActive ? onRenew : undefined}
+          disabled={isActive}
+          className={`w-full mt-4 border border-red-600 py-3
+               font-extrabold tracking-widest transition
+               ${
+                 isActive ? "opacity-40 cursor-not-allowed" : "hover:bg-red-600"
+               }`}
+        >
+          {isActive ? "ACTIVE MEMBERSHIP" : "RENEW MEMBERSHIP"}
         </button>
       </div>
 

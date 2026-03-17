@@ -146,7 +146,7 @@ export function GetTrainerUI() {
                   Unlock faster progress with expert guidance. A personal trainer helps you 
                   stay consistent, improve technique and reach your fitness goals quicker.
                 </p>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6">
+                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-2 gap-2 lg:gap-x-28 sm:gap-3 mt-6">
                   <Benefit icon={<Target className="w-3.5 h-3.5" />} text="Custom Plan" />
                   <Benefit icon={<Heart className="w-3.5 h-3.5" />} text="Diet Support" />
                   <Benefit icon={<TrendingUp className="w-3.5 h-3.5" />} text="Progress Track" />
