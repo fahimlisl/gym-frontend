@@ -18,7 +18,6 @@ import {
   BadgeCheck,
   Wallet,
   ArrowRight,
-  TrendingUp,
   Loader,
   Dumbbell,
   User
@@ -42,9 +41,7 @@ export default function SubscriptionHistory() {
   const fetchProfileData = async () => {
     try {
       setLoading(true);
-      console.log(`${import.meta.env.VITE_API_URL}/user/getProfile`)
-      const response = await api.get(`${import.meta.env.VITE_API_URL}/user/getProfile`)
-      console.log(response)
+      const response = await api.get("/user/getProfile");
       if (response.data?.data) {
         setProfileData(response.data.data.subscription);
         setPersonalTrainingData(response.data.data.personalTraning);
@@ -58,17 +55,9 @@ export default function SubscriptionHistory() {
     }
   };
 
-  if (loading) {
-    return <LoadingState />;
-  }
-
-  if (error) {
-    return <ErrorState error={error} />;
-  }
-
-  if (!profileData?.subscription?.length && !personalTrainingData?.subscription?.length) {
-    return <EmptyState />;
-  }
+  if (loading) return <LoadingState />;
+  if (error) return <ErrorState error={error} />;
+  if (!profileData?.subscription?.length && !personalTrainingData?.subscription?.length) return <EmptyState />;
 
   const subscription = profileData;
   const sortedSubscriptions = profileData?.subscription ? [...profileData.subscription].sort((a, b) => {
@@ -94,26 +83,77 @@ export default function SubscriptionHistory() {
         animate={{ opacity: 1, x: 0 }}
         className="mb-8"
       >
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <Link 
-              to="/member/dashboard"
-              className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-            >
-              <ChevronLeft className="w-5 h-5 text-gray-400 hover:text-red-400" />
-            </Link>
-            <div className="p-3 bg-gradient-to-br from-red-600/20 to-red-800/20 rounded-xl border border-red-600/30">
-              <History className="w-5 h-5 text-red-500" />
-            </div>
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-black tracking-widest bg-gradient-to-r from-red-500 to-red-300 bg-clip-text text-transparent">
-                YOUR HISTORY
-              </h1>
-              <p className="text-xs text-gray-500 mt-1">Subscriptions & Personal Training</p>
-            </div>
+        <div className="flex items-center gap-3 mb-6">
+          <Link 
+            to="/member/dashboard"
+            className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+          >
+            <ChevronLeft className="w-5 h-5 text-gray-400 hover:text-red-400" />
+          </Link>
+          <div className="p-3 bg-gradient-to-br from-red-600/20 to-red-800/20 rounded-xl border border-red-600/30">
+            <History className="w-5 h-5 text-red-500" />
+          </div>
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-black tracking-widest bg-gradient-to-r from-red-500 to-red-300 bg-clip-text text-transparent">
+              YOUR HISTORY
+            </h1>
+            <p className="text-xs text-gray-500 mt-1">Subscriptions & Personal Training</p>
           </div>
         </div>
       </motion.div>
+
+      {profileData?.admissionFee && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="relative mb-12 overflow-hidden rounded-2xl border border-amber-600/30 bg-gradient-to-br from-amber-600/10 via-neutral-900 to-black p-6"
+        >
+          <div className="absolute -top-20 -right-20 w-40 h-40 bg-amber-600/30 rounded-full blur-3xl" />
+          
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2">
+                <Wallet className="w-5 h-5 text-amber-400" />
+                <h3 className="text-lg font-black tracking-widest text-white">
+                  ADMISSION FEE (ONE-TIME)
+                </h3>
+              </div>
+              <div className="px-3 py-1 bg-amber-600/20 rounded-full border border-amber-600/30">
+                <span className="text-[10px] font-black text-amber-400 tracking-wider">PAID</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <StatCard
+                icon={<DollarSign className="w-4 h-4" />}
+                label="ORIGINAL FEE"
+                value={`₹${subscription.admissionFee}`}
+                color="blue"
+              />
+              <StatCard
+                icon={<Percent className="w-4 h-4" />}
+                label="DISCOUNT TYPE"
+                value={formatDiscountType(subscription.discountTypeOnAdFee)}
+                color="purple"
+              />
+              <StatCard
+                icon={<Sparkles className="w-4 h-4" />}
+                label="DISCOUNT AMOUNT"
+                value={`₹${subscription.discountOnAdFee || 0}`}
+                color="green"
+              />
+              <StatCard
+                icon={<Crown className="w-4 h-4" />}
+                label="FINAL AMOUNT"
+                value={`₹${subscription.finalAdFee}`}
+                color="amber"
+                highlight
+              />
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {profileData?.subscription?.length > 0 && (
         <>
@@ -203,10 +243,6 @@ export default function SubscriptionHistory() {
                     index={index}
                     isExpanded={expandedItem === sub._id}
                     onToggle={() => setExpandedItem(expandedItem === sub._id ? null : sub._id)}
-                    admissionFee={subscription.admissionFee}
-                    discountTypeOnAdFee={subscription.discountTypeOnAdFee}
-                    discountOnAdFee={subscription.discountOnAdFee}
-                    finalAdFee={subscription.finalAdFee}
                   />
                 ))}
               </AnimatePresence>
@@ -306,11 +342,7 @@ function SubscriptionCard({
   subscription, 
   index, 
   isExpanded, 
-  onToggle,
-  admissionFee,
-  discountTypeOnAdFee,
-  discountOnAdFee,
-  finalAdFee
+  onToggle
 }) {
   const statusConfig = {
     active: { color: "green", icon: CheckCircle2, label: "ACTIVE", bg: "bg-green-500/20", border: "border-green-500/30", text: "text-green-400" },
@@ -364,13 +396,13 @@ function SubscriptionCard({
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
-          <QuickInfo icon={<DollarSign className="w-3 h-3" />} label="Price" value={`₹${subscription.price}`} />
-          <QuickInfo icon={<Percent className="w-3 h-3" />} label="Discount" value={`₹${subscription.discount}`} />
+          <QuickInfo icon={<DollarSign className="w-3 h-3" />} label="Price" value={`₹${subscription.baseAmount}`} />
+          <QuickInfo icon={<Percent className="w-3 h-3" />} label="Discount" value={`₹${subscription.discount.amount}`} />
           <QuickInfo icon={<Crown className="w-3 h-3" />} label="Final" value={`₹${subscription.finalAmount}`} highlight />
-          <QuickInfo icon={<BadgeCheck className="w-3 h-3" />} label="Type" value={formatDiscountType(subscription.discountType)} />
+          <QuickInfo icon={<BadgeCheck className="w-3 h-3" />} label="Type" value={formatDiscountType(subscription.discount.typeOfDiscount)} />
         </div>
 
-        <div className="flex items-center text-xs text-gray-400 gap-1 mb-4 pb-4 border-b border-white/10">
+        <div className="flex items-center text-xs text-gray-400 gap-1 mb-4 pb-4 border-b border-white/10 flex-wrap">
           <Calendar className="w-3 h-3 text-red-400" />
           <span>{fmt(subscription.startDate)}</span>
           <ArrowRight className="w-3 h-3 text-gray-600 mx-1" />
@@ -387,28 +419,6 @@ function SubscriptionCard({
               className="overflow-hidden"
             >
               <div className="space-y-4 pt-2">
-                <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-                  <h5 className="text-xs font-black text-gray-400 tracking-wider mb-3">ADMISSION FEE</h5>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="text-xs">
-                      <div className="text-gray-500 mb-1">Original Fee</div>
-                      <div className="font-black text-white">₹{admissionFee}</div>
-                    </div>
-                    <div className="text-xs">
-                      <div className="text-gray-500 mb-1">Type</div>
-                      <div className="font-black text-white">{formatDiscountType(discountTypeOnAdFee)}</div>
-                    </div>
-                    <div className="text-xs">
-                      <div className="text-gray-500 mb-1">Discount</div>
-                      <div className="font-black text-white">₹{discountOnAdFee || 0}</div>
-                    </div>
-                    <div className="text-xs">
-                      <div className="text-gray-500 mb-1">Final Amount</div>
-                      <div className="font-black text-red-400">₹{finalAdFee}</div>
-                    </div>
-                  </div>
-                </div>
-
                 <div className="bg-white/5 rounded-lg p-4 border border-white/10">
                   <h5 className="text-xs font-black text-gray-400 tracking-wider mb-3">VALIDITY DETAILS</h5>
                   <div className="space-y-2 text-xs">
@@ -513,7 +523,7 @@ function PersonalTrainingCard({
           <QuickInfo icon={<BadgeCheck className="w-3 h-3" />} label="Payment" value={personalTraining.paymentMethod?.toUpperCase() || "N/A"} />
         </div>
 
-        <div className="flex items-center text-xs text-gray-400 gap-1 mb-4 pb-4 border-b border-white/10">
+        <div className="flex items-center text-xs text-gray-400 gap-1 mb-4 pb-4 border-b border-white/10 flex-wrap">
           <Calendar className="w-3 h-3 text-blue-400" />
           <span>{fmt(personalTraining.startDate)}</span>
           <ArrowRight className="w-3 h-3 text-gray-600 mx-1" />
@@ -597,6 +607,48 @@ function PersonalTrainingCard({
             </motion.div>
           )}
         </AnimatePresence>
+      </div>
+    </motion.div>
+  );
+}
+
+function StatCard({ icon, label, value, color, highlight = false }) {
+  const colorClasses = {
+    red: "text-red-400",
+    blue: "text-blue-400",
+    green: "text-green-400",
+    purple: "text-purple-400",
+    amber: "text-amber-400"
+  };
+
+  const bgClasses = {
+    red: "bg-red-600/10 border-red-600/30",
+    blue: "bg-blue-600/10 border-blue-600/30",
+    green: "bg-green-600/10 border-green-600/30",
+    purple: "bg-purple-600/10 border-purple-600/30",
+    amber: "bg-amber-600/10 border-amber-600/30"
+  };
+
+  return (
+    <motion.div
+      whileHover={{ scale: 1.02, y: -2 }}
+      className={`relative overflow-hidden rounded-xl p-4 border ${
+        highlight 
+          ? "bg-gradient-to-br from-amber-600/20 to-amber-800/20 border-amber-600/30" 
+          : bgClasses[color]
+      }`}
+    >
+      {highlight && (
+        <div className="absolute -top-10 -right-10 w-20 h-20 bg-gradient-to-br from-amber-600/30 rounded-full blur-2xl" />
+      )}
+      <div className="relative z-10">
+        <div className={colorClasses[color] + " mb-2"}>{icon}</div>
+        <div className="text-xs text-gray-500 mb-1">{label}</div>
+        <div className={`text-base sm:text-lg font-black ${
+          highlight ? "text-white" : "text-gray-300"
+        }`}>
+          {value}
+        </div>
       </div>
     </motion.div>
   );

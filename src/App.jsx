@@ -52,6 +52,8 @@ import AdminPTRequestDetails from "./pages/admin/pt/AdminPTRequestDetails.jsx";
 import UserDashboardLayout from "./components/layout/UserDashboardLayout.jsx";
 import DietChart from "./pages/user/DietChart.jsx";
 import SubscriptionHistory from "./pages/user/SubscriptionHistory.jsx";
+import RenewalPlans from "./pages/user/RenewalPlans.jsx";
+import RenewalBilling from "./pages/user/RenewalBilling.jsx";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -130,7 +132,9 @@ export default function App() {
         <Route element={<UserDashboardLayout />}>
           <Route path="/member/dashboard" element={<UserDashboard />} />
           <Route path="/member/pt-plans" element={<PTPlans />} />
+          <Route path="/member/renewal-plans" element={<RenewalPlans />} />
           <Route path="/member/pt-billing/:planId" element={<PTBilling />} />
+          <Route path="/member/renewal-billing/:planId" element={<RenewalBilling />} />
 
           <Route path="/member/diet-chart" element={<DietChart />} />
           <Route path="/member/history" element={<SubscriptionHistory />} />

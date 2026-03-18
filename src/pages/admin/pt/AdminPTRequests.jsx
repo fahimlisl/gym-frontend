@@ -76,10 +76,10 @@ export default function AdminPTRequests() {
 
             </div>
 
-            <img
+            {/* <img
               src={r.image.url}
               className="mt-4 rounded border border-white/10 h-36 w-full object-cover"
-            />
+            /> */}
 
             <button
               className="mt-4 w-full border border-red-600 py-2 text-xs font-bold

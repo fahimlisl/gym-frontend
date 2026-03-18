@@ -20,21 +20,17 @@ export default function SubscriptionCard({ subscription, onRenew }) {
           Membership details & history
         </p>
       </div>
-
       <div className="border border-red-600/40 bg-neutral-950 p-4 rounded-lg space-y-2">
         <p className="text-xs tracking-widest text-red-500">CURRENT PLAN</p>
 
         <Row label="Plan" value={current.plan.toUpperCase()} />
-        <Row label="Base Price" value={`₹${current.price}`} />
+        {console.log(current)}
+        <Row label="Base Price" value={`₹${current.baseAmount}`} />
 
         {current.discountType !== "none" && (
           <Row
             label="Discount"
-            value={
-              current.discountType === "percentage"
-                ? `${current.discount}%`
-                : `₹${current.discount}`
-            }
+            value={current.discount.amount}
           />
         )}
 
@@ -116,14 +112,12 @@ export default function SubscriptionCard({ subscription, onRenew }) {
                   </div>
 
                   <div className="text-xs text-gray-400 mt-2 space-y-1">
-                    <p>Base: ₹{s.price}</p>
+                    <p>Base: ₹{s.baseAmount}</p>
 
                     {s.discountType !== "none" && (
                       <p>
                         Discount:{" "}
-                        {s.discountType === "percentage"
-                          ? `${s.discount}%`
-                          : `₹${s.discount}`}
+                        {s.discount.amount}
                       </p>
                     )}
 

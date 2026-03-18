@@ -18,15 +18,21 @@ import {
   Wallet,
   ArrowRight
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function SubscriptionSection({ subscription }) {
+  const navigate = useNavigate();
 
-  const currentSub = subscription?.subscription?.[0];
+  const currentSub = subscription?.subscription?.[subscription?.subscription?.length - 1];
+  const isExpired = currentSub ? new Date(currentSub.endDate) < new Date() : false;
 
   if (!currentSub) {
     return <EmptyState />;
   }
+
+  const handleRenewal = () => {
+    navigate("/member/renewal-plans");
+  };
 
   return (
     <motion.div
@@ -62,7 +68,7 @@ export default function SubscriptionSection({ subscription }) {
           
           {subscription?.subscription?.length > 1 && (
             <Link 
-              to="/member/history"
+              to="/member/subscription-history"
               className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full border border-red-600/30 bg-red-600/10 hover:bg-red-600/20 transition-all duration-300 group"
             >
               <span className="text-xs font-black text-red-400 group-hover:text-red-300 transition-colors">VIEW HISTORY</span>
@@ -71,63 +77,10 @@ export default function SubscriptionSection({ subscription }) {
           )}
         </motion.div>
 
-        {/* Admission Fee Details Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="relative mb-8 overflow-hidden rounded-2xl border border-red-600/30 bg-gradient-to-br from-red-600/10 via-neutral-900 to-black p-6"
-        >
-          <div className="absolute -top-20 -right-20 w-40 h-40 bg-red-600/30 rounded-full blur-3xl" />
-          
-          <div className="relative z-10">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Wallet className="w-4 h-4 text-red-400" />
-                <h4 className="text-sm font-black tracking-widest text-gray-300">
-                  ADMISSION FEE DETAILS
-                </h4>
-              </div>
-              <div className="px-2 py-1 bg-red-600/20 rounded-full border border-red-600/30">
-                <span className="text-[10px] font-black text-red-400 tracking-wider">ONE-TIME</span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard
-                icon={<DollarSign className="w-4 h-4" />}
-                label="ORIGINAL FEE"
-                value={`₹${subscription.admissionFee}`}
-                color="blue"
-              />
-              <StatCard
-                icon={<Percent className="w-4 h-4" />}
-                label="DISCOUNT TYPE"
-                value={formatDiscountType(subscription.discountTypeOnAdFee)}
-                color="purple"
-              />
-              <StatCard
-                icon={<Sparkles className="w-4 h-4" />}
-                label="DISCOUNT"
-                value={`₹${subscription.discountOnAdFee || 0}`}
-                color="green"
-              />
-              <StatCard
-                icon={<Crown className="w-4 h-4" />}
-                label="FINAL AMOUNT"
-                value={`₹${subscription.finalAdFee}`}
-                color="red"
-                highlight
-              />
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Current Subscription Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
           className="group relative"
         >
           <div className="absolute -inset-0.5 bg-gradient-to-r from-red-600 to-red-800 rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-500 blur" />
@@ -144,27 +97,20 @@ export default function SubscriptionSection({ subscription }) {
                     {currentSub.plan?.toUpperCase() || "PREMIUM PLAN"}
                   </h4>
                   <div className="flex items-center gap-2 mt-2">
-                    <StatusBadge status={currentSub.status} />
-                    {currentSub.isPriority && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/30 text-purple-400">
-                        <Zap className="w-3 h-3 inline mr-1" />
-                        PRIORITY
-                      </span>
-                    )}
+                    <StatusBadge status={currentSub.status} isExpired={isExpired} />
                   </div>
                 </div>
               </div>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-              <QuickInfo icon={<DollarSign className="w-3 h-3" />} label="Price" value={`₹${currentSub.price}`} />
-              <QuickInfo icon={<Percent className="w-3 h-3" />} label="Discount" value={`₹${currentSub.discount}`} />
+              <QuickInfo icon={<DollarSign className="w-3 h-3" />} label="Price" value={`₹${currentSub.baseAmount}`} />
+              <QuickInfo icon={<Percent className="w-3 h-3" />} label="Discount" value={`₹${currentSub.discount.amount}`} />
               <QuickInfo icon={<Crown className="w-3 h-3" />} label="Final" value={`₹${currentSub.finalAmount}`} highlight />
-              <QuickInfo icon={<BadgeCheck className="w-3 h-3" />} label="Type" value={formatDiscountType(currentSub.discountType)} />
+              <QuickInfo icon={<BadgeCheck className="w-3 h-3" />} label="Type" value={formatDiscountType(currentSub.discount.typeOfDiscount)} />
             </div>
 
-            {/* Validity Period Section */}
-            <div className="pt-6 border-t border-white/10">
+            <div className="pt-6 border-t border-white/10 mb-6">
               <div className="space-y-3">
                 <h5 className="text-xs font-black text-gray-400 tracking-wider">VALIDITY PERIOD</h5>
                 <div className="flex items-center justify-between text-sm gap-3 flex-wrap">
@@ -175,11 +121,24 @@ export default function SubscriptionSection({ subscription }) {
                   <ArrowRight className="w-4 h-4 text-gray-600" />
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-red-400" />
-                    <span className="text-gray-300">{fmt(currentSub.endDate)}</span>
+                    <span className={`text-gray-300 ${isExpired ? "text-red-400" : ""}`}>{fmt(currentSub.endDate)}</span>
                   </div>
                 </div>
               </div>
             </div>
+
+            {isExpired ? (
+              <button
+                onClick={handleRenewal}
+                className="w-full py-4 px-4 font-extrabold tracking-wider uppercase text-sm bg-gradient-to-r from-red-700 via-red-600 to-red-700 text-white rounded-xl hover:brightness-110 transition-all duration-300"
+              >
+                RENEW SUBSCRIPTION →
+              </button>
+            ) : (
+              <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4 text-center">
+                <p className="text-sm font-semibold text-green-400">✓ Your subscription is active</p>
+              </div>
+            )}
           </div>
         </motion.div>
 
@@ -196,7 +155,7 @@ export default function SubscriptionSection({ subscription }) {
           
           {subscription?.subscription?.length > 1 && (
             <Link 
-              to="/member/history"
+              to="/member/subscription-history"
               className="sm:hidden flex items-center gap-2 px-3 py-1.5 rounded-full border border-red-600/30 bg-red-600/10 hover:bg-red-600/20 transition-all duration-300 group"
             >
               <span className="text-xs font-black text-red-400">HISTORY</span>
@@ -204,39 +163,6 @@ export default function SubscriptionSection({ subscription }) {
             </Link>
           )}
         </motion.div>
-      </div>
-    </motion.div>
-  );
-}
-
-function StatCard({ icon, label, value, color, highlight = false }) {
-  const colorClasses = {
-    red: "text-red-400",
-    blue: "text-blue-400",
-    green: "text-green-400",
-    purple: "text-purple-400"
-  };
-
-  return (
-    <motion.div
-      whileHover={{ scale: 1.02, y: -2 }}
-      className={`relative overflow-hidden rounded-xl p-4 ${
-        highlight 
-          ? "bg-gradient-to-br from-red-600/20 to-red-800/20 border border-red-600/30" 
-          : "bg-white/5 border border-white/10"
-      }`}
-    >
-      {highlight && (
-        <div className="absolute -top-10 -right-10 w-20 h-20 bg-red-600/30 rounded-full blur-2xl" />
-      )}
-      <div className="relative z-10">
-        <div className={colorClasses[color] + " mb-2"}>{icon}</div>
-        <div className="text-xs text-gray-500 mb-1">{label}</div>
-        <div className={`text-base sm:text-lg font-black ${
-          highlight ? "text-white" : "text-gray-300"
-        }`}>
-          {value}
-        </div>
       </div>
     </motion.div>
   );
@@ -256,42 +182,21 @@ function QuickInfo({ icon, label, value, highlight = false }) {
   );
 }
 
-function StatusBadge({ status }) {
+function StatusBadge({ status, isExpired }) {
   const statusConfig = {
-    active: { color: "green", icon: CheckCircle2, text: "ACTIVE" },
-    expired: { color: "red", icon: XCircle, text: "EXPIRED" },
-    pending: { color: "yellow", icon: AlertCircle, text: "PENDING" },
-    cancelled: { color: "gray", icon: XCircle, text: "CANCELLED" }
+    active: { color: "green", icon: CheckCircle2, label: isExpired ? "EXPIRED" : "ACTIVE", bg: isExpired ? "bg-red-500/20" : "bg-green-500/20", border: isExpired ? "border-red-500/30" : "border-green-500/30", text: isExpired ? "text-red-400" : "text-green-400" },
+    expired: { color: "red", icon: XCircle, label: "EXPIRED", bg: "bg-red-500/20", border: "border-red-500/30", text: "text-red-400" },
+    pending: { color: "yellow", icon: AlertCircle, label: "PENDING", bg: "bg-yellow-500/20", border: "border-yellow-500/30", text: "text-yellow-400" },
+    cancelled: { color: "gray", icon: XCircle, label: "CANCELLED", bg: "bg-gray-500/20", border: "border-gray-500/30", text: "text-gray-400" }
   };
 
-  const config = statusConfig[status?.toLowerCase()] || statusConfig.pending;
+  const config = statusConfig[isExpired ? "expired" : (status?.toLowerCase() || "active")];
   const StatusIcon = config.icon;
 
-  const bgColorMap = {
-    green: "bg-green-500/20",
-    red: "bg-red-500/20",
-    yellow: "bg-yellow-500/20",
-    gray: "bg-gray-500/20"
-  };
-
-  const borderColorMap = {
-    green: "border-green-500/30",
-    red: "border-red-500/30",
-    yellow: "border-yellow-500/30",
-    gray: "border-gray-500/30"
-  };
-
-  const textColorMap = {
-    green: "text-green-400",
-    red: "text-red-400",
-    yellow: "text-yellow-400",
-    gray: "text-gray-400"
-  };
-
   return (
-    <span className={`text-xs px-2 py-0.5 rounded-full ${bgColorMap[config.color]} border ${borderColorMap[config.color]} ${textColorMap[config.color]}`}>
+    <span className={`text-xs px-2 py-0.5 rounded-full ${config.bg} border ${config.border} ${config.text}`}>
       <StatusIcon className="w-3 h-3 inline mr-1" />
-      {config.text}
+      {config.label}
     </span>
   );
 }
@@ -361,7 +266,6 @@ const formatDiscountType = (type) => {
   return type.toUpperCase();
 };
 
-// global css 
 const styles = `
   @keyframes blob {
     0% { transform: translate(0px, 0px) scale(1); }

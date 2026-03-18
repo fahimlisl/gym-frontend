@@ -61,10 +61,10 @@ export default function AdminPTRequestDetails() {
 
         <h2 className="font-black mb-4">PAYMENT PROOF</h2>
 
-        <img
+        {/* <img
           src={request.image.url}
           className="rounded border border-white/10"
-        />
+        /> */}
 
       </div>
 

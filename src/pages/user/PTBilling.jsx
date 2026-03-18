@@ -2,23 +2,24 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../../api/axios.api";
 import toast from "react-hot-toast";
+import useRazorpay from "../../hooks/useRazorpay";
 
 export default function PTBilling() {
   const { planId } = useParams();
   const navigate = useNavigate();
+  const { handlePayment, loading: paymentLoading, error: paymentError, setError: setPaymentError } = useRazorpay();
 
   const [plan, setPlan] = useState(null);
   const [couponInput, setCouponInput] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [discount, setDiscount] = useState(0);
   const [finalPrice, setFinalPrice] = useState(0);
-  const [paymentMethod, setPaymentMethod] = useState("upi");
+  const [paymentMethod, setPaymentMethod] = useState("razorpay");
   const [ref, setRef] = useState("");
-  const [image, setImage] = useState(null);
-  const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [couponLoading, setCouponLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState(null);
 
   useEffect(() => {
     loadPlan();
@@ -102,34 +103,99 @@ export default function PTBilling() {
     toast("Coupon removed");
   };
 
-  const submit = async () => {
-    if (!image) {
-      toast.error("Upload payment proof");
+  const handleProceedToPayment = async () => {
+    if (!plan) {
+      toast.error("Plan not loaded");
       return;
     }
+    const generatedRef = `PT-${Date.now()}`;
+    setRef(generatedRef);
 
-    const form = new FormData();
-    form.append("coupon", appliedCoupon?.code || "");
-    form.append("paymentMethod", paymentMethod);
-    form.append("ref", ref);
-    form.append("image", image);
+    console.log("💰 PT Payment Summary:");
+    console.log(`Plan: ${plan.title}`);
+    console.log(`Plan Price: ₹${plan.finalPrice}`);
+    console.log(`Discount: ₹${discount}`);
+    console.log(`Final Amount: ₹${finalPrice}`);
+    console.log(`Reference: ${generatedRef}`);
 
-    try {
-      setLoading(true);
-      await api.post(`/user/pt/request/${planId}`, form, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-      setSuccess(true);
-      setTimeout(() => {
-        navigate("/member/dashboard");
-      }, 4000);
-    } catch (err) {
-      toast.error(err?.response?.data?.message || "Failed to submit request");
-    } finally {
-      setLoading(false);
-    }
+    await handlePayment({
+      amount: finalPrice, // ✅ Final amount after discount
+      productName: `Personal Training - ${plan.title}`,
+      userEmail: "user@example.com", // Will be replaced by backend from JWT
+      userName: "User", // Will be replaced by backend from JWT
+      onSuccess: async (paymentResult) => {
+        // ✅ Payment successful, now create temp PT bill and auto-approve
+        setPaymentStatus({
+          status: "processing",
+          message: "Processing your request...",
+        });
+
+        try {
+          if(process.env.NODE_ENV === "development"){
+            console.log("📝 Creating PT request after payment...");
+            console.log("Payment ID:", paymentResult.paymentId);
+            console.log("Order ID:", paymentResult.orderId);
+          }
+
+          const billResponse = await api.post(
+            `/user/pt/request/${planId}`,
+            {
+              coupon: appliedCoupon?.code || "",
+              paymentMethod: "razorpay",
+              ref: generatedRef,
+              paymentId: paymentResult.paymentId,
+              orderId: paymentResult.orderId,
+            }
+          );
+          if(process.env.NODE_ENV==="development"){
+            console.log("✅ PT Bill created:", billResponse.data.data);
+          }
+
+          if (!billResponse.ok && billResponse.status !== 200) {
+            throw new Error("Failed to create PT request");
+          }
+
+          const tempBillId = billResponse.data.data._id;
+
+          if(process.env.NODE_ENV==="development"){
+            console.log("📝 Auto-approving PT request...");
+          }
+          const approveResponse = await api.post(
+            `/user/pt/request/approval/${tempBillId}`, // need to change the endpoint and need to put under auth section
+            {}
+          );
+          if(process.env.NODE_ENV==="development"){
+            console.log("✅ PT request approved:", approveResponse.data.data);
+          }
+
+          setPaymentStatus({
+            status: "success",
+            message: "Payment successful! Your PT plan is now active.",
+          });
+
+          toast.success("PT plan activated successfully!");
+
+          setTimeout(() => {
+            navigate("/member/dashboard");
+          }, 2000);
+        } catch (err) {
+          console.error("❌ Error processing request:", err);
+          setPaymentStatus({
+            status: "error",
+            message: `Error: ${err.message}`,
+          });
+          toast.error(err?.response?.data?.message || err.message);
+        }
+      },
+      onError: (err) => {
+        console.error("❌ Payment error:", err);
+        setPaymentStatus({
+          status: "error",
+          message: `Payment failed: ${err.message}`,
+        });
+        toast.error(`Payment failed: ${err.message}`);
+      },
+    });
   };
 
   if (success) {
@@ -144,11 +210,11 @@ export default function PTBilling() {
           </div>
 
           <h2 className="text-3xl sm:text-4xl font-black tracking-wider bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text text-transparent mb-4 text-center">
-            REQUEST SUBMITTED
+            PAYMENT SUCCESSFUL
           </h2>
 
           <p className="text-gray-300 max-w-lg text-center text-sm sm:text-base leading-relaxed mb-8">
-            Your personal training request has been submitted successfully. Our team will review your payment and approve it shortly.
+            Your personal training plan has been activated successfully. You can now select your trainer from the dashboard.
           </p>
 
           <div className="flex items-center gap-2 text-gray-500 text-sm">
@@ -276,29 +342,6 @@ export default function PTBilling() {
           border-color: rgba(239, 68, 68, 0.5);
         }
 
-        .file-input-wrapper {
-          position: relative;
-        }
-
-        .file-input-wrapper input[type='file'] {
-          display: none;
-        }
-
-        .file-upload-zone {
-          cursor: pointer;
-          transition: all 0.3s ease;
-        }
-
-        .file-upload-zone:hover {
-          background-color: rgba(239, 68, 68, 0.05);
-          border-color: rgba(239, 68, 68, 0.3);
-        }
-
-        .file-upload-zone.active {
-          background-color: rgba(239, 68, 68, 0.1);
-          border-color: rgba(239, 68, 68, 0.5);
-        }
-
         .benefit-item {
           animation: slideInUp 0.4s ease-out forwards;
         }
@@ -325,7 +368,7 @@ export default function PTBilling() {
               Personal Training
             </h1>
             <p className="text-gray-400 text-sm sm:text-base">
-              Complete your payment to unlock your training journey
+              Complete your payment to activate your training plan
             </p>
           </div>
 
@@ -364,7 +407,7 @@ export default function PTBilling() {
                     <p className="text-xs uppercase font-bold text-gray-500 tracking-widest">
                       What's Included
                     </p>
-                    {plan.benefits?.map((b, idx) => (
+                    {plan.benefits?.map((b) => (
                       <div
                         key={b._id}
                         className="benefit-item flex items-start gap-3"
@@ -441,78 +484,10 @@ export default function PTBilling() {
 
                   <div className="mb-6">
                     <label className="block text-xs uppercase font-bold text-gray-500 tracking-widest mb-3">
-                      Payment Reference
-                    </label>
-                    <input
-                      placeholder="E.G., TRANSACTION ID OR UTR"
-                      value={ref}
-                      onChange={(e) => setRef(e.target.value)}
-                      className="input-field w-full bg-neutral-800/50 border border-white/10 px-4 py-3 rounded-lg text-sm placeholder-gray-500 text-white outline-none"
-                    />
-                  </div>
-
-                  <div className="mb-6">
-                    <label className="block text-xs uppercase font-bold text-gray-500 tracking-widest mb-3">
                       Payment Method
                     </label>
-                    <select
-                      value={paymentMethod}
-                      onChange={(e) => setPaymentMethod(e.target.value)}
-                      className="input-field w-full bg-neutral-800/50 border border-white/10 px-4 py-3 rounded-lg text-sm text-white outline-none"
-                    >
-                      <option value="upi" className="bg-neutral-900">
-                        UPI Transfer
-                      </option>
-                      <option value="cash" className="bg-neutral-900">
-                        Cash Payment
-                      </option>
-                    </select>
-                  </div>
-
-                  <div className="mb-8">
-                    <label className="block text-xs uppercase font-bold text-gray-500 tracking-widest mb-3">
-                      Payment Proof
-                    </label>
-                    <div className="file-input-wrapper">
-                      <input
-                        id="payment-proof-input"
-                        type="file"
-                        onChange={(e) => {
-                          if (e.target.files && e.target.files[0]) {
-                            setImage(e.target.files[0]);
-                            setPreview(URL.createObjectURL(e.target.files[0]));
-                          }
-                        }}
-                        className="hidden"
-                        accept="image/*"
-                      />
-                      <label
-                        htmlFor="payment-proof-input"
-                        className="file-upload-zone block border-2 border-dashed border-red-600/30 bg-red-500/5 p-6 sm:p-8 rounded-xl text-center cursor-pointer transition-all duration-300"
-                      >
-                        {preview ? (
-                          <div className="space-y-4">
-                            <img
-                              src={preview}
-                              className="h-24 sm:h-32 w-auto mx-auto rounded-lg border border-white/10 object-contain"
-                              alt="Preview"
-                            />
-                            <p className="text-xs text-gray-400">
-                              Click to change image
-                            </p>
-                          </div>
-                        ) : (
-                          <div className="space-y-3">
-                            <div className="text-3xl sm:text-4xl">📸</div>
-                            <p className="text-sm font-semibold text-white">
-                              Click to upload
-                            </p>
-                            <p className="text-xs text-gray-400">
-                              or drag and drop
-                            </p>
-                          </div>
-                        )}
-                      </label>
+                    <div className="bg-neutral-800/50 border border-white/10 px-4 py-3 rounded-lg text-sm text-white">
+                      Razorpay (Secure Payment)
                     </div>
                   </div>
 
@@ -552,23 +527,56 @@ export default function PTBilling() {
                     </div>
                   </div>
 
+                  {paymentStatus && (
+                    <div className={`p-4 rounded-lg mb-6 ${
+                      paymentStatus.status === "success"
+                        ? "bg-green-500/10 border border-green-500/30"
+                        : paymentStatus.status === "processing"
+                        ? "bg-blue-500/10 border border-blue-500/30"
+                        : "bg-red-500/10 border border-red-500/30"
+                    }`}>
+                      <p className={`text-sm font-semibold ${
+                        paymentStatus.status === "success"
+                          ? "text-green-400"
+                          : paymentStatus.status === "processing"
+                          ? "text-blue-400"
+                          : "text-red-400"
+                      }`}>
+                        {paymentStatus.message}
+                      </p>
+                    </div>
+                  )}
+
                   <button
-                    onClick={submit}
-                    disabled={loading}
+                    onClick={handleProceedToPayment}
+                    disabled={paymentLoading || loading}
                     className="button-glow w-full py-4 px-4 font-extrabold tracking-wider uppercase text-sm bg-gradient-to-r from-red-700 via-red-600 to-red-700 text-white rounded-xl hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 relative overflow-hidden"
                   >
-                    {loading ? (
+                    {paymentLoading ? (
                       <span className="flex items-center justify-center gap-3">
                         <span className="animate-spin">⟳</span>
-                        SUBMITTING REQUEST
+                        PROCESSING PAYMENT
+                      </span>
+                    ) : loading ? (
+                      <span className="flex items-center justify-center gap-3">
+                        <span className="animate-spin">⟳</span>
+                        ACTIVATING PLAN
                       </span>
                     ) : (
                       <span className="flex items-center justify-center gap-2">
-                        SUBMIT REQUEST
+                        PROCEED TO PAYMENT
                         <span>→</span>
                       </span>
                     )}
                   </button>
+
+                  {paymentError && (
+                    <div className="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+                      <p className="text-xs text-red-400">
+                        {paymentError}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
