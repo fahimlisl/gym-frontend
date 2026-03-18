@@ -18,9 +18,9 @@ export default function UserHeader({ user }) {
         <p className="text-sm text-gray-400">{user.email}</p>
         <p className="text-xs text-gray-500">{user.phoneNumber}</p>
 
-        <p className="mt-2 text-xs tracking-widest text-green-500">
+        {/* <p className="mt-2 text-xs tracking-widest text-green-500">
           ● ACTIVE MEMBER
-        </p>
+        </p> */}
       </div>
     </div>
   );

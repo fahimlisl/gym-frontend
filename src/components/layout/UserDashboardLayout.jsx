@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import api from "../../api/axios.api";
-import { Menu, X, Lock, LogOut, Home, Apple, Dumbbell, ChevronRight } from "lucide-react";
+import { Menu, X, Lock, LogOut, Home, Apple, Dumbbell, ChevronRight ,History} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Outlet } from "react-router-dom";
 
@@ -67,6 +67,7 @@ export default function UserDashboardLayout() {
     { icon: Home, label: "Dashboard", path: "/member/dashboard" },
     { icon: Apple, label: "Diet Chart", path: "/member/diet-chart" },
     { icon: Dumbbell, label: "Workout Plans", path: "/member/workout-plans" },
+    { icon: History, label: "History", path: "/member/history" },
   ];
 
   return (
