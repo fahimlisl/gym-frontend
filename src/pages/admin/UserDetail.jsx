@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import api from "../../api/axios.api";
 
 import UserHeader from "../../components/admin/UserHeader";
 import SubscriptionCard from "../../components/admin/SubscriptionCard";
@@ -9,6 +10,7 @@ import PTSection from "../../components/admin/PTSection";
 import AssignPTModal from "../../components/admin/AssignPTModal";
 import RenewPTModal from "../../components/admin/RenewPTModal";
 import RenewMembershipModal from "../../components/admin/RenewMembershipModal";
+import AssignWorkoutModal from "./AssignWorkoutModal";
 
 import { fetchParticularUser } from "../../api/admin.api";
 
@@ -18,20 +20,34 @@ export default function UserDetail() {
 
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [userWorkout, setUserWorkout] = useState(null);
 
   const [assignPTOpen, setAssignPTOpen] = useState(false);
   const [renewPTOpen, setRenewPTOpen] = useState(false);
   const [renewMembershipOpen, setRenewMembershipOpen] = useState(false);
+  const [assignWorkoutOpen, setAssignWorkoutOpen] = useState(false);
 
   const loadUser = async () => {
     try {
       setLoading(true);
       const res = await fetchParticularUser(id);
       setUser(res.data.data);
+      
+      // Fetch user's current workout
+      await fetchUserWorkout();
     } catch (err) {
       toast.error("Failed to load member");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUserWorkout = async () => {
+    try {
+      const res = await api.get(`/admin/user/${id}/workout`);
+      setUserWorkout(res.data.data);
+    } catch (err) {
+      setUserWorkout(null);
     }
   };
 
@@ -104,7 +120,7 @@ export default function UserDetail() {
           </h1>
 
           <p className="text-sm text-gray-400 mt-2">
-            Manage subscription & personal training
+            Manage subscription, personal training & workout plans
           </p>
         </div>
 
@@ -122,9 +138,65 @@ export default function UserDetail() {
           <div className="space-y-6">
             <PTSection
               pt={user.personalTraning}
+              subscription={user.subscription} 
               onAssign={() => setAssignPTOpen(true)}
               onRenew={() => setRenewPTOpen(true)}
             />
+
+            <div className="border border-red-600/30 bg-gradient-to-br from-black via-neutral-900 to-black p-6 rounded-xl">
+              <h2 className="text-2xl font-black tracking-widest mb-4">WORKOUT PLAN</h2>
+
+              {userWorkout ? (
+                <div className="space-y-4">
+                  <div className="bg-neutral-800/50 border border-white/10 rounded-lg p-4">
+                    <h3 className="text-white font-light mb-2">{userWorkout.name}</h3>
+                    <div className="text-xs text-neutral-400 space-y-1">
+                      <p>
+                        <span className="text-white">Status:</span> {userWorkout.status}
+                      </p>
+                      <p>
+                        <span className="text-white">Current Week:</span> {userWorkout.currentWeek} / {userWorkout.duration}
+                      </p>
+                      <p>
+                        <span className="text-white">Difficulty:</span> {userWorkout.difficultyLevel}
+                      </p>
+                      <p>
+                        <span className="text-white">Goal:</span> {userWorkout.goal}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => navigate(`/admin/workout/${userWorkout._id}`)}
+                      className="flex-1 py-2 px-4 border border-white/10 text-white text-xs font-light hover:border-red-500 hover:text-red-500 transition-all"
+                    >
+                      EDIT PLAN
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (window.confirm('Replace current workout plan?')) {
+                          setAssignWorkoutOpen(true);
+                        }
+                      }}
+                      className="flex-1 py-2 px-4 border border-white/10 text-white text-xs font-light hover:border-red-500 hover:text-red-500 transition-all"
+                    >
+                      CHANGE PLAN
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <p className="text-neutral-400 text-sm">No workout plan assigned</p>
+                  <button
+                    onClick={() => setAssignWorkoutOpen(true)}
+                    className="w-full py-3 px-4 bg-red-500 text-white text-xs font-light tracking-wider hover:bg-red-600 transition-all"
+                  >
+                    PROVIDE WORKOUT PLAN
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -151,6 +223,14 @@ export default function UserDetail() {
         <RenewMembershipModal
           userId={user._id}
           onClose={() => setRenewMembershipOpen(false)}
+          onSuccess={loadUser}
+        />
+      )}
+
+      {assignWorkoutOpen && (
+        <AssignWorkoutModal
+          userId={user._id}
+          onClose={() => setAssignWorkoutOpen(false)}
           onSuccess={loadUser}
         />
       )}

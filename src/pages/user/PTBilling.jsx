@@ -79,7 +79,7 @@ export default function PTBilling() {
           discountAmount = c.maxDiscount;
           final = plan.finalPrice - discountAmount;
         } else {
-          discountAmount = (plan.finalPrice * c.value) / 100;
+          discountAmount = Math.round((plan.finalPrice * c.value) / 100);
           final = plan.finalPrice - discountAmount;
         }
       }
@@ -119,7 +119,7 @@ export default function PTBilling() {
     console.log(`Reference: ${generatedRef}`);
 
     await handlePayment({
-      amount: finalPrice, // ✅ Final amount after discount
+      amount: Math.round(finalPrice), // ✅ Final amount after discount
       productName: `Personal Training - ${plan.title}`,
       userEmail: "user@example.com", // Will be replaced by backend from JWT
       userName: "User", // Will be replaced by backend from JWT

@@ -18,6 +18,7 @@ import {
   Layers,
   BadgePercent,
   GitPullRequestCreateArrow,
+  ChartBar,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
@@ -29,6 +30,8 @@ const mainMenu = [
   { label: "Members", to: "/admin/members", icon: Users },
   { label: "Trainers", to: "/admin/trainers", icon: UserCog },
   { label: "PT Requests", to: "/admin/pt/requests", icon: GitPullRequestCreateArrow },
+  { label: "Workout Template", to: "/admin/workout-templates", icon: ChartBar },
+  
 ];
 
 const attendanceMenu = {

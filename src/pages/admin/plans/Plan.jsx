@@ -151,7 +151,7 @@ export default function AdminPlans() {
             onChange={(e) => setForm({ ...form, duration: e.target.value })}
           >
             <option value="monthly">Monthly</option>
-            <option value="quaterly">Quarterly</option>
+            <option value="quarterly">Quarterly</option>
             <option value="half-yearly">Half Yearly</option>
             <option value="yearly">Yearly</option>
           </select>

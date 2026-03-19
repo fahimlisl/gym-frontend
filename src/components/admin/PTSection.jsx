@@ -1,106 +1,84 @@
-export default function PTSection({ pt, onAssign, onRenew }) {
+export default function PTSection({ pt, onAssign, onRenew, subscription }) {
   if (!pt) {
     return (
       <div className="rounded-xl border border-red-600/30
                       bg-gradient-to-br from-black via-neutral-900 to-black
                       p-8 text-center space-y-6">
-
         <p className="text-sm text-gray-400 tracking-widest">
           NO PERSONAL TRAINING ASSIGNED
         </p>
-
+        {subscription?.subscription[subscription?.subscription.length - 1]?.status === "active" ? 
         <button
-          onClick={onAssign}
-          className="bg-red-600 hover:bg-red-700
-                     px-10 py-4 text-xs font-extrabold tracking-widest
-                     shadow-[0_0_35px_rgba(239,68,68,0.4)]"
+        onClick={onAssign}
+        className="bg-red-600 hover:bg-red-700
+        px-10 py-4 text-xs font-extrabold tracking-widest
+        shadow-[0_0_35px_rgba(239,68,68,0.4)]"
         >
           ASSIGN PERSONAL TRAINING
         </button>
+        : 
+        <p className="text-xs text-gray-500 tracking-widest">To assign Personal training must have a active plan</p>
+        }
       </div>
     );
   }
 
+  const current = pt.subscription?.[pt.subscription.length - 1];
+  const isPTActive = current?.status?.toLowerCase() === "active";
+  const isSubActive = subscription.subscription[subscription.subscription.length -1]?.status?.toLowerCase() === "active";
+  const canRenew = !isPTActive && isSubActive;
 
-  const current =
-    pt.subscription?.[pt.subscription.length - 1];
-
-      const isActive = current?.status?.toLowerCase() === "active";
   return (
     <div className="rounded-xl border border-white/10
                     bg-gradient-to-br from-black via-neutral-900 to-black
                     p-8 space-y-6">
-
       <div className="flex items-center gap-5">
         <img
           src={current.trainer?.avatar?.url}
           className="w-16 h-16 rounded-full border-2 border-red-600 object-cover"
           alt="Trainer"
         />
-
         <div>
           <p className="text-lg font-extrabold tracking-wide">
             {current.trainer?.fullName.toUpperCase()}
           </p>
           <p className="text-xs text-gray-400">
-            {current.trainer?.experience.toUpperCase() || "TRAINER"}
+            {current.trainer?.experience?.toUpperCase() || "TRAINER"}
           </p>
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4 text-sm">
-        <Info label="PLAN" value={current.plan.toUpperCase()} />
+        <Info label="PLAN" value={current.plan?.toUpperCase()} />
         <Info label="PRICE" value={`₹${current.finalPrice}`} />
-        <Info
-          label="START DATE"
-          value={formatDate(current.startDate)}
-        />
-        <Info
-          label="END DATE"
-          value={formatDate(current.endDate)}
-        />
-        <Info
-          label="STATUS"
-          value={(current.status.toUpperCase())}
-        />
+        <Info label="START DATE" value={formatDate(current.startDate)} />
+        <Info label="END DATE" value={formatDate(current.endDate)} />
+        <Info label="STATUS" value={current.status?.toUpperCase()} />
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 pt-4">
-        {/* <button
-          onClick={onRenew}
-          className="flex-1 border border-red-600
-                     hover:bg-red-600 hover:text-black
-                     px-6 py-3 text-xs font-extrabold tracking-widest
-                     transition"
+        <button
+          onClick={canRenew ? onRenew : undefined}
+          disabled={!canRenew}
+          className={`flex-1 border border-red-600
+                      px-6 py-3 text-xs font-extrabold tracking-widest transition
+                      ${!canRenew
+                        ? "opacity-40 cursor-not-allowed"
+                        : "hover:bg-red-600 hover:text-black"
+                      }`}
         >
           RENEW PT
-        </button> */}
-        <button
-  onClick={!isActive ? onRenew : undefined}
-  disabled={isActive}
-  className={`flex-1 border border-red-600
-              px-6 py-3 text-xs font-extrabold tracking-widest transition
-              ${isActive
-                ? "opacity-40 cursor-not-allowed"
-                : "hover:bg-red-600 hover:text-black"
-              }`}
->
-  RENEW PT
-</button>
+        </button>
       </div>
     </div>
   );
-};
+}
 
 function Info({ label, value }) {
   return (
     <div>
-      <p className="text-[10px] text-gray-400 tracking-widest">
-        {label}
-      </p>
-      <p className="font-semibold mt-1">
-        {value || "—"}
-      </p>
+      <p className="text-[10px] text-gray-400 tracking-widest">{label}</p>
+      <p className="font-semibold mt-1">{value || "—"}</p>
     </div>
   );
 }

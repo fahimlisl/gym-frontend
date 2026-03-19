@@ -51,25 +51,37 @@ export default function PricingP() {
 
   const filteredPlans = plans.filter((plan) => plan.category === billing);
 
-  const handleStartNow = (plan) => {
-    setSelectedPlan(plan);
-    setShowModal(true);
-    setFormData({
-      fullName: "",
-      email: "",
-      phoneNumber: "",
-      discount: 0,
-      discountType: "flat",
-      discountTypeOnAdFee: "flat",
-      discountOnAdFee: 0,
-      paymentMethod: "razorpay",
+const handleStartNow = (plan) => {
+  if (plan.category === "PT") {
+    toast("An active membership is required before purchasing a PT plan.", {
+      icon: "⚠️",
+      style: {
+        background: "#1a1a1a",
+        color: "#fff",
+        border: "1px solid rgba(239,68,68,0.3)",
+      },
     });
-    setRegistrationStatus(null);
-    setCouponCode("");
-    setAppliedCoupon(null);
-    setCouponDiscount(0);
-    setCouponError("");
-  };
+    navigate("/login");
+    return; 
+  }
+  setSelectedPlan(plan);
+  setShowModal(true);
+  setFormData({
+    fullName: "",
+    email: "",
+    phoneNumber: "",
+    discount: 0,
+    discountType: "flat",
+    discountTypeOnAdFee: "flat",
+    discountOnAdFee: 0,
+    paymentMethod: "razorpay",
+  });
+  setRegistrationStatus(null);
+  setCouponCode("");
+  setAppliedCoupon(null);
+  setCouponDiscount(0);
+  setCouponError("");
+};
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;

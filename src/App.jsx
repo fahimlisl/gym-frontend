@@ -55,6 +55,9 @@ import SubscriptionHistory from "./pages/user/SubscriptionHistory.jsx";
 import RenewalPlans from "./pages/user/RenewalPlans.jsx";
 import RenewalBilling from "./pages/user/RenewalBilling.jsx";
 import AdminOffer from "./pages/admin/AdminOffer.jsx";
+import AdminWorkoutTemplates from "./pages/admin/AdminWorkoutTemplates.jsx";
+import AdminEditWorkout from "./pages/admin/AdminEditWorkout.jsx";
+import UserWorkoutView from "./pages/user/UserWorkoutView.jsx";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -139,6 +142,7 @@ export default function App() {
 
           <Route path="/member/diet-chart" element={<DietChart />} />
           <Route path="/member/history" element={<SubscriptionHistory />} />
+          <Route path="/member/workout-plans" element={<UserWorkoutView />} />
           {/* <Route path="/member/workout-plans" element={<WorkoutPlans />} /> */}
         </Route>
 
@@ -179,6 +183,9 @@ export default function App() {
           <Route path="pt/requests" element={<AdminPTRequests />} />
 
           <Route path="pt/request/:reqId" element={<AdminPTRequestDetails />} />
+
+          <Route path="workout-templates" element={<AdminWorkoutTemplates />} />
+          <Route path="workout/:workoutId" element={<AdminEditWorkout />} />
         </Route>
 
         {/* cafe */}

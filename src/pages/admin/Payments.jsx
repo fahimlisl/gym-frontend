@@ -40,6 +40,7 @@ const TransactionModal = ({ tx, onClose }) => {
   if (!tx) return null;
 
   const isCafe = tx.source === "cafe" && tx.referenceId;
+  const isPersonalTraining = tx.source === "personal-training" && tx.referenceId;
 
   const subTotal = isCafe
     ? tx.referenceId.items.reduce(
@@ -84,6 +85,118 @@ const TransactionModal = ({ tx, onClose }) => {
             />
           </div>
 
+          {isPersonalTraining && tx.referenceId && (
+            <div className="bg-neutral-900/50 border border-white/10 rounded-xl p-5 space-y-4">
+              <div className="flex items-center gap-3 mb-2">
+                <span className="text-2xl">💪</span>
+                <p className="text-xs tracking-widest text-gray-500 font-bold uppercase">
+                  PERSONAL TRAINING SUBSCRIPTION
+                </p>
+              </div>
+
+              {(() => {
+                // The transaction amount should match one of the subscriptions
+                const subscription = tx.referenceId.subscription?.find(
+                  sub => sub.finalPrice === tx.amount || 
+                        sub.basePrice === tx.amount ||
+                        (sub.finalPrice && Math.abs(sub.finalPrice - tx.amount) < 1)
+                ) || tx.referenceId.subscription?.[0];
+
+                if (!subscription) return null;
+
+                return (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-black/40 border border-white/5 rounded-lg p-4">
+                        <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Plan</p>
+                        <p className="text-lg font-black text-white capitalize">{subscription.plan}</p>
+                      </div>
+                      <div className="bg-black/40 border border-white/5 rounded-lg p-4">
+                        <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Status</p>
+                        <span className={`inline-block px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide ${
+                          subscription.status === 'active' ? 'bg-green-900/30 text-green-400' :
+                          subscription.status === 'paused' ? 'bg-yellow-900/30 text-yellow-400' :
+                          'bg-red-900/30 text-red-400'
+                        }`}>
+                          {subscription.status}
+                        </span>
+                      </div>
+                    </div>
+
+                    {subscription.trainer && (
+                      <div className="bg-black/40 border border-white/5 rounded-lg p-4">
+                        <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Trainer</p>
+                        <p className="text-base font-bold text-white">{subscription.trainer}</p>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-black/40 border border-white/5 rounded-lg p-4">
+                        <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Start Date</p>
+                        <p className="text-sm font-semibold text-white">
+                          {subscription.startDate ? new Date(subscription.startDate).toLocaleDateString('en-IN', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric'
+                          }) : '—'}
+                        </p>
+                      </div>
+                      <div className="bg-black/40 border border-white/5 rounded-lg p-4">
+                        <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">End Date</p>
+                        <p className="text-sm font-semibold text-white">
+                          {subscription.endDate ? new Date(subscription.endDate).toLocaleDateString('en-IN', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric'
+                          }) : '—'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 space-y-3 bg-black/40 border border-white/5 rounded-lg p-4">
+                      <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-3">Payment Breakdown</p>
+                      
+                      <InfoRow 
+                        label="Base Price" 
+                        value={`₹${subscription.basePrice?.toLocaleString('en-IN') || 0}`} 
+                      />
+                      
+                      {subscription.discount?.amount > 0 && (
+                        <InfoRow
+                          label={`Discount${subscription.discount.code ? ` (${subscription.discount.code})` : ''}`}
+                          value={`−₹${subscription.discount.amount.toLocaleString('en-IN')}`}
+                        />
+                      )}
+
+                      <div className="flex justify-between items-center font-black text-base md:text-lg pt-3 border-t border-white/10">
+                        <span className="tracking-widest text-gray-500 uppercase">
+                          Final Price
+                        </span>
+                        <span className="text-red-600">
+                          ₹{subscription.finalPrice?.toLocaleString('en-IN') || tx.amount.toLocaleString('en-IN')}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-black/40 border border-white/5 rounded-lg p-4">
+                        <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Payment Method</p>
+                        <p className="text-sm font-bold text-white capitalize">{subscription.paymentMethod || tx.paymentMethod}</p>
+                      </div>
+                      
+                      {subscription.ref && (
+                        <div className="bg-black/40 border border-white/5 rounded-lg p-4 col-span-2">
+                          <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Transaction Reference</p>
+                          <p className="text-xs font-mono text-gray-300 break-all">{subscription.ref}</p>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          )}
+
           {tx.subDetail && (
             <div className="bg-neutral-900/50 border border-white/10 rounded-xl p-5 space-y-0">
               <p className="text-xs tracking-widest text-gray-500 font-bold mb-4 uppercase">
@@ -91,7 +204,7 @@ const TransactionModal = ({ tx, onClose }) => {
               </p>
 
               <InfoRow label="Plan" value={tx.subDetail.plan} />
-              <InfoRow label="Price" value={`₹${tx.subDetail.price.toLocaleString('en-IN')}`} />
+              <InfoRow label="Price" value={`₹${tx.subDetail.finalAmount?.toLocaleString('en-IN') || tx.amount.toLocaleString('en-IN')}`} />
 
               <InfoRow
                 label="Start Date"
@@ -191,6 +304,7 @@ const TransactionModal = ({ tx, onClose }) => {
     </div>
   );
 };
+
 
 export default function Payments() {
   const [transactions, setTransactions] = useState([]);

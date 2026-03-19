@@ -50,7 +50,7 @@ export default function UserDashboard() {
 
       <div className="grid lg:grid-cols-2 gap-6 mt-8">
         <SubscriptionSection subscription={user.subscription} />
-        <PTSection pt={user.personalTraning} />
+        <PTSection pt={user.personalTraning} subscription={user.subscription}/>
       </div>
 
       <div className="mt-6">

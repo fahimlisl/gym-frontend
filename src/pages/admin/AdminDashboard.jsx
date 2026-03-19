@@ -2,13 +2,11 @@ import { useEffect, useState } from "react";
 import StatCard from "../../components/dashboard/StatCard.jsx";
 import toast from "react-hot-toast";
 import { TrendingUp } from "lucide-react";
-
 import {
   fetchDashboardRevenue,
   fetchRevenueBySource,
   fetchRecentTransactions,
 } from "../../api/admin.api.js";
-
 import RevenueTimeline from "./RevenueTimeline.jsx";
 
 export default function AdminDashboard() {
@@ -25,7 +23,6 @@ export default function AdminDashboard() {
           fetchRevenueBySource(),
           fetchRecentTransactions(),
         ]);
-
         setStats(rev.data.data);
         setSources(src.data.data);
         setRecent(tx.data.data);
@@ -35,7 +32,6 @@ export default function AdminDashboard() {
         setLoading(false);
       }
     };
-
     load();
   }, []);
 
@@ -56,7 +52,6 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-black p-4 md:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto space-y-10">
 
-        {/* HEADER */}
         <div>
           <h1 className="text-3xl md:text-5xl font-black tracking-tight text-white">
             DASHBOARD
@@ -69,28 +64,27 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
           <StatCard
             title="Today Revenue"
-            value={`₹${stats.today.totalAmount}`}
+            value={`₹${Math.round(stats.today.totalAmount).toLocaleString("en-IN")}`}
             icon={<TrendingUp className="w-5 h-5 text-red-500" />}
           />
           <StatCard
             title="Weekly Revenue"
-            value={`₹${stats.weekly.totalAmount}`}
+            value={`₹${Math.round(stats.weekly.totalAmount).toLocaleString("en-IN")}`}
             icon={<TrendingUp className="w-5 h-5 text-red-500" />}
           />
           <StatCard
             title="Monthly Revenue"
-            value={`₹${stats.monthly.totalAmount}`}
+            value={`₹${Math.round(stats.monthly.totalAmount).toLocaleString("en-IN")}`}
             icon={<TrendingUp className="w-5 h-5 text-red-500" />}
           />
           <StatCard
             title="Yearly Revenue"
-            value={`₹${stats.yearly.totalAmount}`}
+            value={`₹${Math.round(stats.yearly.totalAmount).toLocaleString("en-IN")}`}
             icon={<TrendingUp className="w-5 h-5 text-red-500" />}
           />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
           <Card title="REVENUE OVERVIEW" className="lg:col-span-2">
             <RevenueTimeline data={stats} />
           </Card>
@@ -122,13 +116,9 @@ export default function AdminDashboard() {
                   <th className="text-left">DATE</th>
                 </tr>
               </thead>
-
               <tbody className="divide-y divide-white/5">
                 {recent.map((t, idx) => (
-                  <tr
-                    key={t._id}
-                    className="hover:bg-red-600/5 transition"
-                  >
+                  <tr key={t._id} className="hover:bg-red-600/5 transition">
                     <td className="py-4 text-gray-400">{idx + 1}</td>
                     <td className="font-medium text-white truncate max-w-xs">
                       {t.user?.username || "—"}
@@ -139,7 +129,7 @@ export default function AdminDashboard() {
                       </span>
                     </td>
                     <td className="font-bold text-red-500">
-                      ₹{t.amount}
+                      ₹{Math.round(t.amount).toLocaleString("en-IN")}
                     </td>
                     <td className="hidden md:table-cell text-gray-400 uppercase text-xs">
                       {t.paymentMethod}
@@ -169,7 +159,6 @@ export default function AdminDashboard() {
   );
 }
 
-
 function Card({ title, children, className = "" }) {
   return (
     <div
@@ -186,17 +175,16 @@ function Card({ title, children, className = "" }) {
   );
 }
 
-
 function Progress({ label, value, max }) {
   const percent = Math.min((value / max) * 100, 100);
-
   return (
     <div>
       <div className="flex justify-between text-xs mb-2">
         <span className="text-gray-400">{label}</span>
-        <span className="font-bold text-white">₹{Math.round(value)}</span>
+        <span className="font-bold text-white">
+          ₹{Math.round(value).toLocaleString("en-IN")}
+        </span>
       </div>
-
       <div className="w-full h-2.5 bg-white/10 rounded-full overflow-hidden">
         <div
           style={{ width: `${percent}%` }}

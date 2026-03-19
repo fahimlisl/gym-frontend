@@ -27,13 +27,17 @@ import {
   X
 } from "lucide-react";
 
-export function GetTrainerUI() {
+export function GetTrainerUI({ subscription }) {
   const [trainers, setTrainers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedTrainer, setSelectedTrainer] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [hoveredTrainer, setHoveredTrainer] = useState(null);
   const navigate = useNavigate();
+
+  // check if subscription is active
+  const latestSub = subscription?.subscription?.[subscription.subscription.length - 1];
+  const isSubActive = latestSub?.status?.toLowerCase() === "active";
 
   useEffect(() => {
     fetchTrainers();
@@ -60,6 +64,27 @@ export function GetTrainerUI() {
     }
   };
 
+  // block if no active subscription
+  if (!isSubActive) {
+    return (
+      <div className="rounded-xl border border-red-600/30
+                      bg-gradient-to-br from-black via-neutral-900 to-black
+                      p-10 text-center space-y-5">
+        <div className="w-14 h-14 bg-red-600/10 rounded-full flex items-center justify-center mx-auto border border-red-600/20">
+          <Shield className="w-7 h-7 text-red-500" />
+        </div>
+        <div>
+          <p className="text-white font-black tracking-widest text-lg">
+            NO ACTIVE MEMBERSHIP
+          </p>
+          <p className="text-sm text-gray-400 mt-2 max-w-sm mx-auto">
+            You need an active subscription to apply for personal training.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <motion.div 
@@ -68,7 +93,6 @@ export function GetTrainerUI() {
         className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-neutral-900 via-black to-neutral-900 p-16 text-center"
       >
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-red-600/20 via-transparent to-transparent" />
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg"/>
 
         <div className="relative z-10">
           <div className="relative w-20 h-20 mx-auto mb-6">
@@ -76,7 +100,6 @@ export function GetTrainerUI() {
             <div className="absolute inset-0 rounded-full border-4 border-t-red-600 border-r-transparent border-b-transparent border-l-transparent animate-spin" />
             <Dumbbell className="absolute inset-0 m-auto w-8 h-8 text-red-500 animate-pulse" />
           </div>
-
           <motion.p 
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -127,8 +150,6 @@ export function GetTrainerUI() {
             transition={{ delay: 0.1 }}
             className="relative mb-8 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-neutral-900/90 to-black/90 p-6 sm:p-8"
           >
-            <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg" />
-
             <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
               <div className="flex-1">
                 <div className="inline-flex items-center gap-2 bg-red-600/20 px-3 py-1.5 rounded-full border border-red-600/30 mb-4">
@@ -137,11 +158,9 @@ export function GetTrainerUI() {
                     LIMITED SPOTS AVAILABLE
                   </span>
                 </div>
-
                 <h4 className="text-xl sm:text-2xl font-black mb-3 text-white">
                   Get Your Personal Trainer
                 </h4>
-
                 <p className="text-sm text-gray-400 max-w-2xl leading-relaxed">
                   Unlock faster progress with expert guidance. A personal trainer helps you 
                   stay consistent, improve technique and reach your fitness goals quicker.
@@ -168,6 +187,7 @@ export function GetTrainerUI() {
               </motion.button>
             </div>
           </motion.div>
+
           {trainers.length === 0 ? (
             <motion.div
               initial={{ opacity: 0 }}
@@ -237,14 +257,12 @@ function TrainerCard({ trainer, index, onViewProfile, onHover, onLeave, isHovere
         </div>
       )}
 
-
       <div className="relative mb-4 sm:mb-5 overflow-hidden rounded-lg flex-shrink-0">
         <img
           src={trainer.avatar?.url || "https://via.placeholder.com/300x300?text=Trainer"}
           alt={trainer.fullName}
           className="w-full aspect-square object-cover border border-red-600/20 group-hover:border-red-600/50 transition"
         />
-        
         <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-black/70 px-2.5 py-1.5 rounded-full border border-green-500/50">
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
@@ -252,7 +270,6 @@ function TrainerCard({ trainer, index, onViewProfile, onHover, onLeave, isHovere
           </span>
           <span className="text-[8px] sm:text-xs text-green-400 font-medium">Active</span>
         </div>
-
         <div className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-black/70 px-2.5 py-1.5 rounded-full border border-yellow-500/30">
           <Star className="w-3.5 h-3.5 text-yellow-400 fill-current" />
           <span className="text-xs sm:text-sm font-bold text-white">4.9</span>
@@ -263,15 +280,12 @@ function TrainerCard({ trainer, index, onViewProfile, onHover, onLeave, isHovere
         <h3 className="text-base sm:text-lg lg:text-xl font-bold text-white mb-2 truncate group-hover:text-red-400 transition">
           {trainer.fullName}
         </h3>
-        
         <p className="text-xs sm:text-sm text-gray-400 mb-3">{trainer.experience} years exp.</p>
-
         {trainer.specialization && (
           <p className="text-xs sm:text-sm text-gray-500 mb-4 line-clamp-2">
             {trainer.specialization}
           </p>
         )}
-
         <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-5 sm:mb-6">
           <div className="text-center">
             <div className="text-sm sm:text-base lg:text-lg font-bold text-white">150+</div>
@@ -298,7 +312,6 @@ function TrainerCard({ trainer, index, onViewProfile, onHover, onLeave, isHovere
     </div>
   );
 }
-
 
 function Benefit({ icon, text }) {
   return (
@@ -335,7 +348,6 @@ function TrainerProfileModal({ trainer, onClose }) {
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
-          
           <motion.button
             whileHover={{ scale: 1.1, rotate: 90 }}
             whileTap={{ scale: 0.9 }}
@@ -371,6 +383,7 @@ function TrainerProfileModal({ trainer, onClose }) {
             </div>
           </div>
         </div>
+
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-16rem)]">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
             <div className="text-center p-4 bg-white/5 rounded-xl">
@@ -401,7 +414,7 @@ function TrainerProfileModal({ trainer, onClose }) {
               ABOUT TRAINER
             </h3>
             <p className="text-gray-400 text-sm leading-relaxed">
-              {trainer.bio || "Dedicated fitness professional with years of experience in transforming lives through personalized training programs. Specialized in strength training, nutrition planning, and holistic wellness."}
+              {trainer.bio || "Dedicated fitness professional with years of experience in transforming lives through personalized training programs."}
             </p>
           </div>
 
@@ -433,6 +446,7 @@ function TrainerProfileModal({ trainer, onClose }) {
               ))}
             </div>
           </div>
+
           <div className="flex gap-3">
             <motion.button
               whileHover={{ scale: 1.02 }}
@@ -455,7 +469,6 @@ function TrainerProfileModal({ trainer, onClose }) {
   );
 }
 
-
 const styles = `
   @keyframes blob {
     0% { transform: translate(0px, 0px) scale(1); }
@@ -463,12 +476,8 @@ const styles = `
     66% { transform: translate(-20px, 20px) scale(0.9); }
     100% { transform: translate(0px, 0px) scale(1); }
   }
-  .animate-blob {
-    animation: blob 7s infinite;
-  }
-  .animation-delay-2000 {
-    animation-delay: 2s;
-  }
+  .animate-blob { animation: blob 7s infinite; }
+  .animation-delay-2000 { animation-delay: 2s; }
   .line-clamp-2 {
     display: -webkit-box;
     -webkit-line-clamp: 2;
