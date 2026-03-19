@@ -54,6 +54,7 @@ import DietChart from "./pages/user/DietChart.jsx";
 import SubscriptionHistory from "./pages/user/SubscriptionHistory.jsx";
 import RenewalPlans from "./pages/user/RenewalPlans.jsx";
 import RenewalBilling from "./pages/user/RenewalBilling.jsx";
+import AdminOffer from "./pages/admin/AdminOffer.jsx";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -173,6 +174,7 @@ export default function App() {
           <Route path="attendence/month" element={<MonthlyAttendance />} />
 
           <Route path="plans" element={<Plan />} />
+          <Route path="offers" element={<AdminOffer />} />
 
           <Route path="pt/requests" element={<AdminPTRequests />} />
 

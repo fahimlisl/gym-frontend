@@ -16,6 +16,7 @@ import {
   LogOut,
   KeyRound,
   Layers,
+  BadgePercent,
   GitPullRequestCreateArrow,
 } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -65,6 +66,7 @@ const otherMenu = [
 
 const settings = [
   { label: "Plans", to: "/admin/plans", icon: Layers },
+  { label: "Offers", to: "/admin/offers", icon: BadgePercent },
 ]
 
 export default function Sidebar({ open, onClose }) {

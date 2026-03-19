@@ -18,6 +18,7 @@ export default function Coupon() {
     isActive: true,
     category: "CAFE",
     value: 0,
+    usageLimit: "", 
   });
 
   const fetchCoupons = async () => {
@@ -70,6 +71,7 @@ export default function Coupon() {
       isActive: true,
       category: "CAFE",
       value: "",
+      usageLimit: "", 
     });
   };
 
@@ -85,6 +87,7 @@ export default function Coupon() {
       isActive: coupon.isActive,
       category: coupon.category,
       value: coupon.value,
+      usageLimit: coupon.usageLimit || "",
     });
 
     setShowModal(true);
@@ -119,6 +122,8 @@ export default function Coupon() {
                 <th className="p-3">Max Discount</th>
                 <th className="p-3">Expiry</th>
                 <th className="p-3">Category</th>
+                <th className="p-3">Usage Limit</th> 
+                <th className="p-3">Used</th> 
                 <th className="p-3">Status</th>
                 <th className="p-3">Action</th>
               </tr>
@@ -150,6 +155,21 @@ export default function Coupon() {
                   </td>
 
                   <td className="p-3">{c.category || "-"}</td>
+
+                  <td className="p-3"> 
+                    {c.usageLimit || "∞"}
+                  </td>
+
+                  <td className="p-3"> 
+                    <span className={`px-2 py-1 rounded-full text-xs ${
+                      c.usageLimit && c.usedCount >= c.usageLimit
+                        ? "bg-red-100 text-red-700"
+                        : "bg-green-100 text-green-700"
+                    }`}>
+                      {c.usedCount || 0}
+                      {c.usageLimit ? `/${c.usageLimit}` : ""}
+                    </span>
+                  </td>
 
                   <td className="p-3">
                     <span
@@ -220,6 +240,10 @@ export default function Coupon() {
 
               <div className="text-sm">Category: {c.category || "-"}</div>
 
+              <div className="text-sm"> 
+                Usage: {c.usedCount || 0}{c.usageLimit ? `/${c.usageLimit}` : ""}
+              </div>
+
               <button
                 onClick={() => handleEdit(c)}
                 className="text-blue-600 font-semibold pt-2"
@@ -282,7 +306,15 @@ export default function Coupon() {
 
               <input
                 className="w-full border p-2 rounded"
-                placeholder="Min Cart Amount"
+                placeholder="Value"
+                type="number"
+                value={form.value}
+                onChange={(e) => setForm({ ...form, value: e.target.value })}
+              />
+
+              <input
+                className="w-full border p-2 rounded"
+                placeholder="Min Cart Amount (Optional)"
                 type="number"
                 value={form.minCartAmount}
                 onChange={(e) =>
@@ -295,21 +327,27 @@ export default function Coupon() {
 
               <input
                 className="w-full border p-2 rounded"
-                placeholder="Value"
-                type="number"
-                value={form.value}
-                onChange={(e) => setForm({ ...form, value: e.target.value })}
-              />
-
-              <input
-                className="w-full border p-2 rounded"
-                placeholder="Max Discount"
+                placeholder="Max Discount (Optional)"
                 type="number"
                 value={form.maxDiscount}
                 onChange={(e) =>
                   setForm({
                     ...form,
                     maxDiscount: e.target.value,
+                  })
+                }
+              />
+
+              <input
+                className="w-full border p-2 rounded"
+                placeholder="Usage Limit (Optional - Leave empty for unlimited)"
+                type="number"
+                min="1"
+                value={form.usageLimit}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    usageLimit: e.target.value,
                   })
                 }
               />
@@ -339,6 +377,11 @@ export default function Coupon() {
                 />
                 Active
               </label>
+              {form.usageLimit && (
+                <p className="text-xs text-gray-500">
+                  This coupon can be used {form.usageLimit} times
+                </p>
+              )}
             </div>
 
             <div className="flex flex-col sm:flex-row justify-end gap-3 border-t px-6 py-4">
