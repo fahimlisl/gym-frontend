@@ -272,7 +272,6 @@ function TrainerCard({ trainer, index, onViewProfile, onHover, onLeave, isHovere
         </div>
         <div className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-black/70 px-2.5 py-1.5 rounded-full border border-yellow-500/30">
           <Star className="w-3.5 h-3.5 text-yellow-400 fill-current" />
-          <span className="text-xs sm:text-sm font-bold text-white">4.9</span>
         </div>
       </div>
 
@@ -286,20 +285,6 @@ function TrainerCard({ trainer, index, onViewProfile, onHover, onLeave, isHovere
             {trainer.specialization}
           </p>
         )}
-        <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-5 sm:mb-6">
-          <div className="text-center">
-            <div className="text-sm sm:text-base lg:text-lg font-bold text-white">150+</div>
-            <div className="text-[8px] sm:text-xs text-gray-500 mt-1">Clients</div>
-          </div>
-          <div className="text-center">
-            <div className="text-sm sm:text-base lg:text-lg font-bold text-white">98%</div>
-            <div className="text-[8px] sm:text-xs text-gray-500 mt-1">Success</div>
-          </div>
-          <div className="text-center">
-            <div className="text-sm sm:text-base lg:text-lg font-bold text-white">4.9⭐</div>
-            <div className="text-[8px] sm:text-xs text-gray-500 mt-1">Rating</div>
-          </div>
-        </div>
       </div>
 
       <button
@@ -369,99 +354,12 @@ function TrainerProfileModal({ trainer, onClose }) {
                 </h2>
                 <div className="flex flex-wrap items-center gap-3">
                   <div className="flex items-center gap-1 text-yellow-400">
-                    <Star className="w-4 h-4 fill-current" />
-                    <Star className="w-4 h-4 fill-current" />
-                    <Star className="w-4 h-4 fill-current" />
-                    <Star className="w-4 h-4 fill-current" />
-                    <Star className="w-4 h-4 fill-current" />
-                    <span className="text-white ml-1">(4.9)</span>
                   </div>
-                  <span className="text-sm text-gray-400">•</span>
+                  <span className="text-sm text-yellow-400">•</span>
                   <span className="text-sm text-gray-400">{trainer.experience} years experience</span>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-16rem)]">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-            <div className="text-center p-4 bg-white/5 rounded-xl">
-              <Users className="w-5 h-5 text-red-400 mx-auto mb-2" />
-              <div className="text-xl font-black text-white">150+</div>
-              <div className="text-xs text-gray-500">Happy Clients</div>
-            </div>
-            <div className="text-center p-4 bg-white/5 rounded-xl">
-              <Award className="w-5 h-5 text-red-400 mx-auto mb-2" />
-              <div className="text-xl font-black text-white">8</div>
-              <div className="text-xs text-gray-500">Certifications</div>
-            </div>
-            <div className="text-center p-4 bg-white/5 rounded-xl">
-              <Clock className="w-5 h-5 text-red-400 mx-auto mb-2" />
-              <div className="text-xl font-black text-white">5k+</div>
-              <div className="text-xs text-gray-500">Hours Trained</div>
-            </div>
-            <div className="text-center p-4 bg-white/5 rounded-xl">
-              <ThumbsUp className="w-5 h-5 text-red-400 mx-auto mb-2" />
-              <div className="text-xl font-black text-white">98%</div>
-              <div className="text-xs text-gray-500">Success Rate</div>
-            </div>
-          </div>
-
-          <div className="mb-6">
-            <h3 className="text-lg font-black text-white mb-3 flex items-center gap-2">
-              <UserCheck className="w-4 h-4 text-red-500" />
-              ABOUT TRAINER
-            </h3>
-            <p className="text-gray-400 text-sm leading-relaxed">
-              {trainer.bio || "Dedicated fitness professional with years of experience in transforming lives through personalized training programs."}
-            </p>
-          </div>
-
-          <div className="mb-6">
-            <h3 className="text-lg font-black text-white mb-3 flex items-center gap-2">
-              <Target className="w-4 h-4 text-red-500" />
-              SPECIALIZATIONS
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {['Strength Training', 'Weight Loss', 'Nutrition', 'HIIT', 'Yoga', 'Bodybuilding'].map((spec, i) => (
-                <span key={i} className="px-3 py-1.5 bg-red-600/10 border border-red-600/30 rounded-full text-xs text-red-400">
-                  {spec}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div className="mb-6">
-            <h3 className="text-lg font-black text-white mb-3 flex items-center gap-2">
-              <Medal className="w-4 h-4 text-red-500" />
-              ACHIEVEMENTS
-            </h3>
-            <div className="space-y-2">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="flex items-center gap-2 text-sm text-gray-400">
-                  <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                  <span>Certified Personal Trainer (CPT)</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex gap-3">
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="flex-1 py-3 bg-gradient-to-r from-red-600 to-red-800 rounded-xl font-black tracking-widest text-sm"
-            >
-              BOOK SESSION
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="flex-1 py-3 border border-red-600 rounded-xl font-black tracking-widest text-sm hover:bg-red-600/10 transition-colors"
-            >
-              CONTACT
-            </motion.button>
           </div>
         </div>
       </motion.div>

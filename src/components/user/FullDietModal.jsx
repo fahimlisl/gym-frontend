@@ -27,9 +27,9 @@ export default function FullDietModal({ diet, onClose }) {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-5 text-sm">
           <Meta label="Goal" value={diet.goal} />
-          <Meta label="Calories" value={`${diet.calories} kcal`} />
+          <Meta label="Calories" value={`${Math.round(diet.calories)} kcal`} />
           <Meta label="Diet Type" value={diet.dietType} />
-          <Meta label="Meals / Day" value={diet.mealsPerDay} />
+          <Meta label="Meals / Day" value={Math.round(diet.mealsPerDay)} />
         </div>
 
         <div className="px-5 pb-2">
@@ -39,17 +39,17 @@ export default function FullDietModal({ diet, onClose }) {
           <div className="grid grid-cols-3 gap-3">
             <MacroCard
               label="Protein"
-              grams={diet.desiredMacros?.protein?.grams || 0}
+              grams={Math.round(diet.desiredMacros?.protein?.grams || 0)}
               color="red"
             />
             <MacroCard
               label="Carbs"
-              grams={diet.desiredMacros?.carbs?.grams || 0}
+              grams={Math.round(diet.desiredMacros?.carbs?.grams || 0)}
               color="yellow"
             />
             <MacroCard
               label="Fats"
-              grams={diet.desiredMacros?.fats?.grams || 0}
+              grams={Math.round(diet.desiredMacros?.fats?.grams || 0)}
               color="green"
             />
           </div>
@@ -129,16 +129,16 @@ function FoodRow({ food }) {
 
       <div className="flex items-center gap-3 text-xs text-gray-300">
         <span className="flex items-center gap-1" title="Calories">
-          <span>🔥</span> {food.calories}
+          <span>🔥</span> {Math.round(food.calories)}
         </span>
         <span className="flex items-center gap-1" title="Protein">
-          <span>💪</span> {food.protein}g
+          <span>💪</span> {Math.round(food.protein)}g
         </span>
         <span className="flex items-center gap-1" title="Carbs">
-          <span>🍞</span> {food.carbs}g
+          <span>🍞</span> {Math.round(food.carbs)}g
         </span>
         <span className="flex items-center gap-1" title="Fats">
-          <span>🧈</span> {food.fats}g
+          <span>🧈</span> {Math.round(food.fats)}g
         </span>
       </div>
     </div>

@@ -87,34 +87,34 @@ export default function DietChart() {
           <MetricCard
             icon={<Flame className="w-6 h-6" />}
             label="Daily Calories"
-            value={diet.calories}
+            value={Math.round(diet.calories)}
             unit="kcal"
             color="orange"
-            actual={stats.totalCalories}
+            actual={Math.round(stats.totalCalories)}
           />
           <MetricCard
             icon={<Beef className="w-6 h-6" />}
             label="Protein"
-            value={diet.desiredMacros?.protein?.grams || 0}
+            value={Math.round(diet.desiredMacros?.protein?.grams || 0)}
             unit="g"
             color="red"
-            actual={stats.totalProtein}
+            actual={Math.round(stats.totalProtein)}
           />
           <MetricCard
             icon={<Wheat className="w-6 h-6" />}
             label="Carbs"
-            value={diet.desiredMacros?.carbs?.grams || 0}
+            value={Math.round(diet.desiredMacros?.carbs?.grams || 0)}
             unit="g"
             color="yellow"
-            actual={stats.totalCarbs}
+            actual={Math.round(stats.totalCarbs)}
           />
           <MetricCard
             icon={<Droplet className="w-6 h-6" />}
             label="Fats"
-            value={diet.desiredMacros?.fats?.grams || 0}
+            value={Math.round(diet.desiredMacros?.fats?.grams || 0)}
             unit="g"
             color="green"
-            actual={stats.totalFats}
+            actual={Math.round(stats.totalFats)}
           />
         </div>
       </section>
@@ -122,9 +122,9 @@ export default function DietChart() {
       <section className="diet-chart-section animate-slide-up">
         <h2 className="diet-section-title">Macro Distribution</h2>
         <MacroChart 
-          protein={diet.desiredMacros?.protein?.grams || 0}
-          carbs={diet.desiredMacros?.carbs?.grams || 0}
-          fats={diet.desiredMacros?.fats?.grams || 0}
+          protein={Math.round(diet.desiredMacros?.protein?.grams || 0)}
+          carbs={Math.round(diet.desiredMacros?.carbs?.grams || 0)}
+          fats={Math.round(diet.desiredMacros?.fats?.grams || 0)}
         />
       </section>
 
@@ -252,7 +252,7 @@ function MacroChart({ protein, carbs, fats }) {
           </svg>
           <div className="macro-center">
             <p className="macro-center-label">Total</p>
-            <p className="macro-center-value">{protein + carbs + fats}g</p>
+            <p className="macro-center-value">{Math.round(protein + carbs + fats)}g</p>
           </div>
         </div>
       </div>
@@ -278,7 +278,7 @@ function MacroLegendItem({ label, value, unit, color }) {
       <div className="legend-dot"></div>
       <div className="legend-content">
         <p className="legend-label">{label}</p>
-        <p className="legend-value">{value}{unit}</p>
+        <p className="legend-value">{Math.round(value)}{unit}</p>
       </div>
     </div>
   );
@@ -313,10 +313,10 @@ function MealCardExpanded({ meal, index, isExpanded, onToggle }) {
         <div className="meal-header-right">
           <div className="meal-quick-stats">
             <span className="meal-stat">
-              <Flame className="w-4 h-4" /> {mealCalories}
+              <Flame className="w-4 h-4" /> {Math.round(mealCalories)}
             </span>
             <span className="meal-stat">
-              <Beef className="w-4 h-4" /> {mealProtein}g
+              <Beef className="w-4 h-4" /> {Math.round(mealProtein)}g
             </span>
           </div>
           <ChevronDown className={`meal-chevron ${isExpanded ? "rotated" : ""}`} />
@@ -351,19 +351,19 @@ function FoodItemRow({ food }) {
       <div className="food-macros">
         <div className="food-macro food-calories">
           <span className="macro-icon">🔥</span>
-          <span className="macro-value">{food.calories}</span>
+          <span className="macro-value">{Math.round(food.calories)}</span>
         </div>
         <div className="food-macro food-protein">
           <span className="macro-icon">💪</span>
-          <span className="macro-value">{food.protein}g</span>
+          <span className="macro-value">{Math.round(food.protein)}g</span>
         </div>
         <div className="food-macro food-carbs">
           <span className="macro-icon">🍞</span>
-          <span className="macro-value">{food.carbs}g</span>
+          <span className="macro-value">{Math.round(food.carbs)}g</span>
         </div>
         <div className="food-macro food-fats">
           <span className="macro-icon">🧈</span>
-          <span className="macro-value">{food.fats}g</span>
+          <span className="macro-value">{Math.round(food.fats)}g</span>
         </div>
       </div>
     </div>

@@ -6,6 +6,7 @@ import UserHeader from "../../components/user/UserHeader";
 import SubscriptionSection from "../../components/user/SubscriptionSection";
 import PTSection from "../../components/user/PTSection";
 import DietSection from "../../components/user/DietSection";
+import QRWidget from "../../components/user/QRWidget";
 
 export default function UserDashboard() {
   const [user, setUser] = useState(null);
@@ -54,7 +55,8 @@ export default function UserDashboard() {
       </div>
 
       <div className="mt-6">
-        <DietSection />
+        {/* <DietSection /> */}
+        <QRWidget />
       </div>
     </>
   );

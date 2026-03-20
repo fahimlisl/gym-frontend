@@ -58,6 +58,8 @@ import AdminOffer from "./pages/admin/AdminOffer.jsx";
 import AdminWorkoutTemplates from "./pages/admin/AdminWorkoutTemplates.jsx";
 import AdminEditWorkout from "./pages/admin/AdminEditWorkout.jsx";
 import UserWorkoutView from "./pages/user/UserWorkoutView.jsx";
+import MyQRPage from "./pages/user/MyQRPage.jsx";
+import ScannerPage from "./pages/ScannerPage.jsx";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -107,6 +109,7 @@ export default function App() {
       <ScrollToTop />
 
       <Routes>
+        <Route path="/scanner" element={<ScannerPage />} />
         {/* public */}
         <Route element={<PublicLayout />}>
           <Route path="/" element={<Home />} />
@@ -143,7 +146,7 @@ export default function App() {
           <Route path="/member/diet-chart" element={<DietChart />} />
           <Route path="/member/history" element={<SubscriptionHistory />} />
           <Route path="/member/workout-plans" element={<UserWorkoutView />} />
-          {/* <Route path="/member/workout-plans" element={<WorkoutPlans />} /> */}
+          <Route path="/member/my-qr" element={<MyQRPage />} />
         </Route>
 
         {/* admin */}
