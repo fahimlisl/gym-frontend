@@ -35,7 +35,7 @@ export default function TrainerCard({ trainer, onUpdate }) {
             {trainer.fullName}
           </p>
           <p className="text-xs text-gray-400">
-            {trainer.experience}
+            {trainer.experience} years
           </p>
         </div>
       </div>

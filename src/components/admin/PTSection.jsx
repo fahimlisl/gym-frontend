@@ -43,7 +43,7 @@ export default function PTSection({ pt, onAssign, onRenew, subscription }) {
             {current.trainer?.fullName.toUpperCase()}
           </p>
           <p className="text-xs text-gray-400">
-            {current.trainer?.experience?.toUpperCase() || "TRAINER"}
+            {current.trainer?.experience?.toUpperCase() || "TRAINER"} years
           </p>
         </div>
       </div>

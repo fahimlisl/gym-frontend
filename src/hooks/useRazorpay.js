@@ -87,10 +87,7 @@ const useRazorpay = () => {
         onError
       } = paymentConfig;
 
-      console.log('🔄 Step 1: Loading Razorpay script...');
       await loadRazorpayScript();
-
-      console.log('🔄 Step 2: Creating order...');
       const orderData = await createOrder(
         amount,
         'INR',
@@ -98,11 +95,9 @@ const useRazorpay = () => {
         productName
       );
 
-      console.log('✅ Order created:', orderData.orderId);
-      console.log('🔄 Step 3: Opening Razorpay checkout...');
+
 
       const options = {
-        // key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         key: import.meta.env.VITE_RAZORPAY_TEST_KEY_ID,
         amount: orderData.amount,
         currency: orderData.currency,
@@ -122,9 +117,11 @@ const useRazorpay = () => {
             });
 
             console.log('✅ Payment verified:', verificationResult);
+            setLoading(false);
             onSuccess(verificationResult);
           } catch (err) {
             console.error('❌ Verification failed:', err);
+            setLoading(false);
             setError(err.message);
             onError(err);
           }
@@ -134,6 +131,7 @@ const useRazorpay = () => {
           ondismiss: () => {
             console.log('❌ User closed payment modal');
             const dismissError = new Error('Payment modal closed by user');
+            setLoading(false);
             setError(dismissError.message);
             onError(dismissError);
           }

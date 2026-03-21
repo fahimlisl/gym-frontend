@@ -127,18 +127,15 @@ const RenewalBilling = () => {
     const generatedRef = `RENEWAL-${Date.now()}`;
     setRef(generatedRef);
 
-    console.log("💰 Renewal Payment Summary:");
-    console.log(`Plan: ${plan.title}`);
-    console.log(`Plan Price: ₹${plan.finalPrice}`);
-    console.log(`Discount: ₹${discount}`);
-    console.log(`Final Amount: ₹${finalPrice}`);
-    console.log(`Reference: ${generatedRef}`);
+    const user = await api.get(`/user/${"getProfile"}`)
+    const d = user.data.data;
 
     await handlePayment({
       amount: finalPrice,
       productName: `PT Renewal - ${plan.title}`,
-      userEmail: "user@example.com",
-      userName: "User",
+      userEmail: d.email,
+      userName: d.username, 
+      userPhone: d.phoneNumber,
       onSuccess: async (paymentResult) => {
         setPaymentStatus({
           status: "processing",

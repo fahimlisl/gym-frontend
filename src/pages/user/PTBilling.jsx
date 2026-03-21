@@ -110,21 +110,16 @@ export default function PTBilling() {
     }
     const generatedRef = `PT-${Date.now()}`;
     setRef(generatedRef);
-
-    console.log("💰 PT Payment Summary:");
-    console.log(`Plan: ${plan.title}`);
-    console.log(`Plan Price: ₹${plan.finalPrice}`);
-    console.log(`Discount: ₹${discount}`);
-    console.log(`Final Amount: ₹${finalPrice}`);
-    console.log(`Reference: ${generatedRef}`);
+    const user = await api.get(`/user/${"getProfile"}`)
+    const d = user.data.data;
 
     await handlePayment({
-      amount: Math.round(finalPrice), // ✅ Final amount after discount
+      amount: Math.round(finalPrice), 
       productName: `Personal Training - ${plan.title}`,
-      userEmail: "user@example.com", // Will be replaced by backend from JWT
-      userName: "User", // Will be replaced by backend from JWT
+      userEmail: d.email,
+      userName: d.username, 
+      userPhone: d.phoneNumber,
       onSuccess: async (paymentResult) => {
-        // ✅ Payment successful, now create temp PT bill and auto-approve
         setPaymentStatus({
           status: "processing",
           message: "Processing your request...",

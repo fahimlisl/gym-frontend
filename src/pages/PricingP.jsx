@@ -276,6 +276,7 @@ const handleStartNow = (plan) => {
       productName: `${selectedPlan.title} - ${selectedPlan.duration}`,
       userEmail: formData.email,
       userName: formData.fullName,
+      userPhone: formData.phoneNumber,
       onSuccess: async (paymentResult) => {
         setRegistrationStatus({
           status: "registering",
@@ -427,7 +428,7 @@ const handleStartNow = (plan) => {
               <button
                 onClick={() => setShowModal(false)}
                 className="text-gray-400 hover:text-white text-2xl"
-                disabled={loading || registrationStatus?.status === "registering" || checkingUser}
+                disabled={registrationStatus?.status === "registering" || checkingUser}
               >
                 ✕
               </button>
@@ -621,6 +622,23 @@ const handleStartNow = (plan) => {
                 {registrationStatus.status === "registering" && (
                   <div className="mt-4 flex justify-center">
                     <div className="animate-spin h-8 w-8 border-4 border-red-600 border-t-transparent rounded-full"></div>
+                  </div>
+                )}
+
+                {registrationStatus.status === "error" && (
+                  <div className="mt-4 flex gap-3">
+                    <button
+                      onClick={() => setRegistrationStatus(null)}
+                      className="flex-1 px-4 py-2 border border-white/20 text-white rounded-lg font-semibold hover:border-red-500 hover:bg-red-600/10 transition"
+                    >
+                      Try Again
+                    </button>
+                    <button
+                      onClick={() => setShowModal(false)}
+                      className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition"
+                    >
+                      Close
+                    </button>
                   </div>
                 )}
 

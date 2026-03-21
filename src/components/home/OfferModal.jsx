@@ -32,7 +32,6 @@ export default function OfferModal() {
         return true;
       });
       
-      console.log("Active offers:", activeOffers); 
       
       if (activeOffers.length > 0) {
         const timer = setTimeout(() => {
