@@ -29,8 +29,10 @@ export default function UserDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-neutral-950 flex items-center justify-center
-                      text-gray-500 tracking-widest">
+      <div
+        className="min-h-screen bg-neutral-950 flex items-center justify-center
+                      text-gray-500 tracking-widest"
+      >
         LOADING DASHBOARD...
       </div>
     );
@@ -38,8 +40,10 @@ export default function UserDashboard() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-neutral-950 flex items-center justify-center
-                      text-red-500 tracking-widest">
+      <div
+        className="min-h-screen bg-neutral-950 flex items-center justify-center
+                      text-red-500 tracking-widest"
+      >
         USER NOT FOUND
       </div>
     );
@@ -47,11 +51,16 @@ export default function UserDashboard() {
 
   return (
     <>
-      <UserHeader user={user} />
+      <UserHeader
+        user={user}
+        onAvatarUpdate={(updater) =>
+          setUser((prev) => ({ ...prev, avatar: updater(prev).avatar }))
+        }
+      />
 
       <div className="grid lg:grid-cols-2 gap-6 mt-8">
         <SubscriptionSection subscription={user.subscription} />
-        <PTSection pt={user.personalTraning} subscription={user.subscription}/>
+        <PTSection pt={user.personalTraning} subscription={user.subscription} />
       </div>
 
       <div className="mt-6">
