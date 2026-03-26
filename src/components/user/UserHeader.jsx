@@ -33,10 +33,10 @@ export default function UserHeader({ user, onAvatarUpdate }) {
         ...prev,
         avatar: res.data.data.avatar,
       }));
-      setPreviewUrl(null); 
+      setPreviewUrl(null);
     } catch (err) {
       toast.error(err?.response?.data?.message || "Failed to update photo");
-      setPreviewUrl(null); 
+      setPreviewUrl(null);
     } finally {
       setUploading(false);
       e.target.value = "";
@@ -54,13 +54,13 @@ export default function UserHeader({ user, onAvatarUpdate }) {
     <div className="relative overflow-hidden border border-red-600/30 bg-gradient-to-br from-black via-neutral-900 to-black rounded-xl">
       <div className="h-px bg-gradient-to-r from-transparent via-red-600/60 to-transparent" />
 
-      <div className="p-6 sm:p-8 flex flex-col sm:flex-row items-center sm:items-start gap-6">
+      <div className="p-4 sm:p-8 flex flex-row sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
         <div className="relative flex-shrink-0 group">
           <motion.div
             whileHover={{ scale: uploading ? 1 : 1.03 }}
             transition={{ duration: 0.2 }}
             onClick={handleAvatarClick}
-            className={`relative w-24 h-24 rounded-full cursor-pointer ${
+            className={`relative w-14 h-14 sm:w-24 sm:h-24 rounded-full cursor-pointer ${
               uploading ? "cursor-wait" : "cursor-pointer"
             }`}
           >
@@ -107,32 +107,31 @@ export default function UserHeader({ user, onAvatarUpdate }) {
           />
         </div>
 
-        <div className="flex-1 min-w-0 text-center sm:text-left">
-          <div className="flex items-center justify-center sm:justify-start gap-3 mb-1">
-            <h1 className="text-2xl font-black tracking-widest truncate">
+        <div className="flex-1 min-w-0 text-left">
+          <div className="flex items-center gap-2 mb-0.5">
+            <h1 className="text-base sm:text-2xl font-black tracking-widest truncate">
               {(user.username || "MEMBER").toUpperCase()}
             </h1>
-            <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border border-green-500/30 bg-green-500/10 text-green-400 text-[10px] font-bold tracking-widest flex-shrink-0">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-green-500/30 bg-green-500/10 text-green-400 text-[9px] font-bold tracking-widest flex-shrink-0">
+              <span className="w-1 h-1 rounded-full bg-green-400 animate-pulse" />
               ACTIVE
             </span>
           </div>
 
-          <p className="text-sm text-gray-400 mb-0.5 truncate">{user.email}</p>
-          <p className="text-xs text-gray-500 tracking-wider">
-            {user.phoneNumber}
-          </p>
-
-          <div className="mt-3 sm:hidden flex justify-center">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-green-500/30 bg-green-500/10 text-green-400 text-[10px] font-bold tracking-widest">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-              ACTIVE MEMBER
+          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+            <p className="text-[11px] sm:text-sm text-gray-400 truncate">
+              {user.email}
+            </p>
+            <span className="text-gray-600 text-[10px] hidden xs:inline">
+              ·
             </span>
+            <p className="text-[11px] sm:text-xs text-gray-500 tracking-wider">
+              {user.phoneNumber}
+            </p>
           </div>
-
-          <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/10 bg-white/5">
-            <Shield className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />
-            <span className="text-[10px] text-gray-500 tracking-widest font-mono truncate">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-white/10 bg-white/5">
+            <Shield className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-red-500 flex-shrink-0" />
+            <span className="text-[9px] sm:text-[10px] text-gray-500 tracking-widest font-mono truncate">
               ID:{" "}
               {String(user._id || "")
                 .slice(-10)

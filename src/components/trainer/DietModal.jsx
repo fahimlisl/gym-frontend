@@ -235,6 +235,7 @@ export default function DietModal({ studentId, onClose }) {
     try {
       const res = await api.get("/trainer/getAllFoods");
       setFoodDatabase(res.data.data);
+      // setSearchResults(res.data.data);
     } catch (err) {
       console.error("Failed to fetch foods", err);
       toast.error("Could not load food database");
@@ -242,14 +243,15 @@ export default function DietModal({ studentId, onClose }) {
   };
 
   const searchFoods = () => {
-    if (!searchQuery.trim()) return;
-    setSearching(true);
-    const filtered = foodDatabase.filter((food) =>
-      food.foodName.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-    setSearchResults(filtered);
-    setSearching(false);
-  };
+  if (!searchQuery.trim()) {
+    setSearchResults(foodDatabase); // show all on empty search
+    return;
+  }
+  const filtered = foodDatabase.filter((food) =>
+    food.foodName.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  setSearchResults(filtered);
+};
 
   const adjustMacro = (type, direction) => {
     if (isApproved) return toast.error("Cannot edit approved diet");
@@ -886,7 +888,19 @@ export default function DietModal({ studentId, onClose }) {
                         type="text"
                         placeholder="e.g., chicken, rice..."
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        // onChange={(e) => setSearchQuery(e.target.value)}
+                        onChange={(e) => {
+                        const val = e.target.value;
+                        setSearchQuery(val);
+                        if (val.trim()) {
+                          const filtered = foodDatabase.filter((food) =>
+                            food.foodName.toLowerCase().includes(val.toLowerCase())
+                          );
+                          setSearchResults(filtered);
+                        } else {
+                          setSearchResults([]);
+                        }
+                        }}
                         onKeyDown={(e) => e.key === "Enter" && searchFoods()}
                         className="w-full bg-black/90 border border-red-600/30 rounded-xl pl-4 pr-10 py-3 text-sm text-gray-300 placeholder:text-gray-700 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 outline-none transition-all"
                       />

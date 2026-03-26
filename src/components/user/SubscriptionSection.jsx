@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { isDeltaZero, motion } from "framer-motion";
 import { 
   Calendar, 
   CreditCard,
@@ -25,6 +25,8 @@ export default function SubscriptionSection({ subscription }) {
 
   const currentSub = subscription?.subscription?.[subscription?.subscription?.length - 1];
   const isExpired = currentSub ? new Date(currentSub.endDate) < new Date() : false;
+  // const isExpired = currentSub?.status === "expired" ? true  : false
+  // const isExpired = currentSub?.status === "expired" ? new Date(currentSub.endDate) < new Date() : false
 
   if (!currentSub) {
     return <EmptyState />;
@@ -68,7 +70,7 @@ export default function SubscriptionSection({ subscription }) {
           
           {subscription?.subscription?.length > 1 && (
             <Link 
-              to="/member/subscription-history"
+              to="/member/history"
               className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full border border-red-600/30 bg-red-600/10 hover:bg-red-600/20 transition-all duration-300 group"
             >
               <span className="text-xs font-black text-red-400 group-hover:text-red-300 transition-colors">VIEW HISTORY</span>

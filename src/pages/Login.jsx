@@ -31,7 +31,7 @@ const resetSchema = z
   });
 
 export default function Login() {
-  const [role, setRole] = useState("admin");
+  const [role, setRole] = useState("member");
   const [showForgot, setShowForgot] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
   const [step, setStep] = useState(1);
@@ -125,8 +125,12 @@ export default function Login() {
       setShowForgot(false);
       resetForm();
     } catch (err) {
+
+      // const backendMessage =  err?.response?.data?.message || err?.response?.data?.errors?.[0] || err?.message || "Reset failed";
+      
       toast.error(
-        err?.response?.data?.message || "Reset failed"
+        // backendMessage
+        "otp mismatch"
       );
     }
   };

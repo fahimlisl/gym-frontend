@@ -20,31 +20,29 @@ export default function OfferModal() {
 
   useEffect(() => {
     const seenOffer = sessionStorage.getItem("offerSeen");
-    
+
     if (!seenOffer && offers.length > 0 && !loading) {
       const now = new Date();
-      const activeOffers = offers.filter(o => {
+      const activeOffers = offers.filter((o) => {
         if (o.isActive !== true) return false;
-        
         if (o.startDate && new Date(o.startDate) > now) return false;
         if (o.expiryDate && new Date(o.expiryDate) < now) return false;
-        
         return true;
       });
-      
-      
+
       if (activeOffers.length > 0) {
         const timer = setTimeout(() => {
-          const randomOffer = activeOffers[Math.floor(Math.random() * activeOffers.length)];
+          const randomOffer =
+            activeOffers[Math.floor(Math.random() * activeOffers.length)];
           setSelectedOffer(randomOffer);
-          
-          const coupon = coupons.find(c => c.code === randomOffer.coupon);
+
+          const coupon = coupons.find((c) => c.code === randomOffer.coupon);
           setAssociatedCoupon(coupon || null);
-          
+
           setIsOpen(true);
           sessionStorage.setItem("offerSeen", "true");
         }, 1000);
-        
+
         return () => clearTimeout(timer);
       }
     }
@@ -56,21 +54,22 @@ export default function OfferModal() {
       const offersRes = await api.get("/general/offer/fetch/all");
       const offersData = offersRes.data.data || [];
       setOffers(offersData);
-      const couponCodes = [...new Set(offersData.map(o => o.coupon).filter(Boolean))];
-      
+      const couponCodes = [
+        ...new Set(offersData.map((o) => o.coupon).filter(Boolean)),
+      ];
+
       if (couponCodes.length > 0) {
-        const couponPromises = couponCodes.map(code => 
+        const couponPromises = couponCodes.map((code) =>
           api.post("/general/coupon", { code }).catch(() => null)
         );
-        
+
         const couponResults = await Promise.all(couponPromises);
         const fetchedCoupons = couponResults
-          .filter(res => res && res.data && res.data.data)
-          .map(res => res.data.data);
-        
+          .filter((res) => res && res.data && res.data.data)
+          .map((res) => res.data.data);
+
         setCoupons(fetchedCoupons);
       }
-      
     } catch (err) {
       console.error("Error fetching offers:", err);
     } finally {
@@ -80,11 +79,10 @@ export default function OfferModal() {
 
   const calculateRemainingSlots = (offer) => {
     if (!offer || !offer.totalSlots) return 0;
-    const coupon = coupons.find(c => c.code === offer.coupon);
+    const coupon = coupons.find((c) => c.code === offer.coupon);
     if (coupon && coupon.usageLimit) {
       return Math.max(0, coupon.usageLimit - (coupon.usedCount || 0));
     }
-    
     return offer.totalSlots;
   };
 
@@ -114,194 +112,413 @@ export default function OfferModal() {
   const remainingSlots = calculateRemainingSlots(selectedOffer);
   const percentageUsed = calculatePercentage(selectedOffer);
   const discountText = getDiscountText(selectedOffer);
-  
-  const isExpiringSoon = selectedOffer.expiryDate && 
+
+  const isExpiringSoon =
+    selectedOffer.expiryDate &&
     new Date(selectedOffer.expiryDate) - new Date() < 7 * 24 * 60 * 60 * 1000;
+  const backdropVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { duration: 0.4, ease: "easeOut" },
+    },
+    exit: {
+      opacity: 0,
+      transition: { duration: 0.3, ease: "easeIn" },
+    },
+  };
+
+  const modalVariants = {
+    hidden: {
+      opacity: 0,
+      scale: 0.92,
+      y: 40,
+      filter: "blur(8px)",
+    },
+    visible: {
+      opacity: 1,
+      scale: 1,
+      y: 0,
+      filter: "blur(0px)",
+      transition: {
+        type: "spring",
+        damping: 24,
+        stiffness: 350,
+        duration: 0.5,
+        filter: { duration: 0.3 },
+      },
+    },
+    exit: {
+      opacity: 0,
+      scale: 0.96,
+      y: 20,
+      filter: "blur(4px)",
+      transition: {
+        duration: 0.25,
+        ease: "easeIn",
+      },
+    },
+  };
+
+  const badgeVariants = {
+    hidden: { opacity: 0, x: -20, filter: "blur(4px)" },
+    visible: {
+      opacity: 1,
+      x: 0,
+      filter: "blur(0px)",
+      transition: { delay: 0.2, duration: 0.4, ease: "easeOut" },
+    },
+  };
+
+  const titleVariants = {
+    hidden: { opacity: 0, y: 30, filter: "blur(4px)" },
+    visible: {
+      opacity: 1,
+      y: 0,
+      filter: "blur(0px)",
+      transition: {
+        delay: 0.25,
+        duration: 0.5,
+        ease: [0.21, 0.78, 0.35, 1.02],
+      },
+    },
+  };
+
+  const descriptionVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { delay: 0.35, duration: 0.4, ease: "easeOut" },
+    },
+  };
+
+  const infoCardVariants = {
+    hidden: { opacity: 0, x: -15, scale: 0.98 },
+    visible: (custom) => ({
+      opacity: 1,
+      x: 0,
+      scale: 1,
+      transition: {
+        delay: 0.4 + custom * 0.05,
+        duration: 0.4,
+        ease: "easeOut",
+      },
+    }),
+  };
+
+  const slotsVariants = {
+    hidden: { opacity: 0, y: 20, scale: 0.98 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: { delay: 0.6, duration: 0.45, ease: "easeOut" },
+    },
+  };
+
+  const buttonVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { delay: 0.7, duration: 0.4, ease: "easeOut" },
+    },
+    hover: {
+      scale: 1.02,
+      y: -2,
+      transition: { duration: 0.2, ease: "easeOut" },
+    },
+    tap: {
+      scale: 0.98,
+      transition: { duration: 0.1 },
+    },
+  };
+
+  const secondaryButtonVariants = {
+    hover: {
+      scale: 1.02,
+      backgroundColor: "rgba(255, 255, 255, 0.15)",
+      transition: { duration: 0.2 },
+    },
+    tap: { scale: 0.98 },
+  };
+
+  const footerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { delay: 0.85, duration: 0.3 },
+    },
+  };
 
   return (
-    <AnimatePresence>
+    <AnimatePresence mode="wait">
       {isOpen && (
         <>
+          {/* Backdrop */}
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            variants={backdropVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
             onClick={() => setIsOpen(false)}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+            className="fixed inset-0 bg-black/70 backdrop-blur-md z-40"
           />
 
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            variants={modalVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto pointer-events-none"
           >
-            <div className="relative w-full max-w-md overflow-hidden rounded-2xl bg-gradient-to-br from-black via-neutral-900 to-black border border-red-600/30 shadow-2xl">
-              <div className="absolute inset-0">
-                <div className="absolute -top-40 -right-40 w-80 h-80 bg-red-600/20 rounded-full blur-3xl animate-pulse" />
-                <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-red-600/10 rounded-full blur-3xl animate-pulse animation-delay-2000" />
-              </div>
+            <div className="relative w-full max-w-md max-h-[98vh] overflow-y-auto overflow-x-hidden rounded-3xl bg-gradient-to-br from-neutral-900 via-black to-neutral-900 border border-white/20 shadow-2xl pointer-events-auto">
 
-              <div className="absolute inset-0">
-                <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-red-600 to-transparent" />
-                <div className="absolute bottom-0 right-0 w-full h-px bg-gradient-to-l from-transparent via-red-600 to-transparent" />
-              </div>
-
-              {/* Close Button */}
-              {/* <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setIsOpen(false)}
-                className="absolute top-4 right-4 z-10 p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
+              <motion.div
+                className="absolute inset-0 pointer-events-none"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.6 }}
               >
-                {/* <X className="w-5 h-5 text-gray-400" /> */}
-              {/* </motion.button> */} 
+                <div className="absolute -top-40 -right-40 w-80 h-80 bg-red-600/30 rounded-full blur-3xl animate-pulse" />
+                <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-orange-600/20 rounded-full blur-3xl animate-pulse animation-delay-2000" />
+                <motion.div
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-red-500/5 rounded-full blur-3xl"
+                  animate={{
+                    scale: [1, 1.1, 1],
+                    opacity: [0.3, 0.5, 0.3],
+                  }}
+                  transition={{
+                    duration: 4,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                />
+              </motion.div>
+
+              <div className="absolute inset-0 pointer-events-none">
+                <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-red-500 to-transparent" />
+                <div className="absolute bottom-0 right-0 w-full h-px bg-gradient-to-l from-transparent via-red-500 to-transparent" />
+              </div>
+
+              <motion.button
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.1, duration: 0.2 }}
+                whileHover={{ scale: 1.1, rotate: 90 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setIsOpen(false)}
+                className="absolute top-4 right-4 z-20 p-2 rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur-sm transition-all duration-200"
+              >
+                <X className="w-5 h-5 text-gray-400 hover:text-white transition-colors" />
+              </motion.button>
 
               <div className="relative z-10 p-8 sm:p-10">
                 <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className="inline-flex items-center gap-2 mb-6 px-3 py-1 rounded-full bg-red-600/20 border border-red-600/50"
+                  variants={badgeVariants}
+                  initial="hidden"
+                  animate="visible"
+                  className="inline-flex items-center gap-2 mb-6 px-4 py-1.5 rounded-full bg-gradient-to-r from-red-600/20 to-orange-600/20 border border-red-600/50 shadow-lg"
                 >
-                  <Flame className="w-4 h-4 text-red-500" />
+                  <motion.div
+                    animate={{
+                      scale: [1, 1.1, 1],
+                      rotate: [0, 5, -5, 0],
+                    }}
+                    transition={{ duration: 1, repeat: Infinity, repeatDelay: 3 }}
+                  >
+                    <Flame className="w-4 h-4 text-red-500" />
+                  </motion.div>
                   <span className="text-xs font-black text-red-400 tracking-wider">
                     {selectedOffer.badgeText || "LIMITED TIME OFFER"}
                   </span>
                 </motion.div>
 
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
+                  variants={titleVariants}
+                  initial="hidden"
+                  animate="visible"
                 >
                   <h2 className="text-3xl sm:text-4xl font-black mb-2 text-white tracking-tight">
-                    <span className="bg-gradient-to-r from-red-500 via-red-400 to-orange-500 bg-clip-text text-transparent">
+                    <span className="bg-gradient-to-r from-red-500 via-red-400 to-orange-500 bg-clip-text text-transparent animate-gradient-x bg-[length:200%_auto]">
                       {selectedOffer.title}
                     </span>
                   </h2>
-                  <p className="text-base text-gray-300 mb-6">
-                    {selectedOffer.description || `Get ${discountText} on membership`}
+                </motion.div>
+
+                <motion.p
+                  variants={descriptionVariants}
+                  initial="hidden"
+                  animate="visible"
+                  className="text-base text-gray-300 mb-6 leading-relaxed"
+                >
+                  {selectedOffer.description || `Get ${discountText} on membership`}
+                </motion.p>
+
+                <motion.div className="space-y-3 mb-8">
+                  {[
+                    {
+                      icon: Tag,
+                      color: "green",
+                      title: discountText,
+                      subtitle:
+                        selectedOffer.discountType === "percentage"
+                          ? `Max discount ₹${selectedOffer.maxDiscount || "∞"}`
+                          : `Flat ₹${selectedOffer.discountValue} off`,
+                    },
+                    selectedOffer.minAmount > 0 && {
+                      icon: Zap,
+                      color: "blue",
+                      title: "MINIMUM PURCHASE",
+                      subtitle: `₹${selectedOffer.minAmount} or more`,
+                    },
+                    isExpiringSoon && {
+                      icon: Clock,
+                      color: "purple",
+                      title: "EXPIRING SOON",
+                      subtitle: new Date(
+                        selectedOffer.expiryDate
+                      ).toLocaleDateString(),
+                    },
+                    {
+                      icon: Gift,
+                      color: "red",
+                      title: "TOTAL SLOTS",
+                      subtitle: `${selectedOffer.totalSlots} memberships available`,
+                    },
+                  ]
+                    .filter(Boolean)
+                    .map((item, idx) => (
+                      <motion.div
+                        key={idx}
+                        custom={idx}
+                        variants={infoCardVariants}
+                        initial="hidden"
+                        animate="visible"
+                        whileHover={{ scale: 1.02, x: 5 }}
+                        transition={{
+                          type: "spring",
+                          stiffness: 400,
+                          damping: 25,
+                        }}
+                        className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10 hover:border-white/20 transition-all duration-300"
+                      >
+                        <motion.div
+                          className={`p-2 rounded-lg bg-${item.color}-600/20`}
+                          whileHover={{ scale: 1.05, rotate: 5 }}
+                        >
+                          <item.icon
+                            className={`w-4 h-4 text-${item.color}-400`}
+                          />
+                        </motion.div>
+                        <div className="flex-1">
+                          <p className="text-sm font-black text-white">
+                            {item.title}
+                          </p>
+                          <p className="text-xs text-gray-400">{item.subtitle}</p>
+                        </div>
+                      </motion.div>
+                    ))}
+                </motion.div>
+
+                <motion.div
+                  variants={slotsVariants}
+                  initial="hidden"
+                  animate="visible"
+                  className="mb-8 p-5 rounded-2xl bg-gradient-to-r from-red-600/10 to-orange-600/10 border border-red-600/30 backdrop-blur-sm"
+                >
+                  <p className="text-xs text-gray-400 mb-1 font-medium tracking-wider">
+                    MEMBERSHIPS REMAINING
                   </p>
-                </motion.div>
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 }}
-                  className="space-y-3 mb-8"
-                >
-                  <div className="flex items-center gap-3 p-3 rounded-lg bg-white/5 border border-white/10">
-                    <div className="p-2 rounded-lg bg-green-600/20">
-                      <Tag className="w-4 h-4 text-green-400" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-black text-white">{discountText}</p>
-                      <p className="text-xs text-gray-500">
-                        {selectedOffer.discountType === "percentage" 
-                          ? `Max discount ₹${selectedOffer.maxDiscount || '∞'}` 
-                          : `Flat ₹${selectedOffer.discountValue} off`}
-                      </p>
-                    </div>
-                  </div>
-
-                  {selectedOffer.minAmount > 0 && (
-                    <div className="flex items-center gap-3 p-3 rounded-lg bg-white/5 border border-white/10">
-                      <div className="p-2 rounded-lg bg-blue-600/20">
-                        <Zap className="w-4 h-4 text-blue-400" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-black text-white">MINIMUM PURCHASE</p>
-                        <p className="text-xs text-gray-500">₹{selectedOffer.minAmount} or more</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {isExpiringSoon && (
-                    <div className="flex items-center gap-3 p-3 rounded-lg bg-white/5 border border-white/10">
-                      <div className="p-2 rounded-lg bg-purple-600/20">
-                        <Clock className="w-4 h-4 text-purple-400" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-black text-white">EXPIRING SOON</p>
-                        <p className="text-xs text-gray-500">
-                          {new Date(selectedOffer.expiryDate).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="flex items-center gap-3 p-3 rounded-lg bg-white/5 border border-white/10">
-                    <div className="p-2 rounded-lg bg-red-600/20">
-                      <Gift className="w-4 h-4 text-red-400" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-black text-white">TOTAL SLOTS</p>
-                      <p className="text-xs text-gray-500">{selectedOffer.totalSlots} memberships available</p>
-                    </div>
-                  </div>
-                </motion.div>
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5 }}
-                  className="mb-8 p-4 rounded-xl bg-gradient-to-r from-red-600/10 to-orange-600/10 border border-red-600/30"
-                >
-                  <p className="text-xs text-gray-400 mb-1 font-medium">MEMBERSHIPS REMAINING</p>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-3xl font-black text-red-500">{associatedCoupon.usedCount}</span>
-                    <span className="text-gray-500">/{selectedOffer.totalSlots}</span>
+                    <motion.span
+                      className="text-3xl font-black text-red-500"
+                      initial={{ scale: 0.5, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{
+                        delay: 0.65,
+                        type: "spring",
+                        stiffness: 300,
+                      }}
+                    >
+                      {selectedOffer.totalSlots - remainingSlots}
+                    </motion.span>
+                    <span className="text-gray-500 font-medium">
+                      /{selectedOffer.totalSlots}
+                    </span>
                   </div>
-                  <div className="mt-3 w-full bg-neutral-800 rounded-full h-2 overflow-hidden">
+                  <div className="mt-3 w-full bg-neutral-800/80 rounded-full h-2.5 overflow-hidden">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${percentageUsed}%` }}
-                      transition={{ delay: 0.6, duration: 1 }}
-                      className="h-full bg-gradient-to-r from-red-600 to-orange-500"
+                      transition={{
+                        delay: 0.7,
+                        duration: 1.2,
+                        ease: [0.34, 1.2, 0.64, 1],
+                      }}
+                      className="h-full bg-gradient-to-r from-red-600 to-orange-500 rounded-full"
                     />
                   </div>
 
                   {associatedCoupon && associatedCoupon.usageLimit > 0 && (
-                    <p className="text-xs text-gray-400 mt-2">
-                      Coupon used: {associatedCoupon.usedCount || 0}/{associatedCoupon.usageLimit} times
-                    </p>
+                    <motion.p
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.85 }}
+                      className="text-xs text-gray-400 mt-2"
+                    >
+                      Coupon used: {associatedCoupon.usedCount || 0}/
+                      {associatedCoupon.usageLimit} times
+                    </motion.p>
                   )}
                 </motion.div>
+
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.6 }}
+                  variants={buttonVariants}
+                  initial="hidden"
+                  animate="visible"
                   className="space-y-3"
                 >
                   <motion.button
-                    whileHover={{ scale: 1.02, y: -2 }}
-                    whileTap={{ scale: 0.98 }}
+                    variants={buttonVariants}
+                    whileHover="hover"
+                    whileTap="tap"
                     onClick={handleGetOffer}
-                    className="w-full group relative overflow-hidden rounded-xl bg-gradient-to-r from-red-600 to-red-800 px-6 py-4 font-black text-white tracking-wider text-sm transition-all duration-300"
+                    className="w-full group relative overflow-hidden rounded-xl bg-gradient-to-r from-red-600 to-red-800 px-6 py-4 font-black text-white tracking-wider text-sm shadow-lg shadow-red-600/30"
                   >
-                    <span className="absolute inset-0 bg-gradient-to-r from-red-800 to-red-600 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <span className="relative flex items-center justify-center gap-2">
+                    <motion.span
+                      className="absolute inset-0 bg-gradient-to-r from-red-800 via-red-700 to-red-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                      initial={false}
+                    />
+                    <motion.span
+                      className="relative flex items-center justify-center gap-2"
+                      whileHover={{ gap: "0.75rem" }}
+                    >
                       CLAIM YOUR {discountText}
-                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                    </span>
+                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-200" />
+                    </motion.span>
                   </motion.button>
 
                   <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                    variants={secondaryButtonVariants}
+                    whileHover="hover"
+                    whileTap="tap"
                     onClick={() => setIsOpen(false)}
-                    className="w-full px-6 py-3 rounded-xl border border-white/20 bg-white/5 hover:bg-white/10 font-black text-white text-sm transition-all duration-300"
+                    className="w-full px-6 py-3 rounded-xl border border-white/20 bg-white/5 hover:bg-white/10 font-black text-white text-sm transition-all duration-200"
                   >
                     MAYBE LATER
                   </motion.button>
                 </motion.div>
+
                 <motion.p
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.7 }}
+                  variants={footerVariants}
+                  initial="hidden"
+                  animate="visible"
                   className="mt-6 text-center text-xs text-gray-500"
                 >
-                  Limited time offer • Valid for {selectedOffer.category.toLowerCase()}
+                  Limited time offer • Valid for{" "}
+                  {selectedOffer.category.toLowerCase()}
                 </motion.p>
               </div>
             </div>

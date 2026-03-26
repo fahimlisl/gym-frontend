@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 
 export default function MemberCard({ user, latestStatus }) {
-  const hasPT = Boolean(user.personalTraning);
+  const hasPT = user?.personalTraning?.subscription[user?.personalTraning?.subscription.length - 1].status;
   const isExpired = latestStatus === "expired";
 
   return (
@@ -57,7 +57,7 @@ export default function MemberCard({ user, latestStatus }) {
 
           <div className="flex gap-2 mt-2 flex-wrap">
             <Badge text="MEMBER" />
-            {hasPT
+            {hasPT === "active"
               ? <Badge text="PT ACTIVE" active />
               : <Badge text="NO PT" />}
             {isExpired && <Badge text="EXPIRED" danger />}

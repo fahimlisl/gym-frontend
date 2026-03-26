@@ -47,7 +47,7 @@ export default function Members() {
   const filteredUsers = useMemo(() => {
     return users.filter((u) => {
       const status = getLatestStatus(u);
-      const hasPT = Boolean(u.personalTraning);
+      const hasPT = u?.personalTraning?.subscription[u?.personalTraning?.subscription.length - 1].status;
 
       const matchesSearch =
         u.username?.toLowerCase().includes(search.toLowerCase());
@@ -62,7 +62,7 @@ export default function Members() {
           matchesFilter = status === "active";
           break;
         case "withPT":
-          matchesFilter = hasPT;
+          matchesFilter = hasPT === "active";
           break;
         case "withoutPT":
           matchesFilter = !hasPT;

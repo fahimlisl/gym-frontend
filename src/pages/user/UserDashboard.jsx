@@ -58,15 +58,15 @@ export default function UserDashboard() {
         }
       />
 
-      <div className="grid lg:grid-cols-2 gap-6 mt-8">
+      <div className="mt-4">
+        {/* <DietSection /> */}
+        <QRWidget />
+      </div>
+      <div className="grid lg:grid-cols-2 gap-6 mt-4">
         <SubscriptionSection subscription={user.subscription} />
         <PTSection pt={user.personalTraning} subscription={user.subscription} />
       </div>
 
-      <div className="mt-6">
-        {/* <DietSection /> */}
-        <QRWidget />
-      </div>
     </>
   );
 }
