@@ -5,7 +5,7 @@ import { X, Loader, ChevronRight, AlertCircle } from "lucide-react";
 import api from "../../api/axios.api";
 
 // hardcoded admission fee
-const ADMISSION_FEE = 1000;
+const ADMISSION_FEE = 1099;
 
 function Modal({ title, children, onClose }) {
   useEffect(() => {

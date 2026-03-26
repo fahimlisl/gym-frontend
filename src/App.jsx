@@ -60,6 +60,7 @@ import AdminEditWorkout from "./pages/admin/AdminEditWorkout.jsx";
 import UserWorkoutView from "./pages/user/UserWorkoutView.jsx";
 import MyQRPage from "./pages/user/MyQRPage.jsx";
 import ScannerPage from "./pages/ScannerPage.jsx";
+import SuppBillsAdmin from "./pages/admin/SuppBillsAdmin.jsx";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -154,6 +155,7 @@ export default function App() {
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="supplements" element={<AdminSupplements />} />
           <Route path="supplements/add" element={<AddSupplement />} />
+          <Route path="supplement/request" element={<SuppBillsAdmin />} />
 
           <Route path="members" element={<Members />} />
           <Route path="members/:id" element={<UserDetail />} />

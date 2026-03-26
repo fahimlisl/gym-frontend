@@ -16,7 +16,7 @@ export default function PricingCard({
       ? Math.round(((basePrice - price) / basePrice) * 100)
       : null;
 
-  const ADMISSION_FEE = 1000; // Fixed admission fee
+  const ADMISSION_FEE = 1099; 
 
   return (
     <div

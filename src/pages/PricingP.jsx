@@ -11,7 +11,7 @@ export default function PricingP() {
   const { handlePayment, loading, error, setError } = useRazorpay();
 
   // hard coded admission fee
-  const ADMISSION_FEE = 1000;
+  const ADMISSION_FEE = 1099;
 
   const [billing, setBilling] = useState("SUBSCRIPTION");
   const [plans, setPlans] = useState([]);
