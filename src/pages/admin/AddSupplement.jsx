@@ -16,16 +16,24 @@ export default function AddSupplement() {
 
     formData.append("productName", form.productName.value);
     formData.append("category", form.category.value);
-    formData.append("price", form.price.value);
+    formData.append("salePrice", form.salePrice.value);
+    formData.append("purchasePrice", form.purchasePrice.value);
+    formData.append("quantity", form.quantity.value);
     formData.append("description", form.description.value);
+    
+    // Barcode is optional
+    if (form.barcode.value) {
+      formData.append("barcode", form.barcode.value);
+    }
 
+    // Append images
     for (let file of form.images.files) {
       formData.append("images", file);
     }
 
     try {
       await addSupplement(formData);
-      toast.success("Supplement added");
+      toast.success("Supplement added successfully");
       navigate("/admin/supplements");
     } catch (err) {
       toast.error(
@@ -68,12 +76,42 @@ export default function AddSupplement() {
           <option>Fish Oil</option>
         </select>
 
+        <div className="grid grid-cols-2 gap-4">
+          <input
+            type="number"
+            name="salePrice"
+            placeholder="Sale Price"
+            step="0.01"
+            min="0"
+            className="w-full bg-neutral-900 border border-white/10 px-4 py-3"
+            required
+          />
+
+          <input
+            type="number"
+            name="purchasePrice"
+            placeholder="Purchase Price"
+            step="0.01"
+            min="0"
+            className="w-full bg-neutral-900 border border-white/10 px-4 py-3"
+            required
+          />
+        </div>
+
         <input
           type="number"
-          name="price"
-          placeholder="Price"
+          name="quantity"
+          placeholder="Quantity"
+          min="1"
           className="w-full bg-neutral-900 border border-white/10 px-4 py-3"
           required
+        />
+
+        <input
+          type="text"
+          name="barcode"
+          placeholder="Barcode (Optional)"
+          className="w-full bg-neutral-900 border border-white/10 px-4 py-3"
         />
 
         <textarea
@@ -95,7 +133,7 @@ export default function AddSupplement() {
 
         <button
           disabled={loading}
-          className="bg-red-600 w-full py-3 font-extrabold"
+          className="bg-red-600 w-full py-3 font-extrabold disabled:opacity-50"
         >
           {loading ? "ADDING..." : "ADD SUPPLEMENT"}
         </button>

@@ -302,6 +302,7 @@ export default function Coupon() {
                 <option value="SUBSCRIPTION">SUBSCRIPTION</option>
                 <option value="PERSONAL TRAINING">PERSONAL TRAINING</option>
                 <option value="ADMISSION">ADMISSION</option>
+                <option value="SUPPLEMENT">SUPPLEMENT</option>
               </select>
 
               <input

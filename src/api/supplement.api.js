@@ -39,3 +39,13 @@ export const deleteSupplement = async (id) => {
     `/admin/destroy-supplement/${id}`
   );
 };
+
+
+export const editSupplement = async (id, formData) => {
+  const response = await api.patch(`/admin/edit-supplement/${id}`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+  return response.data.data;
+};
