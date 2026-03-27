@@ -29,7 +29,7 @@ export default function Contact() {
             <li>📍 Barsatigola chow rasta more (station road), Bhagwangola, Murshidabad</li>
             <li>📞 +91 8910322642 / 8250717406</li>
             <li>📞 +91 7719161307 (reception)</li>
-            <li>✉️ support@alphagym.com</li>
+            <li>✉️ alphagym2001@gmail.com</li>
             <li>🕒 Mon – Sun: 5AM – 11PM</li>
           </ul>
         </div>
