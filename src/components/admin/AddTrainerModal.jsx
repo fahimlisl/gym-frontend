@@ -103,7 +103,7 @@ export default function AddTrainerModal({ onClose, onSuccess }) {
             />
 
             <Input
-              label="EMAIL (OPTIONAL)"
+              label="EMAIL *"
               value={form.email}
               onChange={(e) =>
                 setForm({

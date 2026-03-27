@@ -40,7 +40,7 @@ export default function PricingCard({
       </h3>
 
       {subtext && (
-        <p className="text-sm text-gray-400 mt-1">
+        <p className=" text-green-400 text-xl mt-1">
           {subtext}
         </p>
       )}
@@ -53,14 +53,14 @@ export default function PricingCard({
             </span>
           )}
 
-          <span className="text-4xl sm:text-5xl font-black text-white tracking-tight">
+          <span className="text-7xl sm:text-7xl font-black text-white tracking-tight">
             ₹{price}
           </span>
 
           {discount && (
             <span className="bg-red-600/10 text-red-500 text-xs font-bold px-2 py-1 rounded">
-              SAVE {discount}%
-            </span>
+             SAVE MORE
+            </span> 
           )}
         </div>
 
@@ -103,7 +103,7 @@ export default function PricingCard({
             : "border border-white/20 hover:border-red-500 hover:bg-red-600/10 text-white"
         )}
       >
-        START NOW
+        CHOOSE PLAN
       </button>
     </div>
   );

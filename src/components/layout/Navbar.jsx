@@ -1,10 +1,7 @@
-import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 
-export default function Navbar() {
-  const [open, setOpen] = useState(false);
-
+export default function Navbar({ menuOpen, setMenuOpen }) {
   const navLinkClass = ({ isActive }) =>
     `relative text-sm font-bold tracking-wide transition
      ${isActive ? "text-red-600" : "text-white hover:text-red-500"}`;
@@ -26,32 +23,14 @@ export default function Navbar() {
         </Link>
 
         <ul className="hidden md:flex items-center gap-8">
-          <NavLink to="/" className={navLinkClass}>
-            Home
-          </NavLink>
-
-          <NavLink to="/store" className={navLinkClass}>
-            Store
-          </NavLink>
-          <NavLink to="/programs" className={navLinkClass}>
-            Programs
-          </NavLink>
-          <NavLink to="/pricing" className={navLinkClass}>
-            Pricing
-          </NavLink>
-          <NavLink to="/contacts" className={navLinkClass}>
-            Contacts
-          </NavLink>
-          <NavLink to="/about" className={navLinkClass}>
-            About Us
-          </NavLink>
-          <NavLink to="/trainers" className={navLinkClass}>
-            Trainer
-          </NavLink>
-
-          <NavLink to="/login" className={navLinkClass}>
-            Login
-          </NavLink>
+          <NavLink to="/" className={navLinkClass}>Home</NavLink>
+          <NavLink to="/store" className={navLinkClass}>Store</NavLink>
+          <NavLink to="/programs" className={navLinkClass}>Programs</NavLink>
+          <NavLink to="/pricing" className={navLinkClass}>Gym Plan</NavLink>
+          <NavLink to="/contacts" className={navLinkClass}>Contacts</NavLink>
+          <NavLink to="/about" className={navLinkClass}>About Us</NavLink>
+          <NavLink to="/trainers" className={navLinkClass}>Our Trainers</NavLink>
+          <NavLink to="/login" className={navLinkClass}>Login</NavLink>
         </ul>
 
         <div className="hidden md:block">
@@ -63,76 +42,22 @@ export default function Navbar() {
           </Link>
         </div>
 
-        <button onClick={() => setOpen(!open)} className="md:hidden text-white">
-          {open ? <X size={26} /> : <Menu size={26} />}
+        <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden text-white">
+          {menuOpen ? <X size={26} /> : <Menu size={26} />}
         </button>
       </nav>
 
-      {open && (
+      {menuOpen && (
         <div className="md:hidden bg-black border-t border-white/10">
           <div className="flex flex-col p-6 gap-5 text-sm font-bold tracking-wide">
-            <NavLink
-              to="/"
-              onClick={() => setOpen(false)}
-              className={navLinkClass}
-            >
-              Home
-            </NavLink>
-
-            <NavLink
-              to="/store"
-              onClick={() => setOpen(false)}
-              className={navLinkClass}
-            >
-              Store
-            </NavLink>
-            <NavLink
-              to="/programs"
-              onClick={() => setOpen(false)}
-              className={navLinkClass}
-            >
-              Programs
-            </NavLink>
-            <NavLink
-              to="/pricing"
-              onClick={() => setOpen(false)}
-              className={navLinkClass}
-            >
-              Pricing
-            </NavLink>
-            <NavLink
-              to="/contacts"
-              onClick={() => setOpen(false)}
-              className={navLinkClass}
-            >
-              Contacts
-            </NavLink>
-            <NavLink
-              to="/about"
-              onClick={() => setOpen(false)}
-              className={navLinkClass}
-            >
-              About Us
-            </NavLink>
-            <NavLink
-              to="/trainers"
-              onClick={() => setOpen(false)}
-              className={navLinkClass}
-            >
-              Trainer
-            </NavLink>
-
-            <NavLink
-              to="/login"
-              onClick={() => setOpen(false)}
-              className={navLinkClass}
-            >
-              Login
-            </NavLink>
-
+            <NavLink to="/" onClick={() => setMenuOpen(false)} className={navLinkClass}>Home</NavLink>
+            <NavLink to="/store" onClick={() => setMenuOpen(false)} className={navLinkClass}>Store</NavLink>
+            <NavLink to="/programs" onClick={() => setMenuOpen(false)} className={navLinkClass}>Programs</NavLink>
+            <NavLink to="/contacts" onClick={() => setMenuOpen(false)} className={navLinkClass}>Contacts</NavLink>
+            <NavLink to="/about" onClick={() => setMenuOpen(false)} className={navLinkClass}>About Us</NavLink>
             <Link
               to="/pricing"
-              onClick={() => setOpen(false)}
+              onClick={() => setMenuOpen(false)}
               className="mt-4 bg-red-600 py-3 text-center font-extrabold tracking-widest shadow-[0_0_25px_rgba(239,68,68,0.5)]"
             >
               JOIN NOW

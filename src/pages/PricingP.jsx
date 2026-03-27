@@ -65,11 +65,11 @@ export default function PricingP() {
     fetchOfferAvailable();
   }, []);
 
-  const matchingOffers = offerDetails.filter(
+  const matchingOffers = offerDetails?.filter(
     (offer) => offer.category === "SUBSCRIPTION" && offer.isActive === true,
   );
 
-  const filteredPlans = plans.filter((plan) => plan.category === billing);
+  const filteredPlans = plans?.filter((plan) => plan.category === billing);
 
   const handleStartNow = (plan) => {
     if (plan.category === "PT") {
@@ -174,7 +174,8 @@ export default function PricingP() {
 
       if (coupon.minCartAmount > selectedPlan.finalPrice) {
         throw new Error(
-          `Minimum purchase of ₹${coupon.minCartAmount} required`,
+          // `Minimum cart amount of ₹${coupon.minCartAmount} required`,
+          `Coupon is not valid for 1 month plan` // hardcoded as of now
         );
       }
 
@@ -405,7 +406,7 @@ export default function PricingP() {
 
       <section className="container pb-28">
         <div className="grid md:grid-cols-3 gap-10">
-          {filteredPlans.map((plan) => (
+          {filteredPlans?.map((plan) => (
             <PricingCard
               key={plan._id}
               title={plan.title}
