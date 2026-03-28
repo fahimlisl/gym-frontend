@@ -69,22 +69,22 @@ export default function TrainerProfile() {
           </p>
 
           <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
-            <a
+            {/* <a
               href={`tel:${trainer.phoneNumber}`}
               className="flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-green-500 hover:bg-green-600 transition font-medium text-black"
             >
               <Phone size={18} />
               Call Trainer
-            </a>
+            </a> */}
 
-            <a
+            {/* <a
               href={`https://wa.me/91${trainer.phoneNumber}`}
               target="_blank"
               rel="noreferrer"
               className="flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-white/10 hover:bg-white/20 transition font-medium"
             >
               WhatsApp
-            </a>
+            </a> */}
           </div>
         </div>
       </div>
