@@ -17,6 +17,7 @@
     "@zxing/library": "^0.21.3",
     "axios": "^1.13.3",
     "clsx": "^2.1.1",
+    "emailjs-com": "^3.2.0",
     "file-saver": "^2.0.5",
     "framer-motion": "^12.29.0",
     "heroicons": "^2.2.0",
