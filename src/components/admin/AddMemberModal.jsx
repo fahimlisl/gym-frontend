@@ -292,10 +292,12 @@ export default function AddMemberModal({ onClose, onSuccess }) {
           </TwoCol>
 
           <Input 
-            label="EMAIL (OPTIONAL)" 
+            label="EMAIL *" 
             name="email" 
+            type="email"
             value={form.email}
-            onChange={handleChange} 
+            onChange={handleChange}
+            required
           />
 
           <FileInput 

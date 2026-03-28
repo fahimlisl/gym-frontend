@@ -24,7 +24,7 @@ export default function Programs() {
       title: "Personal Training",
       level: "CUSTOM",
       description:
-        "One-on-one coaching with personalized workouts, diet plans, and accountability.",
+        "One-on-one / groups coaching with personalized workouts, diet plans, and accountability.",
     },
   ];
 

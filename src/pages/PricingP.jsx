@@ -97,7 +97,7 @@ export default function PricingP() {
       paymentMethod: "razorpay",
     });
     setRegistrationStatus(null);
-    setCouponCode("");
+    setCouponCode("ADD1099");
     setAppliedCoupon(null);
     setCouponDiscount(0);
     setCouponError("");
@@ -414,6 +414,7 @@ export default function PricingP() {
               subtext={plan.bio}
               price={plan.finalPrice}
               basePrice={plan.basePrice}
+              category={plan.category}
               features={plan.benefits.map((b) => b.heading)}
               onStartNow={() => handleStartNow(plan)}
             />
@@ -556,7 +557,7 @@ export default function PricingP() {
                         name="phoneNumber"
                         value={formData.phoneNumber}
                         onChange={handleInputChange}
-                        placeholder="9876543210"
+                        placeholder="XXXXX-XXXXX"
                         className="w-full px-4 py-3 bg-white/[0.04] border border-white/10 rounded-lg text-white placeholder-white/20 focus:outline-none focus:border-red-500/50 transition text-sm"
                         disabled={loading || checkingUser}
                       />
