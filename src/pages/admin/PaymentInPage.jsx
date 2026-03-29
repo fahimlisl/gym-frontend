@@ -2,11 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { X, Plus, Download } from "lucide-react";
 import * as XLSX from "xlsx";
-
-import {
-  fetchAllTransactions,
-  createPaymentIn,
-} from "../../api/admin.api";
+import { fetchAllTransactions, createPaymentIn } from "../../api/admin.api.js";
 
 const CREDIT_SOURCES = [
   "subscription",
@@ -26,8 +22,7 @@ const SOURCE_LABELS = {
   paymentin: "Payment In",
 };
 
-const fmt = (n) =>
-  Math.round(n).toLocaleString("en-IN");
+const fmt = (n) => Math.round(n).toLocaleString("en-IN");
 
 const StatCard = ({ label, value, sub, color = "text-white" }) => (
   <div className="flex flex-col rounded-xl bg-gradient-to-br from-black via-neutral-900 to-black border border-white/10 p-5">
@@ -209,18 +204,17 @@ export default function PaymentInPage() {
     }
   };
 
-  useEffect(() => { load(); }, []);
-
+  useEffect(() => {
+    load();
+  }, []);
 
   const baseFiltered = useMemo(() => {
     return transactions.filter((t) => {
       const txDate = new Date(t.createdAt).toISOString().split("T")[0];
       const matchesView =
         view === "paymentin" ? t.source === "paymentin" : true;
-      const matchesSource =
-        source === "all" || t.source === source;
-      const matchesMethod =
-        method === "all" || t.paymentMethod === method;
+      const matchesSource = source === "all" || t.source === source;
+      const matchesMethod = method === "all" || t.paymentMethod === method;
       return (
         txDate >= fromDate &&
         txDate <= toDate &&
@@ -245,7 +239,10 @@ export default function PaymentInPage() {
       const upi = paymentins
         .filter((t) => t.paymentMethod === "upi")
         .reduce((s, t) => s + t.amount, 0);
-      return { cash, upi };
+      const razorpay = paymentins
+        .filter((t) => t.paymentMethod === "razorpay")
+        .reduce((s, t) => s + t.amount, 0);
+      return { cash, upi, razorpay };
     }
 
     const netByMethod = (m) => {
@@ -253,20 +250,23 @@ export default function PaymentInPage() {
         .filter(
           (t) =>
             CREDIT_SOURCES.includes(t.source) &&
-            (m === "all" || t.paymentMethod === m)
+            (m === "all" || t.paymentMethod === m),
         )
         .reduce((s, t) => s + t.amount, 0);
       const debits = inRange
         .filter(
           (t) =>
-            t.source === "expense" &&
-            (m === "all" || t.paymentMethod === m)
+            t.source === "expense" && (m === "all" || t.paymentMethod === m),
         )
         .reduce((s, t) => s + t.amount, 0);
       return credits - debits;
     };
 
-    return { cash: netByMethod("cash"), upi: netByMethod("upi") };
+    return {
+      cash: netByMethod("cash"),
+      upi: netByMethod("upi"),
+      razorpay: netByMethod("razorpay"),
+    };
   }, [transactions, view, fromDate, toDate]);
 
   const exportExcel = () => {
@@ -346,9 +346,13 @@ export default function PaymentInPage() {
           ))}
         </div>
 
-        <div className="grid grid-cols-2 gap-3 md:gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
           <StatCard
-            label={view === "paymentin" ? "Total Cash (Payment In)" : "Net Cash (All)"}
+            label={
+              view === "paymentin"
+                ? "Total Cash (Payment In)"
+                : "Net Cash (All)"
+            }
             value={fmt(statBlocks.cash)}
             color={statBlocks.cash >= 0 ? "text-green-400" : "text-red-500"}
             sub={
@@ -360,7 +364,9 @@ export default function PaymentInPage() {
             }
           />
           <StatCard
-            label={view === "paymentin" ? "Total UPI (Payment In)" : "Net UPI (All)"}
+            label={
+              view === "paymentin" ? "Total UPI (Payment In)" : "Net UPI (All)"
+            }
             value={fmt(statBlocks.upi)}
             color={statBlocks.upi >= 0 ? "text-green-400" : "text-red-500"}
             sub={
@@ -371,6 +377,38 @@ export default function PaymentInPage() {
                 : undefined
             }
           />
+          <div className="col-span-2 md:col-span-1 flex flex-col rounded-xl bg-gradient-to-br from-black via-neutral-900 to-black border border-white/10 p-5">
+            <p className="text-[10px] text-gray-500 tracking-widest uppercase font-semibold">
+              {view === "paymentin"
+                ? "Total Digital (Payment In)"
+                : "Net Digital (All)"}
+            </p>
+            <p
+              className={`text-2xl font-black mt-2 ${statBlocks.upi + statBlocks.razorpay >= 0 ? "text-green-400" : "text-red-500"}`}
+            >
+              ₹{fmt(statBlocks.upi + statBlocks.razorpay)}
+            </p>
+            {view === "all" && (
+              <p className="text-xs text-gray-500 mt-1">
+                {statBlocks.upi + statBlocks.razorpay >= 0
+                  ? "↑ Positive"
+                  : "↓ Negative"}
+              </p>
+            )}
+            <div className="flex items-center gap-2 mt-2">
+              <span className="text-[10px] text-gray-500">
+                UPI ₹{fmt(statBlocks.upi)}
+              </span>
+              <span className="text-[10px] text-gray-600">+</span>
+              <span className="text-[10px] text-gray-500">
+                Razorpay ₹{fmt(statBlocks.razorpay)}
+              </span>
+            </div>
+            <p className="text-[10px] text-yellow-500/70 mt-2 leading-relaxed">
+              ⚠ Razorpay settlements go directly to bank — not reflected in
+              physical cash.
+            </p>
+          </div>
         </div>
 
         <div className="border border-white/10 bg-gradient-to-br from-black via-neutral-900 to-black rounded-xl p-4 md:p-6 space-y-4">
@@ -379,7 +417,9 @@ export default function PaymentInPage() {
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
             <div className="space-y-1.5">
-              <label className="text-xs text-gray-400 font-semibold uppercase">From</label>
+              <label className="text-xs text-gray-400 font-semibold uppercase">
+                From
+              </label>
               <input
                 type="date"
                 value={fromDate}
@@ -388,7 +428,9 @@ export default function PaymentInPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs text-gray-400 font-semibold uppercase">To</label>
+              <label className="text-xs text-gray-400 font-semibold uppercase">
+                To
+              </label>
               <input
                 type="date"
                 value={toDate}
@@ -397,7 +439,9 @@ export default function PaymentInPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs text-gray-400 font-semibold uppercase">Method</label>
+              <label className="text-xs text-gray-400 font-semibold uppercase">
+                Method
+              </label>
               <select
                 value={method}
                 onChange={(e) => setMethod(e.target.value)}
@@ -413,14 +457,18 @@ export default function PaymentInPage() {
             </div>
             {view === "all" && (
               <div className="space-y-1.5">
-                <label className="text-xs text-gray-400 font-semibold uppercase">Source</label>
+                <label className="text-xs text-gray-400 font-semibold uppercase">
+                  Source
+                </label>
                 <select
                   value={source}
                   onChange={(e) => setSource(e.target.value)}
                   className={inputCls + " appearance-none cursor-pointer"}
                 >
                   {Object.entries(SOURCE_LABELS).map(([k, v]) => (
-                    <option key={k} value={k}>{v}</option>
+                    <option key={k} value={k}>
+                      {v}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -450,7 +498,9 @@ export default function PaymentInPage() {
           </div>
         ) : baseFiltered.length === 0 ? (
           <div className="border border-white/10 bg-gradient-to-br from-black via-neutral-900 to-black rounded-xl p-12 text-center">
-            <p className="text-gray-500 font-semibold text-sm">NO RECORDS FOUND</p>
+            <p className="text-gray-500 font-semibold text-sm">
+              NO RECORDS FOUND
+            </p>
             {view === "paymentin" && (
               <button
                 onClick={() => setShowAddModal(true)}
@@ -463,7 +513,6 @@ export default function PaymentInPage() {
           </div>
         ) : (
           <div className="overflow-hidden border border-white/10 bg-gradient-to-br from-black via-neutral-900 to-black rounded-xl">
-
             <div className="lg:hidden space-y-3 p-4">
               {baseFiltered.map((tx) => {
                 const isCredit = CREDIT_SOURCES.includes(tx.source);
@@ -478,7 +527,9 @@ export default function PaymentInPage() {
                           {new Date(tx.createdAt).toLocaleDateString("en-IN")}
                         </p>
                         <p className="text-sm font-black text-white uppercase mt-0.5 truncate">
-                          {tx.referenceId?.title || SOURCE_LABELS[tx.source] || tx.source}
+                          {tx.referenceId?.title ||
+                            SOURCE_LABELS[tx.source] ||
+                            tx.source}
                         </p>
                         {tx.referenceId?.category && (
                           <p className="text-xs text-gray-500 mt-0.5">
@@ -511,7 +562,9 @@ export default function PaymentInPage() {
                     <th className="p-4 text-left">SI</th>
                     <th className="p-4 text-left">Date</th>
                     <th className="p-4 text-left">Title</th>
-                    {view === "all" && <th className="p-4 text-left">Source</th>}
+                    {view === "all" && (
+                      <th className="p-4 text-left">Source</th>
+                    )}
                     <th className="p-4 text-left">Category</th>
                     <th className="p-4 text-right">Amount</th>
                     <th className="p-4 text-left">Method</th>
@@ -575,7 +628,7 @@ export default function PaymentInPage() {
                         baseFiltered.reduce((s, t) => {
                           const isCredit = CREDIT_SOURCES.includes(t.source);
                           return s + (isCredit ? t.amount : -t.amount);
-                        }, 0)
+                        }, 0),
                       )}
                     </td>
                     <td colSpan={2} />
