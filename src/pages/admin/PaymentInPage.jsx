@@ -99,7 +99,7 @@ const AddPaymentModal = ({ onClose, onSuccess }) => {
             <label className={labelCls}>Title *</label>
             <input
               className={inputCls}
-              placeholder="e.g. Membership fee from walk-in"
+              placeholder="Title"
               value={form.title}
               onChange={(e) => set("title", e.target.value)}
             />
