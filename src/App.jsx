@@ -61,6 +61,7 @@ import UserWorkoutView from "./pages/user/UserWorkoutView.jsx";
 import MyQRPage from "./pages/user/MyQRPage.jsx";
 import ScannerPage from "./pages/ScannerPage.jsx";
 import SuppBillsAdmin from "./pages/admin/SuppBillsAdmin.jsx";
+import PaymentInPage from "./pages/admin/PaymentInPage.jsx";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -172,6 +173,7 @@ export default function App() {
 
           <Route path="payments/all" element={<Payments />} />
           <Route path="payments/cafe" element={<CafePaymentsOfAdmin />} />
+          <Route path="payments/payments-in" element={<PaymentInPage />} />
 
           {/* attendance */}
           <Route

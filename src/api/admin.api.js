@@ -125,3 +125,6 @@ export const addBenefit = (id, data) => api.patch(`/admin/plan/add/benefit/${id}
 export const removeBenefit = (planId, benefitId) =>
   api.patch(`/admin/plan/remove/benefit/${planId}/${benefitId}`);
 export const editPlan = (id,data) => api.patch(`/admin/plan/edit/${id}`,data)
+
+export const createPaymentIn = (data) =>
+  api.post("/admin/add/payment/in", data); 

@@ -53,6 +53,7 @@ const paymentsMenu = {
   base: "/admin/payments",
   items: [
     { label: "All Payments", to: "/admin/payments/all" },
+    { label: "Payments In", to: "/admin/payments/payments-in" },
     { label: "Cafe Payments", to: "/admin/payments/cafe" },
   ],
 };

@@ -11,6 +11,7 @@ const getTransactionType = (tx) => {
     "supplement",
     "subscription",
     "personal-training",
+    "paymentin"
   ];
   return creditSources.includes(tx.source) ? "credit" : "debit";
 };
@@ -247,6 +248,28 @@ const TransactionModal = ({ tx, onClose }) => {
               <InfoRow label="Amount" value={`₹${tx.amount.toLocaleString('en-IN')}`} />
             </div>
           )}
+          {tx.source === "paymentin" && tx.referenceId && (
+            <div className="bg-neutral-900/50 border border-white/10 rounded-xl p-5 space-y-0">
+              <p className="text-xs tracking-widest text-gray-500 font-bold mb-4 uppercase">
+                💳 Payment In Details
+              </p>
+
+              <InfoRow label="Title" value={tx.referenceId.title} />
+              <InfoRow label="Category" value={tx.referenceId.category || "—"} />
+              <InfoRow label="Remarks" value={tx.referenceId.remarks} />
+              {tx.referenceId.transactionId && (
+                <InfoRow label="UPI Ref" value={tx.referenceId.transactionId} />
+              )}
+              <InfoRow
+                label="Amount"
+                value={
+                  <span className="text-green-400 font-black">
+                    +₹{tx.amount.toLocaleString("en-IN")}
+                  </span>
+                }
+              />
+            </div>
+          )}
 
           {isCafe && (
             <div className="bg-neutral-900/50 border border-white/10 rounded-xl p-5 space-y-4">
@@ -310,7 +333,7 @@ export default function Payments() {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedTx, setSelectedTx] = useState(null);
-
+  const [paymentMethod, setPaymentMethod] = useState("all");
   const today = new Date().toISOString().split("T")[0];
   const [fromDate, setFromDate] = useState(today);
   const [toDate, setToDate] = useState(today);
@@ -333,7 +356,7 @@ export default function Payments() {
 
   const sources = useMemo(() => {
     const unique = new Set(transactions.map((t) => t.source));
-    return ["all", ...Array.from(unique)];
+    return ["all","subscription", "supplement", "personal-training","cafe","expense","paymentin"]
   }, [transactions]);
 
   const filtered = useMemo(() => {
@@ -345,10 +368,11 @@ export default function Payments() {
         txDate >= fromDate &&
         txDate <= toDate &&
         (entryType === "all" || type === entryType) &&
-        (source === "all" || t.source === source)
+        (source === "all" || t.source === source) &&
+        (paymentMethod === "all" || t.paymentMethod === paymentMethod)
       );
     });
-  }, [transactions, fromDate, toDate, entryType, source]);
+  }, [transactions, fromDate, toDate, entryType, source, paymentMethod]);
 
   const totals = useMemo(() => {
     let credit = 0;
@@ -429,7 +453,8 @@ export default function Payments() {
             Filters
           </h3>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
+          {/* <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4"> */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 md:gap-4">
             <div className="space-y-1.5">
               <label className="text-xs text-gray-400 font-semibold uppercase">From</label>
               <input
@@ -460,6 +485,22 @@ export default function Payments() {
                 <option value="all">All Entries</option>
                 <option value="credit">Credit Only</option>
                 <option value="debit">Debit Only</option>
+              </select>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs text-gray-400 font-semibold uppercase">Method</label>
+              <select
+                value={paymentMethod}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+                className="w-full bg-neutral-900 border border-white/10 px-3 py-2.5 rounded-lg text-sm text-white focus:outline-none focus:border-red-600/40 transition-colors appearance-none cursor-pointer uppercase"
+              >
+                <option value="all">All Methods</option>
+                <option value="cash">Cash</option>
+                <option value="upi">UPI</option>
+                <option value="card">Card</option>
+                <option value="netbanking">Netbanking</option>
+                <option value="razorpay">Razorpay</option>
               </select>
             </div>
 
