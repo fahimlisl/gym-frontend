@@ -62,6 +62,8 @@ import MyQRPage from "./pages/user/MyQRPage.jsx";
 import ScannerPage from "./pages/ScannerPage.jsx";
 import SuppBillsAdmin from "./pages/admin/SuppBillsAdmin.jsx";
 import PaymentInPage from "./pages/admin/PaymentInPage.jsx";
+import TrainerQRWidget from "./pages/trainer/TrainerQRWidget.jsx";
+import TodayAttendanceTrainer from "./pages/trainer/TodayAttendanceTrainer.jsx";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -130,11 +132,12 @@ export default function App() {
         {/* trainer */}
         <Route element={<TrainerDashboardLayout />}>
           <Route path="/trainer/dashboard" element={<TrainerDashboard />} />
-          <Route path="/trainer/foods" element={<Foods />} />
-          <Route
+          <Route path="/trainer/my-qr" element={<TrainerQRWidget />} />
+          <Route path="/trainer/attendence/today" element={<TodayAttendanceTrainer />} />
+          {/* <Route
             path="/trainer/diet/:userId"
             element={<TrainerDietManager />}
-          />
+          /> */}
         </Route>
 
         {/* member */}
@@ -186,6 +189,7 @@ export default function App() {
 
           <Route path="plans" element={<Plan />} />
           <Route path="offers" element={<AdminOffer />} />
+          <Route path="foods" element={<Foods />} />
 
           <Route path="pt/requests" element={<AdminPTRequests />} />
 

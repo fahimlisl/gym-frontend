@@ -334,7 +334,7 @@ export default function Payments() {
   const [loading, setLoading] = useState(true);
   const [selectedTx, setSelectedTx] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState("all");
-  const today = new Date().toISOString().split("T")[0];
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
   const [fromDate, setFromDate] = useState(today);
   const [toDate, setToDate] = useState(today);
   const [entryType, setEntryType] = useState("all");
@@ -361,7 +361,7 @@ export default function Payments() {
 
   const filtered = useMemo(() => {
     return transactions.filter((t) => {
-      const txDate = new Date(t.createdAt).toISOString().split("T")[0];
+      const txDate = new Date(t.createdAt).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
       const type = getTransactionType(t);
 
       return (

@@ -8,7 +8,7 @@ export default function CafePaymentsOfAdmin() {
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
   const [adminFilter, setAdminFilter] = useState("all");
@@ -30,9 +30,7 @@ export default function CafePaymentsOfAdmin() {
 
   const filteredOrders = useMemo(() => {
     return orders.filter((order) => {
-      const orderDate = new Date(order.createdAt)
-        .toISOString()
-        .split("T")[0];
+      const orderDate = new Date(order.createdAt).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
 
       const withinDate =
         (!startDate || orderDate >= startDate) &&

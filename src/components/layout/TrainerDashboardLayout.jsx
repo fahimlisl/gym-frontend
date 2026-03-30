@@ -98,7 +98,8 @@ export default function TrainerDashboardLayout({ trainer }) {
 
               <nav className="flex-1 px-4 py-6 space-y-2">
                 <NavItem to="/trainer/dashboard" label="DASHBOARD" />
-                <NavItem to="/trainer/foods" label="FOODS" />
+                <NavItem to="/trainer/my-qr" label="My Qr" />
+                <NavItem to="/trainer/attendence/today" label="Today's Attendence" />
               </nav>
 
               <div className="px-4 py-4 border-t border-red-600/30 space-y-3">
@@ -144,7 +145,8 @@ export default function TrainerDashboardLayout({ trainer }) {
 
             <nav className="flex-1 px-4 py-6 space-y-2">
               <NavItem to="/trainer/dashboard" label="DASHBOARD" />
-              <NavItem to="/trainer/foods" label="FOODS" />
+              <NavItem to="/trainer/my-qr" label="My Qr" />
+              <NavItem to="/trainer/attendence/today" label="Today's Attendence" />
             </nav>
 
             <div className="px-4 py-4 border-t border-red-600/30 space-y-3">

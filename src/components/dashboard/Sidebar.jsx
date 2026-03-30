@@ -20,6 +20,7 @@ import {
   GitPullRequestCreateArrow,
   ChartBar,
   GitPullRequestDraft,
+  Hamburger,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
@@ -73,6 +74,7 @@ const otherMenu = [
 const settings = [
   { label: "Plans", to: "/admin/plans", icon: Layers },
   { label: "Offers", to: "/admin/offers", icon: BadgePercent },
+  { label: "Foods", to: "/admin/foods", icon: Hamburger },
 ]
 
 export default function Sidebar({ open, onClose }) {

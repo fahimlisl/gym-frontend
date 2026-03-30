@@ -8,8 +8,10 @@ export default function CafePayments() {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const [fromDate, setFromDate] = useState("");
-  const [toDate, setToDate] = useState("");
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+  const [fromDate, setFromDate] = useState(today);
+  const [toDate, setToDate] = useState(today);
+
   const [methodFilter, setMethodFilter] = useState("all");
 
   const [selectedPayment, setSelectedPayment] = useState(null);
@@ -37,11 +39,13 @@ export default function CafePayments() {
         return false;
       }
 
-      if (fromDate && date < new Date(fromDate)) return false;
+      if (fromDate) {
+        const start = new Date(fromDate + "T00:00:00+05:30");
+        if (date < start) return false;
+      }
 
       if (toDate) {
-        const end = new Date(toDate);
-        end.setHours(23, 59, 59, 999);
+        const end = new Date(toDate + "T23:59:59+05:30");
         if (date > end) return false;
       }
 
