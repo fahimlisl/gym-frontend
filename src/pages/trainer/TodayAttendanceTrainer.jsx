@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { getTodayAttendance } from "../../../api/attendence.api.js";
+import { getTodayAttendanceTrainer } from "../../api/attendence.api";
 
-export default function TodayAttendance() {
+export default function TodayAttendanceTrainer() {
   const [data, setData] = useState([]);
 
   useEffect(() => {
-    getTodayAttendance().then((res) => {
+    getTodayAttendanceTrainer().then((res) => {
       setData(res.data.attendance);
     });
   }, []);

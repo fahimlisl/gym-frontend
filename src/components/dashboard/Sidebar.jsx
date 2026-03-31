@@ -20,6 +20,7 @@ import {
   GitPullRequestCreateArrow,
   ChartBar,
   GitPullRequestDraft,
+  Hamburger,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
@@ -39,11 +40,26 @@ const mainMenu = [
 const attendanceMenu = {
   label: "Attendance",
   icon: CalendarCog,
-  base: "/admin/attendence",
+  base: "/admin/attendance",
   items: [
-    { label: "Dashboard", to: "/admin/attendence/dashboard" },
-    { label: "Today", to: "/admin/attendence/today" },
-    { label: "Monthly", to: "/admin/attendence/month" },
+    {
+      label: "Member",
+      base: "/admin/attendance/member",
+      items: [
+        { label: "Dashboard", to: "/admin/attendance/member/dashboard" },
+        { label: "Today", to: "/admin/attendance/member/today" },
+        { label: "Monthly", to: "/admin/attendance/member/month" },
+      ],
+    },
+    {
+      label: "Trainer",
+      base: "/admin/attendance/trainer",
+      items: [
+        { label: "Monthly & Today", to: "/admin/attendance/trainer/dashboard" },
+        // { label: "Today", to: "/admin/attendance/trainer/today" },
+        // { label: "Monthly", to: "/admin/attendance/trainer/month" },
+      ],
+    },
   ],
 };
 
@@ -73,6 +89,7 @@ const otherMenu = [
 const settings = [
   { label: "Plans", to: "/admin/plans", icon: Layers },
   { label: "Offers", to: "/admin/offers", icon: BadgePercent },
+  { label: "Foods", to: "/admin/foods", icon: Hamburger },
 ]
 
 export default function Sidebar({ open, onClose }) {
@@ -335,9 +352,12 @@ function SidebarLink({ item, onClose }) {
   );
 }
 
-function CollapsibleGroup({ config, onClose }) {
+function CollapsibleGroup({ config, onClose, level = 0 }) {
   const location = useLocation();
-  const isActive = location.pathname.startsWith(config.base);
+  const isActive = config.base
+    ? location.pathname.startsWith(config.base)
+    : false;
+
   const [open, setOpen] = useState(isActive);
 
   useEffect(() => {
@@ -348,6 +368,7 @@ function CollapsibleGroup({ config, onClose }) {
 
   return (
     <div>
+      {/* Parent Button */}
       <button
         onClick={() => setOpen((prev) => !prev)}
         className={`w-full flex items-center justify-between px-4 py-3
@@ -357,36 +378,53 @@ function CollapsibleGroup({ config, onClose }) {
             ? "bg-red-600 text-white shadow-md shadow-red-600/30"
             : "text-gray-400 hover:text-white hover:bg-white/5"
         }`}
+        style={{ paddingLeft: `${level * 12 + 16}px` }}
       >
         <div className="flex items-center gap-3">
-          <Icon size={18} />
+          {Icon && <Icon size={18} />}
           {config.label}
         </div>
-        <ChevronDown
-          size={16}
-          className={`transition ${open ? "rotate-180" : ""}`}
-        />
+
+        {config.items && (
+          <ChevronDown
+            size={16}
+            className={`transition ${open ? "rotate-180" : ""}`}
+          />
+        )}
       </button>
 
-      {open && (
-        <div className="ml-6 mt-1 space-y-1">
-          {config.items.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              onClick={onClose}
-              className={({ isActive }) =>
-                `block px-4 py-2 text-sm rounded-md transition
-                ${
-                  isActive
-                    ? "text-red-400 bg-red-500/10"
-                    : "text-gray-400 hover:text-white hover:bg-white/5"
-                }`
-              }
-            >
-              {item.label}
-            </NavLink>
-          ))}
+      {/* Children */}
+      {open && config.items && (
+        <div className="mt-1 space-y-1">
+          {config.items.map((item, idx) =>
+            item.items ? (
+              // 🔁 Recursive call for nested groups
+              <CollapsibleGroup
+                key={idx}
+                config={item}
+                onClose={onClose}
+                level={level + 1}
+              />
+            ) : (
+              // 📍 Final links
+              <NavLink
+                key={item.to}
+                to={item.to}
+                onClick={onClose}
+                className={({ isActive }) =>
+                  `block px-4 py-2 text-sm rounded-md transition
+                  ${
+                    isActive
+                      ? "text-red-400 bg-red-500/10"
+                      : "text-gray-400 hover:text-white hover:bg-white/5"
+                  }`
+                }
+                style={{ paddingLeft: `${(level + 1) * 12 + 16}px` }}
+              >
+                {item.label}
+              </NavLink>
+            )
+          )}
         </div>
       )}
     </div>

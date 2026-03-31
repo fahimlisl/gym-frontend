@@ -8,3 +8,8 @@ export const trainerLogout = () =>
 
 export const trainerChangePassword = (payload) =>
   api.patch("/trainer/change/password", payload);
+
+export const getTrainerSelf = async () => {
+  const response = await api.get("/trainer/fetchSelf");
+  return response;
+};

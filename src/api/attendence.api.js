@@ -14,6 +14,9 @@ export const markAttendance = async ({ phoneNumber, source }) => {
 export const getTodayAttendance = () =>
   api.get("/admin/today/attendence");
 
+export const getTodayAttendanceTrainer = () =>
+  api.get("/trainer/today/attendence");
+
 export const getMonthlyAttendance = (month) =>
   api.get(`/admin/month/attendence?month=${month}`);
 

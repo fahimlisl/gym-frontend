@@ -187,8 +187,8 @@ export default function PaymentInPage() {
 
   const [view, setView] = useState("paymentin");
 
-  const today = new Date().toISOString().split("T")[0];
-  const [fromDate, setFromDate] = useState("2024-01-01");
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+  const [fromDate, setFromDate] = useState(today);
   const [toDate, setToDate] = useState(today);
   const [method, setMethod] = useState("all");
   const [source, setSource] = useState("all");
@@ -210,7 +210,7 @@ export default function PaymentInPage() {
 
   const baseFiltered = useMemo(() => {
     return transactions.filter((t) => {
-      const txDate = new Date(t.createdAt).toISOString().split("T")[0];
+      const txDate = new Date(t.createdAt).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
       const matchesView =
         view === "paymentin" ? t.source === "paymentin" : true;
       const matchesSource = source === "all" || t.source === source;
@@ -227,7 +227,7 @@ export default function PaymentInPage() {
 
   const statBlocks = useMemo(() => {
     const inRange = transactions.filter((t) => {
-      const txDate = new Date(t.createdAt).toISOString().split("T")[0];
+      const txDate = new Date(t.createdAt).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
       return txDate >= fromDate && txDate <= toDate;
     });
 
@@ -476,7 +476,7 @@ export default function PaymentInPage() {
             <div className="flex items-end">
               <button
                 onClick={() => {
-                  setFromDate("2024-01-01");
+                  setFromDate(today);
                   setToDate(today);
                   setMethod("all");
                   setSource("all");
