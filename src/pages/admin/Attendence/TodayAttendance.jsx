@@ -19,11 +19,11 @@ export default function TodayAttendance() {
       <div className="space-y-3 max-h-[300px] overflow-y-auto">
         {data.map((a) => (
           <div
-            key={a._id}
+            key={a?._id}
             className="flex items-center justify-between bg-black border border-[#1f1f1f] p-3 rounded-md"
           >
             <div>
-              <p className="font-medium">{a.member.username || "Member"}</p>
+              <p className="font-medium">{a?.member?.username || "Member"}</p>
               <p className="text-sm text-gray-400">
                 {new Date(a.checkIn).toLocaleTimeString()}
               </p>

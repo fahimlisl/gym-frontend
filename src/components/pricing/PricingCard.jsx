@@ -92,11 +92,11 @@ export default function PricingCard({
             ₹{price}
           </span>
 
-          {discount > 0 && (
+          {/* {discount > 0 && ( */}
             <span className="bg-red-600/10 text-red-500 text-xs font-bold px-2 py-1 rounded">
               SAVE MORE
             </span>
-          )}
+          {/* // )} */}
         </div>
 
         <span className="text-gray-400 text-sm">/ {duration}</span>

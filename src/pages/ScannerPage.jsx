@@ -47,6 +47,30 @@ const statusConfig = {
     iconColor: "text-red-400",
     message: (name) => `${name?.toUpperCase()} — MEMBERSHIP INACTIVE`,
   },
+  checkout_success: {
+    bg: "from-sky-950/90 to-black/95",
+    border: "border-sky-500/40",
+    bar: "from-sky-600 via-sky-400 to-sky-600",
+    label: "CHECKED OUT",
+    labelColor: "text-sky-400",
+    ringColor: "ring-sky-500/40",
+    icon: "↗",
+    iconBg: "bg-sky-500/20 border-sky-500/50",
+    iconColor: "text-sky-400",
+    message: (name) => `SEE YOU, ${name?.toUpperCase()}`,
+  },
+  checkout_error: {
+    bg: "from-neutral-900/90 to-black/95",
+    border: "border-white/20",
+    bar: "from-neutral-500 via-neutral-300 to-neutral-500",
+    label: "CHECKOUT FAILED",
+    labelColor: "text-gray-400",
+    ringColor: "ring-white/10",
+    icon: "!",
+    iconBg: "bg-white/10 border-white/20",
+    iconColor: "text-gray-300",
+    message: (msg) => msg || "CHECKOUT FAILED — TRY AGAIN",
+  },
   error: {
     bg: "from-neutral-900/90 to-black/95",
     border: "border-white/20",
@@ -61,6 +85,21 @@ const statusConfig = {
   },
 };
 
+function parseQRPayload(raw) {
+  if (raw.startsWith("TRAINER::")) {
+    return { type: "trainer", id: raw.replace("TRAINER::", "").trim() };
+  }
+  return { type: "member", id: raw.trim() };
+}
+
+function normaliseResponse(data, type) {
+  return {
+    displayName: type === "trainer" ? data.fullName : data.username,
+    avatar: data.avatar || null,
+    alreadyMarked: data.alreadyMarked || false,
+  };
+}
+
 export default function ScannerPage() {
   const videoRef = useRef(null);
   const readerRef = useRef(null);
@@ -71,6 +110,7 @@ export default function ScannerPage() {
   const [member, setMember] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");
   const [cameraError, setCameraError] = useState(null);
+  const [checkingOut, setCheckingOut] = useState(false);
 
   const resetToScanning = useCallback(() => {
     setStatus("scanning");
@@ -79,22 +119,60 @@ export default function ScannerPage() {
     isProcessing.current = false;
   }, []);
 
-  const handleScan = useCallback(async (memberId) => {
+  // trainer checkout triggered by button
+  const handleTrainerCheckout = useCallback(async () => {
+    if (!member?.id || checkingOut) return;
+    setCheckingOut(true);
+    clearTimeout(resetTimer.current); // pause the auto-reset while request is in flight
+
+    try {
+      await axios.post(`${BASE_URL}/general/attendance/trainer/checkout`, {
+        trainerId: member.id,
+      });
+      setStatus("checkout_success");
+    } catch (err) {
+      const msg = err?.response?.data?.message || "Checkout failed";
+      setErrorMsg(msg);
+      setStatus("checkout_error");
+    } finally {
+      setCheckingOut(false);
+      resetTimer.current = setTimeout(resetToScanning, RESET_DELAY);
+    }
+  }, [member, checkingOut, resetToScanning]);
+
+  const handleScan = useCallback(async (rawText) => {
     if (isProcessing.current) return;
     isProcessing.current = true;
 
+    const { type, id } = parseQRPayload(rawText);
+
     try {
-      const res = await axios.post(`${BASE_URL}/general/attendance/qr`, { memberId });
-      const data = res.data;
-      setMember({ username: data.username, avatar: data.avatar });
-      setStatus(data.alreadyMarked ? "already" : "success");
+      let res;
+      if (type === "trainer") {
+        res = await axios.post(`${BASE_URL}/general/attendance/trainer/qr`, { trainerId: id });
+      } else {
+        res = await axios.post(`${BASE_URL}/general/attendance/qr`, { memberId: id });
+      }
+
+      const normalised = normaliseResponse(res.data, type);
+      // store raw id so the checkout button can reference it
+      setMember({ ...normalised, type, id });
+      setStatus(normalised.alreadyMarked ? "already" : "success");
     } catch (err) {
       const data = err?.response?.data;
-      if (err?.response?.status === 400 && data?.alreadyMarked) {
-        setMember({ username: data.username, avatar: data.avatar });
+      const httpStatus = err?.response?.status;
+
+      if (httpStatus === 400 && data?.alreadyMarked) {
+        const normalised = normaliseResponse(data, type);
+        setMember({ ...normalised, type, id });
         setStatus("already");
-      } else if (err?.response?.status === 403) {
-        setMember({ username: data.username, avatar: data.avatar });
+      } else if (httpStatus === 403) {
+        setMember({
+          displayName: data?.username || data?.fullName || null,
+          avatar: data?.avatar || null,
+          type,
+          id,
+        });
         setStatus("inactive");
       } else {
         setErrorMsg(data?.message || "Something went wrong");
@@ -116,7 +194,7 @@ export default function ScannerPage() {
         controls = await codeReader.decodeFromVideoDevice(
           undefined,
           videoRef.current,
-          (result, err) => {
+          (result) => {
             if (result && !isProcessing.current) {
               handleScan(result.getText());
             }
@@ -139,6 +217,11 @@ export default function ScannerPage() {
   }, [handleScan]);
 
   const cfg = statusConfig[status];
+
+  // show checkout button only when a trainer scanned and is in "already" state
+  const showCheckoutBtn =
+    member?.type === "trainer" &&
+    status === "already";
 
   return (
     <div className="relative min-h-screen bg-black flex flex-col items-center justify-between overflow-hidden select-none">
@@ -271,7 +354,7 @@ export default function ScannerPage() {
                       <div className="relative">
                         <img
                           src={member.avatar}
-                          alt={member.username}
+                          alt={member.displayName}
                           className={`w-20 h-20 rounded-full object-cover ring-2 ${cfg.ringColor}`}
                           onError={(e) => { e.currentTarget.style.display = "none"; }}
                         />
@@ -282,7 +365,7 @@ export default function ScannerPage() {
                     ) : (
                       <div className={`w-20 h-20 rounded-full border-2 flex items-center justify-center ${cfg.iconBg} ${cfg.border}`}>
                         <span className={`text-2xl font-black ${cfg.iconColor}`}>
-                          {member?.username ? getInitials(member.username) : cfg.icon}
+                          {member?.displayName ? getInitials(member.displayName) : cfg.icon}
                         </span>
                       </div>
                     )}
@@ -292,14 +375,46 @@ export default function ScannerPage() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.12 }}
-                    className="text-center"
+                    className="text-center w-full"
                   >
-                    <div className={`text-xs font-black tracking-[0.25em] mb-2 ${cfg.labelColor}`}>
+                    <div className={`text-xs font-black tracking-[0.25em] mb-1 ${cfg.labelColor}`}>
                       {cfg.label}
+                      {member?.type === "trainer" && (
+                        <span className="ml-2 text-[9px] font-bold tracking-widest text-orange-400/80 border border-orange-500/30 px-1.5 py-0.5 rounded">
+                          TRAINER
+                        </span>
+                      )}
                     </div>
                     <div className="text-white font-black text-base tracking-widest leading-snug">
-                      {cfg.message(member?.username || errorMsg)}
+                      {status === "checkout_error"
+                        ? cfg.message(errorMsg)
+                        : cfg.message(member?.displayName || errorMsg)}
                     </div>
+
+                    {/* checkout button — trainer already-in state only */}
+                    <AnimatePresence>
+                      {showCheckoutBtn && (
+                        <motion.button
+                          initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 4, scale: 0.95 }}
+                          transition={{ delay: 0.2, duration: 0.25 }}
+                          onClick={handleTrainerCheckout}
+                          disabled={checkingOut}
+                          className="mt-4 w-full py-2.5 rounded-xl text-xs font-black tracking-[0.2em] uppercase transition-all duration-200 disabled:opacity-50"
+                          style={{
+                            background: checkingOut
+                              ? "rgba(14,165,233,0.08)"
+                              : "rgba(14,165,233,0.18)",
+                            border: "1px solid rgba(14,165,233,0.4)",
+                            color: "#38bdf8",
+                            boxShadow: checkingOut ? "none" : "0 0 16px rgba(14,165,233,0.12)",
+                          }}
+                        >
+                          {checkingOut ? "CHECKING OUT..." : "↗ CHECK OUT NOW"}
+                        </motion.button>
+                      )}
+                    </AnimatePresence>
                   </motion.div>
 
                   <div className="w-full h-0.5 bg-white/10 rounded-full overflow-hidden">
