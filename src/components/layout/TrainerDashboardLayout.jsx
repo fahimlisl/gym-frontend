@@ -8,7 +8,8 @@ import {
   CalendarCheck, 
   UserCheck,
   Key,
-  LogOut 
+  LogOut, 
+  ScanQrCode
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { trainerLogout, trainerChangePassword, getTrainerSelf } from "../../api/trainer.api.js";
@@ -145,9 +146,10 @@ export default function TrainerDashboardLayout() {
 
               <nav className="flex-1 px-4 py-6 space-y-1">
                 <NavItem to="/trainer/dashboard" label="DASHBOARD" icon={LayoutDashboard} />
-                <NavItem to="/trainer/my-qr" label="MY QR" icon={QrCode} />
                 <NavItem to="/trainer/attendence/today" label="TODAY'S ATTENDANCE" icon={CalendarCheck} />
                 <NavItem to="/trainer/attendence/my" label="MY ATTENDANCE" icon={UserCheck} />
+                <NavItem to="/trainer/attendence/scan-qr" label="Scan QR" icon={ScanQrCode} />
+                <NavItem to="/trainer/my-qr" label="MY QR" icon={QrCode} />
               </nav>
 
               <div className="px-4 py-4 border-t border-red-600/30 space-y-2">
@@ -197,9 +199,10 @@ export default function TrainerDashboardLayout() {
 
             <nav className="flex-1 px-4 py-6 space-y-1">
               <NavItem to="/trainer/dashboard" label="DASHBOARD" icon={LayoutDashboard} />
-              <NavItem to="/trainer/my-qr" label="MY QR" icon={QrCode} />
               <NavItem to="/trainer/attendence/today" label="TODAY'S ATTENDANCE" icon={CalendarCheck} />
               <NavItem to="/trainer/attendence/my" label="MY ATTENDANCE" icon={UserCheck} />
+              <NavItem to="/trainer/attendence/scan-qr" label="Scan QR" icon={ScanQrCode} />
+              <NavItem to="/trainer/my-qr" label="MY QR" icon={QrCode} />
             </nav>
 
             <div className="px-4 py-4 border-t border-red-600/30 space-y-2">
