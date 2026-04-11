@@ -54,6 +54,92 @@ function StatCard({ label, value, icon, delay = 0, accent = "#ef4444" }) {
   );
 }
 
+function CouponBonusSection({ coupon, bonus }) {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div
+        className="relative overflow-hidden rounded-xl border border-white/8 p-5 group hover:border-yellow-500/30 transition-all duration-300"
+        style={{ background: "linear-gradient(135deg, #0d0d0d 0%, #111111 100%)" }}
+      >
+        <div className="absolute left-0 top-0 bottom-0 w-0.5 rounded-l-xl" style={{ background: "#eab308" }} />
+        <div
+          className="absolute -top-8 -right-8 w-28 h-28 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+          style={{ background: "radial-gradient(circle, rgba(234,179,8,0.15), transparent)" }}
+        />
+        <div className="pl-3">
+          <div className="flex items-center justify-between mb-3">
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-sm"
+              style={{ background: "rgba(234,179,8,0.12)", border: "1px solid rgba(234,179,8,0.25)" }}
+            >
+              🎟
+            </div>
+            {coupon ? (
+              <span
+                className="text-[10px] font-bold px-2 py-0.5 rounded-md tracking-wider"
+                style={{ background: "rgba(34,197,94,0.12)", color: "#22c55e", border: "1px solid rgba(34,197,94,0.25)" }}
+              >
+                ACTIVE
+              </span>
+            ) : (
+              <span
+                className="text-[10px] font-bold px-2 py-0.5 rounded-md tracking-wider"
+                style={{ background: "rgba(107,114,128,0.2)", color: "#6b7280", border: "1px solid rgba(107,114,128,0.2)" }}
+              >
+                NOT ASSIGNED
+              </span>
+            )}
+          </div>
+          <p className="text-white/40 text-[10px] tracking-[0.25em] uppercase font-medium mb-1.5">My Coupon</p>
+          {coupon ? (
+            <>
+              <p className="text-2xl font-black tracking-widest mb-1" style={{ color: "#eab308" }}>
+                {coupon.code}
+              </p>
+            </>
+          ) : (
+            <p className="text-white/20 text-sm font-medium mt-1">No coupon assigned yet</p>
+          )}
+        </div>
+      </div>
+      <div
+        className="relative overflow-hidden rounded-xl border border-white/8 p-5 group hover:border-purple-500/30 transition-all duration-300"
+        style={{ background: "linear-gradient(135deg, #0d0d0d 0%, #111111 100%)" }}
+      >
+        <div className="absolute left-0 top-0 bottom-0 w-0.5 rounded-l-xl" style={{ background: "#a855f7" }} />
+        <div
+          className="absolute -top-8 -right-8 w-28 h-28 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+          style={{ background: "radial-gradient(circle, rgba(168,85,247,0.15), transparent)" }}
+        />
+        <div className="pl-3">
+          <div
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-sm mb-3"
+            style={{ background: "rgba(168,85,247,0.12)", border: "1px solid rgba(168,85,247,0.25)" }}
+          >
+            💰
+          </div>
+          <p className="text-white/40 text-[10px] tracking-[0.25em] uppercase font-medium mb-3">Bonus</p>
+          <div className="flex items-end gap-6">
+            <div>
+              <p className="text-white/25 text-[10px] uppercase tracking-widest mb-0.5">This Month</p>
+              <p className="text-2xl font-black" style={{ color: "#a855f7" }}>
+                ₹{(bonus?.monthBonus ?? 0).toLocaleString("en-IN")}
+              </p>
+            </div>
+            <div className="pb-0.5">
+              <p className="text-white/25 text-[10px] uppercase tracking-widest mb-0.5">Total Earned</p>
+              <p className="text-lg font-bold text-white/50">
+                ₹{(bonus?.totalBonus ?? 0).toLocaleString("en-IN")}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  );
+}
+
 function StudentGridCard({ student, index }) {
   const navigate = useNavigate();
   const initials = student.username?.slice(0, 2).toUpperCase() ?? "??";
@@ -213,6 +299,8 @@ function StudentListRow({ student, index }) {
 export default function TrainerDashboard() {
   const [allStudents, setAllStudents] = useState([]);
   const [assignedStudents, setAssignedStudents] = useState([]);
+  const [coupon, setCoupon] = useState(null);
+  const [bonus, setBonus] = useState(null);
   const [loadingAll, setLoadingAll] = useState(true);
   const [loadingAssigned, setLoadingAssigned] = useState(true);
   const [search, setSearch] = useState("");
@@ -229,6 +317,17 @@ export default function TrainerDashboard() {
       .then((res) => setAssignedStudents(res.data.data || []))
       .catch(() => toast.error("Failed to load assigned students"))
       .finally(() => setLoadingAssigned(false));
+
+    api.get("/trainer/fetch/self/coupon")
+      .then((res) => {
+        const data = res.data.data;
+        if (data && Object.keys(data).length > 0) setCoupon(data);
+      })
+      .catch(() => {});
+
+    api.get("/trainer/fetchSelf")
+      .then((res) => setBonus(res.data.data?.bonus ?? null))
+      .catch(() => {});
   }, []);
 
   const loading = loadingAll || loadingAssigned;
@@ -249,9 +348,7 @@ export default function TrainerDashboard() {
     return sourceStudents.filter((s) => {
       const q = search.toLowerCase();
       const matchSearch = !q || s.username?.toLowerCase().includes(q) || s.email?.toLowerCase().includes(q);
-
       if (filterStatus === "students") return matchSearch;
-
       const isActive = getLatestSub(s)?.status?.toLowerCase() === "active";
       const matchFilter =
         filterStatus === "all" ||
@@ -351,6 +448,8 @@ export default function TrainerDashboard() {
             </>
           )}
         </div>
+
+        <CouponBonusSection coupon={coupon} bonus={bonus} />
 
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">

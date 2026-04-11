@@ -21,6 +21,7 @@ import {
   ChartBar,
   GitPullRequestDraft,
   Hamburger,
+  QrCode,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
@@ -34,6 +35,7 @@ const mainMenu = [
   { label: "PT Requests", to: "/admin/pt/requests", icon: GitPullRequestCreateArrow },
   { label: "Workout Template", to: "/admin/workout-templates", icon: ChartBar },
   { label: "Supplement Requests", to: "/admin/supplement/request", icon: GitPullRequestDraft },
+  { label: "Check-In QR", to: "/admin/check-in/qr", icon: QrCode },
   
 ];
 
@@ -82,6 +84,7 @@ const cafeMenu = [
 const otherMenu = [
   { label: "Supplements", to: "/admin/supplements", icon: Package },
   { label: "Coupons", to: "/admin/coupons", icon: TicketPercent },
+  { label: "Trainer Coupons", to: "/admin/coupons/trainer", icon: BadgePercent },
   { label: "Expenses", to: "/admin/expenses", icon: BanknoteArrowDown },
   { label: "Assets", to: "/admin/assets", icon: Dumbbell },
 ];

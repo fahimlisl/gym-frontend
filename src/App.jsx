@@ -67,6 +67,10 @@ import TodayAttendanceTrainer from "./pages/trainer/TodayAttendanceTrainer.jsx";
 import TrainerStudentDetail from "./pages/trainer/TrainerStudentDetail.jsx";
 import TrainerMyAttendance from "./pages/trainer/TrainerMyAttendance.jsx";
 import AdminTrainerAttendance from "./pages/admin/Attendence/AdminTrainerAttendance.jsx";
+import GymQRPage from "./pages/admin/Attendence/GymQRPage.jsx";
+import MemberScanGymQR from "./pages/user/MemberScanGymQR.jsx";
+import TrainerScanGymQR from "./pages/trainer/TrainerScanGymQR.jsx";
+import TrainerCoupon from "./pages/admin/TrainerCoupon.jsx";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -136,6 +140,7 @@ export default function App() {
         <Route element={<TrainerDashboardLayout />}>
           <Route path="/trainer/dashboard" element={<TrainerDashboard />} />
           <Route path="/trainer/my-qr" element={<TrainerQRWidget />} />
+          <Route path="/trainer/attendence/scan-qr" element={<TrainerScanGymQR />} />
           <Route path="/trainer/attendence/today" element={<TodayAttendanceTrainer />} />
           <Route path="/trainer/student/:userId" element={<TrainerStudentDetail />} />
           <Route path="/trainer/attendence/my" element={<TrainerMyAttendance />} />
@@ -158,6 +163,7 @@ export default function App() {
           <Route path="/member/history" element={<SubscriptionHistory />} />
           <Route path="/member/workout-plans" element={<UserWorkoutView />} />
           <Route path="/member/my-qr" element={<MyQRPage />} />
+          <Route path="/member/scan-qr" element={<MemberScanGymQR />} />
         </Route>
 
         {/* admin */}
@@ -172,6 +178,7 @@ export default function App() {
 
           <Route path="trainers" element={<Trainers />} />
           <Route path="coupons" element={<Coupon />} />
+          <Route path="coupons/trainer" element={<TrainerCoupon />} />
           <Route path="expenses" element={<Expenses />} />
           <Route path="assets" element={<AdminInventory />} />
 
@@ -192,6 +199,7 @@ export default function App() {
           <Route path="attendance/member/mark" element={<MarkAttendance />} />
           <Route path="attendance/member/today" element={<TodayAttendance />} />
           <Route path="attendance/member/month" element={<MonthlyAttendance />} />
+          <Route path="check-in/qr" element={<GymQRPage />} />
 
           <Route path="attendance/trainer/dashboard" element={<AdminTrainerAttendance />} />
           {/* <Route path="attendance/trainer/today" element={<TodayAttendance />} /> */}
