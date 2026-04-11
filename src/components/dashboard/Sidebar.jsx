@@ -84,6 +84,7 @@ const cafeMenu = [
 const otherMenu = [
   { label: "Supplements", to: "/admin/supplements", icon: Package },
   { label: "Coupons", to: "/admin/coupons", icon: TicketPercent },
+  { label: "Trainer Coupons", to: "/admin/coupons/trainer", icon: BadgePercent },
   { label: "Expenses", to: "/admin/expenses", icon: BanknoteArrowDown },
   { label: "Assets", to: "/admin/assets", icon: Dumbbell },
 ];

@@ -70,6 +70,7 @@ import AdminTrainerAttendance from "./pages/admin/Attendence/AdminTrainerAttenda
 import GymQRPage from "./pages/admin/Attendence/GymQRPage.jsx";
 import MemberScanGymQR from "./pages/user/MemberScanGymQR.jsx";
 import TrainerScanGymQR from "./pages/trainer/TrainerScanGymQR.jsx";
+import TrainerCoupon from "./pages/admin/TrainerCoupon.jsx";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -177,6 +178,7 @@ export default function App() {
 
           <Route path="trainers" element={<Trainers />} />
           <Route path="coupons" element={<Coupon />} />
+          <Route path="coupons/trainer" element={<TrainerCoupon />} />
           <Route path="expenses" element={<Expenses />} />
           <Route path="assets" element={<AdminInventory />} />
 

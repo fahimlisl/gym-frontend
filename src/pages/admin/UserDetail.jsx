@@ -12,6 +12,7 @@ import RenewPTModal from "../../components/admin/RenewPTModal";
 import RenewMembershipModal from "../../components/admin/RenewMembershipModal";
 import AssignWorkoutModal from "./AssignWorkoutModal";
 import AdminDietModal from "../../components/admin/AdminDietModal";
+import EditMemberModal from "../../components/admin/EditMemberModal";
 
 import { fetchParticularUser } from "../../api/admin.api";
 
@@ -29,6 +30,7 @@ export default function UserDetail() {
   const [renewMembershipOpen, setRenewMembershipOpen] = useState(false);
   const [assignWorkoutOpen, setAssignWorkoutOpen] = useState(false);
   const [dietModalOpen, setDietModalOpen] = useState(false);
+  const [editMemberOpen, setEditMemberOpen] = useState(false);
 
   const loadUser = async () => {
     try {
@@ -107,11 +109,34 @@ export default function UserDetail() {
           <span className="relative">BACK TO MEMBERS</span>
         </button>
 
-        <div className="border border-red-600/30 bg-gradient-to-br from-black via-neutral-900 to-black p-6 md:p-8 rounded-xl">
-          <h1 className="text-3xl font-black tracking-widest">MEMBER DETAILS</h1>
-          <p className="text-sm text-gray-400 mt-2">
-            Manage subscription, personal training & workout plans
-          </p>
+        <div className="border border-red-600/30 bg-gradient-to-br from-black via-neutral-900 to-black p-6 md:p-8 rounded-xl flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-black tracking-widest">MEMBER DETAILS</h1>
+            <p className="text-sm text-gray-400 mt-2">
+              Manage subscription, personal training & workout plans
+            </p>
+          </div>
+          <button
+            onClick={() => setEditMemberOpen(true)}
+            className="
+              group relative overflow-hidden
+              flex items-center gap-2
+              px-5 py-2.5
+              text-[11px] font-black tracking-widest
+              rounded-lg
+              transition-all duration-300
+              hover:shadow-[0_0_25px_rgba(239,68,68,0.4)]
+            "
+            style={{
+              background: "linear-gradient(135deg, #dc2626, #b91c1c)",
+              border: "1px solid rgba(239,68,68,0.4)",
+              color: "#fff",
+            }}
+          >
+            <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 opacity-0 group-hover:opacity-100 transition duration-300" />
+            <span className="relative">✎</span>
+            <span className="relative">EDIT MEMBER</span>
+          </button>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-8">
@@ -270,6 +295,14 @@ export default function UserDetail() {
             setDietModalOpen(false);
             fetchUserDiet();
           }}
+        />
+      )}
+
+      {editMemberOpen && (
+        <EditMemberModal
+          user={user}
+          onClose={() => setEditMemberOpen(false)}
+          onSuccess={loadUser}
         />
       )}
     </>

@@ -575,53 +575,52 @@ export default function Payments() {
         ) : (
           <div className="overflow-hidden border border-white/10 bg-gradient-to-br from-black via-neutral-900 to-black rounded-xl">
             <div className="lg:hidden space-y-3 p-4">
-              {filtered.map((tx) => {
-                const type = getTransactionType(tx);
-                si++;
+          {filtered.map((tx, index) => {
+            const type = getTransactionType(tx);
 
-                return (
-                  <div
-                    key={tx._id}
-                    className="group relative flex flex-col rounded-xl overflow-hidden bg-gradient-to-br from-black via-neutral-900 to-black border border-white/10 hover:border-red-600/40 transition"
-                  >
-                    <div className="p-4 space-y-3">
-                      <div className="flex justify-between items-start gap-3">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[10px] text-gray-400 tracking-widest uppercase font-semibold">
-                            {new Date(tx.createdAt).toLocaleDateString()}
-                          </p>
-                          <p className="text-base sm:text-lg font-black text-white mt-1 truncate uppercase">
-                            {tx.source}
-                          </p>
-                        </div>
-
-                        <span className={`inline-block px-2 py-1 rounded text-xs font-bold uppercase whitespace-nowrap ${
-                          type === 'credit' ? 'bg-green-900/40 text-green-400' : 'bg-red-900/40 text-red-600'
-                        }`}>
-                          {type === "credit" ? `+₹${tx.amount}` : `-₹${tx.amount}`}
-                        </span>
-                      </div>
-
-                      <div className="text-xs text-gray-400 space-y-1">
-                        <p>Method: <span className="text-gray-300">{tx.paymentMethod}</span></p>
-                        <p>Status: <span className={`font-semibold ${
-                          tx.status === 'success' ? 'text-green-400' :
-                          tx.status === 'pending' ? 'text-yellow-400' :
-                          'text-red-600'
-                        }`}>{tx.status}</span></p>
-                      </div>
+            return (
+              <div
+                key={tx._id}
+                className="group relative flex flex-col rounded-xl overflow-hidden bg-gradient-to-br from-black via-neutral-900 to-black border border-white/10 hover:border-red-600/40 transition"
+              >
+                <div className="p-4 space-y-3">
+                  <div className="flex justify-between items-start gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] text-gray-400 tracking-widest uppercase font-semibold">
+                        #{index + 1} · {new Date(tx.createdAt).toLocaleDateString()}
+                      </p>
+                      <p className="text-base sm:text-lg font-black text-white mt-1 truncate uppercase">
+                        {tx.source}
+                      </p>
                     </div>
 
-                    <button
-                      onClick={() => setSelectedTx(tx)}
-                      className="flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white py-2 text-[11px] font-extrabold rounded-none transition"
-                    >
-                      <Eye size={14} />
-                      VIEW
-                    </button>
+                    <span className={`inline-block px-2 py-1 rounded text-xs font-bold uppercase whitespace-nowrap ${
+                      type === 'credit' ? 'bg-green-900/40 text-green-400' : 'bg-red-900/40 text-red-600'
+                    }`}>
+                      {type === "credit" ? `+₹${tx.amount}` : `-₹${tx.amount}`}
+                    </span>
                   </div>
-                );
-              })}
+
+                  <div className="text-xs text-gray-400 space-y-1">
+                    <p>Method: <span className="text-gray-300">{tx.paymentMethod}</span></p>
+                    <p>Status: <span className={`font-semibold ${
+                      tx.status === 'success' ? 'text-green-400' :
+                      tx.status === 'pending' ? 'text-yellow-400' :
+                      'text-red-600'
+                    }`}>{tx.status}</span></p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setSelectedTx(tx)}
+                  className="flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white py-2 text-[11px] font-extrabold rounded-none transition"
+                >
+                  <Eye size={14} />
+                  VIEW
+                </button>
+              </div>
+            );
+          })}
             </div>
 
             <div className="hidden lg:block overflow-x-auto">
@@ -639,7 +638,7 @@ export default function Payments() {
                 </thead>
 
                 <tbody>
-                  {filtered.map((tx) => {
+                  {filtered.map((tx, index) => {
                     const type = getTransactionType(tx);
 
                     return (
@@ -647,7 +646,7 @@ export default function Payments() {
                         key={tx._id}
                         className="border-b border-white/5 hover:bg-white/[0.03] transition"
                       >
-                        <td className="p-4 text-gray-400 font-medium">{si++}</td>
+                        <td className="p-4 text-gray-400 font-medium">{index + 1}</td>  {/* 👈 */}
 
                         <td className="p-4 text-gray-300">
                           {new Date(tx.createdAt).toLocaleDateString()}
