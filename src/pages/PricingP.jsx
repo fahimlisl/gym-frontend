@@ -96,7 +96,7 @@ export default function PricingP() {
       paymentMethod: "razorpay",
     });
     setRegistrationStatus(null);
-    setCouponCode("ADD1099");
+    setCouponCode(plan.duration === "yearly" ? "ADD1099" : "")
     setAppliedCoupon(null);
     setCouponDiscount(0);
     setCouponError("");
