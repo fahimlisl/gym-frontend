@@ -174,7 +174,8 @@ export default function PricingP() {
       if (coupon.minCartAmount > selectedPlan.finalPrice) {
         throw new Error(
           // `Minimum cart amount of ₹${coupon.minCartAmount} required`,
-          `Coupon is not valid for 1 month plan` // hardcoded as of now
+          `Coupon is not applicable for this plan`
+          // `Coupon is not valid for 1 month plan` // hardcoded as of now
         );
       }
 
