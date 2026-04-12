@@ -31,24 +31,30 @@ export default function PricingCard({
       );
     }
 
-    if (duration === "monthly") {
+    // if (duration === "monthly") {
+    //   return (
+    //     <span className="text-gray-500 line-through text-sm sm:text-lg">
+    //       ₹{basePrice}
+    //     </span>
+    //   );
+    // }
+
       return (
         <span className="text-gray-500 line-through text-sm sm:text-lg">
           ₹{basePrice}
         </span>
       );
-    }
 
-    return (
-      <div className="flex flex-col gap-0.5">
-        <span className="text-gray-500 line-through text-xs sm:text-sm leading-tight">
-          admission ₹{ADMISSION_FEE} + fees ₹{basePrice}
-        </span>
-        <span className="text-gray-600 text-xs">
-          was ₹{basePrice + ADMISSION_FEE}
-        </span>
-      </div>
-    );
+    // return (
+    //   <div className="flex flex-col gap-0.5">
+    //     <span className="text-gray-500 line-through text-xs sm:text-sm leading-tight">
+    //       admission ₹{ADMISSION_FEE} + fees ₹{basePrice}
+    //     </span>
+    //     <span className="text-gray-600 text-xs">
+    //       was ₹{basePrice + ADMISSION_FEE}
+    //     </span>
+    //   </div>
+    // );
   };
 
   return (
@@ -101,8 +107,9 @@ export default function PricingCard({
 
         <span className="text-gray-400 text-sm">/ {duration}</span>
 
-        {!isPT && duration === "monthly" && (
-          <p className="text-xs text-white/30 mt-1">
+        {/* {!isPT && duration === "monthly" && ( */}
+        {!isPT && !(duration === "yearly") && (
+          <p className="text-xs text-white/90 mt-1">
             + ₹{ADMISSION_FEE} admission fee on checkout
           </p>
         )}
