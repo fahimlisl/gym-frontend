@@ -68,7 +68,7 @@ export default function UserDashboardLayout() {
     { icon: Apple, label: "Diet Chart", path: "/member/diet-chart" },
     { icon: Dumbbell, label: "Workout Plans", path: "/member/workout-plans" },
     { icon: History, label: "History", path: "/member/history" },
-    { icon: QrCode, label: "My QR", path: "/member/my-qr" },
+    // { icon: QrCode, label: "My QR", path: "/member/my-qr" },
     { icon: ScanQrCode , label: "Scan QR", path: "/member/scan-qr" },
   ];
 

@@ -29,12 +29,22 @@ export default function QRWidget() {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="border border-red-600/30 bg-gradient-to-br from-neutral-900 to-black rounded-xl overflow-hidden"
+      className="border border-red-600/30 bg-gradient-to-br from-neutral-900 to-black rounded-2xl overflow-hidden"
     >
-      <div className="h-0.5 bg-gradient-to-r from-red-700 via-red-500 to-red-700" />
+      <div className="h-0.5 bg-gradient-to-r from-red-900 via-red-500 to-red-900" />
 
-      <div className="p-5 flex items-center gap-5">
-        <div className="relative w-20 h-20 flex-shrink-0 bg-black border border-white/10 rounded-lg flex items-center justify-center overflow-hidden">
+      <div className="p-5 flex items-center gap-4">
+
+        {/* QR Frame */}
+        <div className="relative w-[80px] h-[80px] flex-shrink-0 bg-white rounded-xl flex items-center justify-center overflow-hidden">
+
+          {/* Pulse ring */}
+          <motion.span
+            animate={{ scale: [1, 1.04, 1], opacity: [0.3, 0.8, 0.3] }}
+            transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute inset-0 rounded-xl border border-red-500/50 pointer-events-none"
+          />
+
           {loading ? (
             <motion.div
               animate={{ rotate: 360 }}
@@ -43,35 +53,54 @@ export default function QRWidget() {
               <RefreshCw className="w-5 h-5 text-red-500" />
             </motion.div>
           ) : qr ? (
-            <img src={qr} alt="QR Code" className="w-full h-full object-contain p-1" />
+            <>
+              <img src={qr} alt="QR Code" className="w-[68px] h-[68px] object-contain" />
+              {/* Animated scan line */}
+              <motion.span
+                className="absolute left-1 right-1 h-[2px] rounded-full bg-gradient-to-r from-transparent via-red-500/80 to-transparent pointer-events-none"
+                animate={{ top: ["8px", "calc(100% - 10px)"], opacity: [0, 1, 1, 0] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                style={{ position: "absolute" }}
+              />
+            </>
           ) : (
-            <QrCode className="w-6 h-6 text-gray-600" />
+            <QrCode className="w-6 h-6 text-gray-400" />
           )}
 
-          <span className="absolute top-1 left-1 w-2.5 h-2.5 border-t border-l border-red-600/60" />
-          <span className="absolute top-1 right-1 w-2.5 h-2.5 border-t border-r border-red-600/60" />
-          <span className="absolute bottom-1 left-1 w-2.5 h-2.5 border-b border-l border-red-600/60" />
-          <span className="absolute bottom-1 right-1 w-2.5 h-2.5 border-b border-r border-red-600/60" />
+          {/* Corner brackets */}
+          <span className="absolute top-1 left-1 w-3 h-3 border-t-2 border-l-2 border-red-500 rounded-tl" />
+          <span className="absolute top-1 right-1 w-3 h-3 border-t-2 border-r-2 border-red-500 rounded-tr" />
+          <span className="absolute bottom-1 left-1 w-3 h-3 border-b-2 border-l-2 border-red-500 rounded-bl" />
+          <span className="absolute bottom-1 right-1 w-3 h-3 border-b-2 border-r-2 border-red-500 rounded-br" />
         </div>
 
+        {/* Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <QrCode className="w-4 h-4 text-red-500 flex-shrink-0" />
-            <span className="text-white font-bold tracking-widest text-sm">GYM CHECK-IN</span>
+            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse flex-shrink-0" />
+            <span className="text-white font-semibold tracking-widest text-[11px] uppercase">
+              Gym Check-In
+            </span>
           </div>
-          <p className="text-gray-500 text-xs tracking-wide leading-relaxed">
-            Show this at the entrance to mark your attendance instantly.
+          <p className="text-gray-500 text-[11.5px] leading-relaxed">
+            Show at entrance to mark attendance instantly.
           </p>
+          <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-500/10 border border-red-500/25">
+            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+            <span className="text-red-400 text-[10px] font-medium tracking-wide">Active</span>
+          </div>
         </div>
 
+        {/* Navigate button */}
         <motion.button
           whileHover={{ x: 3 }}
           whileTap={{ scale: 0.95 }}
-          onClick={() => navigate("/member/my-qr")}
-          className="flex-shrink-0 p-2 border border-white/10 hover:border-red-600/40 hover:bg-red-600/10 rounded-lg transition-all"
+          onClick={() => navigate("/member/scan-qr")}
+          className="flex-shrink-0 w-9 h-9 border border-white/10 hover:border-red-600/50 hover:bg-red-600/10 rounded-xl flex items-center justify-center transition-all"
         >
-          <ChevronRight className="w-5 h-5 text-red-500" />
+          <ChevronRight className="w-4 h-4 text-red-500" />
         </motion.button>
+
       </div>
     </motion.div>
   );

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { BrowserQRCodeReader } from "@zxing/browser";
+import { useNavigate } from "react-router-dom";
 import api from "../../api/axios.api";
 
 const GYM_QR_PAYLOAD = "ALPHA_GYM_CHECKIN";
@@ -10,6 +11,7 @@ export default function MemberScanGymQR() {
   const scannedRef = useRef(false);
   const [status, setStatus] = useState("idle");
   const [message, setMessage] = useState("");
+  const navigate = useNavigate();
 
   const stopScanner = () => {
     controlsRef.current?.stop();
@@ -21,7 +23,7 @@ export default function MemberScanGymQR() {
   };
 
   const startScanner = async () => {
-    stopScanner(); 
+    stopScanner();
     scannedRef.current = false;
 
     const reader = new BrowserQRCodeReader();
@@ -32,7 +34,6 @@ export default function MemberScanGymQR() {
         (result, err) => {
           if (result && !scannedRef.current) {
             const text = result.getText();
-            console.log("Scanned:", text);
             if (text === GYM_QR_PAYLOAD) {
               scannedRef.current = true;
               stopScanner();
@@ -65,7 +66,6 @@ export default function MemberScanGymQR() {
       setStatus("success");
       setMessage(res.data.message);
     } catch (err) {
-      console.error("Checkin error:", err.response?.data);
       const msg = err.response?.data?.message || "Something went wrong";
       if (err.response?.status === 400) setStatus("already");
       else if (err.response?.status === 403) setStatus("inactive");
@@ -123,12 +123,24 @@ export default function MemberScanGymQR() {
           >
             {message}
           </p>
-          <button
-            onClick={reset}
-            className="mt-2 px-5 py-2 bg-white/10 text-white text-xs font-black tracking-widest rounded-xl hover:bg-white/20 transition"
-          >
-            SCAN AGAIN
-          </button>
+
+          {/* Buttons row */}
+          <div className={`flex gap-3 mt-2 ${status === "success" ? "flex-col w-full" : ""}`}>
+            {status === "success" && (
+              <button
+                onClick={() => navigate("/member/dashboard")}
+                className="w-full px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white text-xs font-black tracking-widest rounded-xl transition"
+              >
+                GO HOME
+              </button>
+            )}
+            <button
+              onClick={reset}
+              className="w-full px-5 py-2 bg-white/10 text-white text-xs font-black tracking-widest rounded-xl hover:bg-white/20 transition"
+            >
+              SCAN AGAIN
+            </button>
+          </div>
         </div>
       )}
 

@@ -162,7 +162,7 @@ export default function App() {
           <Route path="/member/diet-chart" element={<DietChart />} />
           <Route path="/member/history" element={<SubscriptionHistory />} />
           <Route path="/member/workout-plans" element={<UserWorkoutView />} />
-          <Route path="/member/my-qr" element={<MyQRPage />} />
+          {/* <Route path="/member/my-qr" element={<MyQRPage />} />*/}
           <Route path="/member/scan-qr" element={<MemberScanGymQR />} />
         </Route>
 
