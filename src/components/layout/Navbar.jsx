@@ -12,7 +12,7 @@ export default function Navbar({ menuOpen, setMenuOpen }) {
         <Link to="/" className="text-xl font-extrabold tracking-widest">
           <span className="inline-flex items-center gap-1">
             <img
-              src="./alphagymlogo.png"
+              src="./alphagymlogov2.png"
               alt="logo"
               className="h-6 w-auto"
             />
