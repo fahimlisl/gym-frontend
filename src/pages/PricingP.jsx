@@ -1,6 +1,6 @@
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, useRef } from "react";
 import PricingCard from "../components/pricing/PricingCard";
-import { NavLink, useAsyncError, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { fetchAllPlans } from "../api/general.api.js";
 import useRazorpay from "../hooks/useRazorpay";
 import toast from "react-hot-toast";
@@ -9,6 +9,7 @@ import api from "../api/axios.api.js";
 export default function PricingP() {
   const navigate = useNavigate();
   const { handlePayment, loading, error, setError } = useRazorpay();
+  const avatarInputRef = useRef(null);
 
   const ADMISSION_FEE = 1099;
 
@@ -26,10 +27,13 @@ export default function PricingP() {
   const [couponDiscount, setCouponDiscount] = useState(0);
   const [offerDetails, setOfferDetails] = useState([]);
 
+  const [avatarFile, setAvatarFile] = useState(null); // raw File object for FormData upload
+
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
     phoneNumber: "",
+    avatar: null, // base64 preview only
     discount: 0,
     discountType: "flat",
     discountTypeOnAdFee: "flat",
@@ -51,10 +55,6 @@ export default function PricingP() {
       try {
         const d = await api.get("/general/offer/fetch/all");
         setOfferDetails(d.data.data);
-        console.log("d", d);
-        // console.log(offerDetails.data.data.map((t) => t.category === "SUBSCRIPTION"))
-        console.log("offerDetials : ", offerDetails);
-        console.log(d.data.data);
       } catch (error) {
         console.error("failed to load available offers", error);
       }
@@ -63,10 +63,6 @@ export default function PricingP() {
     loadPlans();
     fetchOfferAvailable();
   }, []);
-
-  const matchingOffers = offerDetails?.filter(
-    (offer) => offer.category === "SUBSCRIPTION" && offer.isActive === true,
-  );
 
   const filteredPlans = plans?.filter((plan) => plan.category === billing);
 
@@ -89,14 +85,16 @@ export default function PricingP() {
       fullName: "",
       email: "",
       phoneNumber: "",
+      avatar: null,
       discount: 0,
       discountType: "flat",
       discountTypeOnAdFee: "flat",
       discountOnAdFee: 0,
       paymentMethod: "razorpay",
     });
+    setAvatarFile(null);
     setRegistrationStatus(null);
-    setCouponCode(plan.duration === "yearly" ? "ADD1099" : "")
+    setCouponCode(plan.duration === "yearly" ? "ADD1099" : "");
     setAppliedCoupon(null);
     setCouponDiscount(0);
     setCouponError("");
@@ -110,17 +108,49 @@ export default function PricingP() {
     }));
   };
 
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Profile photo must be under 2MB");
+      e.target.value = "";
+      return;
+    }
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Only JPG, PNG or WEBP images are allowed");
+      e.target.value = "";
+      return;
+    }
+
+    // Store raw File — sent via FormData to the backend (multer expects this)
+    setAvatarFile(file);
+
+    // Store base64 — used only for the preview circle in the UI
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setFormData((prev) => ({ ...prev, avatar: ev.target.result }));
+    };
+    reader.readAsDataURL(file);
+  };
+
   const validateForm = () => {
+    if (!formData.avatar) {
+      toast.error("Profile photo is required");
+      return false;
+    }
     if (!formData.fullName.trim()) {
-      alert("Full name is required");
+      toast.error("Full name is required");
       return false;
     }
     if (!formData.email.trim()) {
-      alert("Email is required");
+      toast.error("Email is required");
       return false;
     }
     if (!formData.phoneNumber.trim() || formData.phoneNumber.length < 10) {
-      alert("Valid phone number is required");
+      toast.error("Valid phone number is required");
       return false;
     }
     return true;
@@ -172,16 +202,13 @@ export default function PricingP() {
       }
 
       if (coupon.minCartAmount > selectedPlan.finalPrice) {
-        throw new Error(
-          // `Minimum cart amount of ₹${coupon.minCartAmount} required`,
-          `Coupon is not applicable for this plan`
-          // `Coupon is not valid for 1 month plan` // hardcoded as of now
-        );
+        throw new Error("Coupon is not applicable for this plan");
       }
 
       if (coupon.usageLimit && coupon.usedCount >= coupon.usageLimit) {
         throw new Error("This coupon has reached its usage limit");
       }
+
       let discountAmount = 0;
       if (coupon.typeOfCoupon === "flat") {
         discountAmount = coupon.value;
@@ -235,7 +262,6 @@ export default function PricingP() {
   const checkUserExistence = async () => {
     try {
       setCheckingUser(true);
-      console.log("🔍 Checking if user exists...");
 
       const response = await fetch(
         `${import.meta.env.VITE_API_URL}/user/check/existance`,
@@ -279,20 +305,6 @@ export default function PricingP() {
     const userExists = await checkUserExistence();
     if (!userExists) return;
 
-    const planType = billing === "SUBSCRIPTION" ? selectedPlan.duration : "pt";
-
-    console.log("💰 Payment Summary:");
-    console.log(`Plan: ${selectedPlan.title}`);
-    console.log(`Original Plan Price: ₹${selectedPlan.finalPrice}`);
-    if (couponDiscount > 0) {
-      console.log(`Coupon Discount: -₹${couponDiscount}`);
-    }
-    console.log(`Final Plan Price: ₹${finalPlanPrice}`);
-    console.log(`Admission Fee: ₹${ADMISSION_FEE}`);
-    console.log(`Admission Discount: ₹${calculateAdmissionFeeDiscount()}`);
-    console.log(`Final Admission Fee: ₹${finalAdmissionFee}`);
-    console.log(`Total Payable: ₹${totalPayableAmount}`);
-
     await handlePayment({
       amount: totalPayableAmount,
       productName: `${selectedPlan.title} - ${selectedPlan.duration}`,
@@ -306,34 +318,30 @@ export default function PricingP() {
         });
 
         try {
-          console.log("📝 Calling registration endpoint...");
+          // Build FormData so multer on the backend receives the file via req.file
+          const payload = new FormData();
+          payload.append("username", formData.fullName);
+          payload.append("email", formData.email);
+          payload.append("phoneNumber", formData.phoneNumber);
+          payload.append("planId", selectedPlan._id);
+          if (appliedCoupon?.code) payload.append("coupon", appliedCoupon.code);
+          payload.append("admissionFee", ADMISSION_FEE);
+          payload.append("discountTypeOnAdFee", formData.discountTypeOnAdFee);
+          payload.append("discountOnAdFee", formData.discountOnAdFee);
+          payload.append("paymentStatus", "paid");
+          payload.append("paymentMethod", "razorpay");
+          payload.append("paymentId", paymentResult.paymentId);
+          payload.append("orderId", paymentResult.orderId);
+          // Append the actual File object — multer reads this as req.file
+          if (avatarFile) payload.append("avatar", avatarFile);
 
           const response = await fetch(
             `${import.meta.env.VITE_API_URL}/user/register`,
             {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                // user data
-                username: formData.fullName,
-                email: formData.email,
-                phoneNumber: formData.phoneNumber,
-
-                planId: selectedPlan._id,
-
-                coupon: appliedCoupon?.code || null,
-
-                admissionFee: ADMISSION_FEE,
-                discountTypeOnAdFee: formData.discountTypeOnAdFee,
-                discountOnAdFee: formData.discountOnAdFee,
-
-                paymentStatus: "paid",
-                paymentMethod: "razorpay",
-                paymentId: paymentResult.paymentId,
-                orderId: paymentResult.orderId,
-
-                avatar: null,
-              }),
+              // Do NOT set Content-Type manually — browser sets it with the
+              // correct multipart boundary automatically when body is FormData
+              body: payload,
             },
           );
 
@@ -443,6 +451,8 @@ export default function PricingP() {
       {showModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <div className="bg-neutral-900 rounded-2xl border border-white/10 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+
+            {/* Modal Header */}
             <div className="relative bg-gradient-to-br from-[#1a0000] to-neutral-900 px-8 py-6 border-b border-white/7 rounded-t-2xl overflow-hidden">
               <div className="absolute top-0 right-0 w-48 h-24 bg-red-600/10 blur-2xl pointer-events-none rounded-full" />
               <div className="flex items-start justify-between">
@@ -472,6 +482,7 @@ export default function PricingP() {
               </div>
             </div>
 
+            {/* Offer Banners */}
             {offerDetails.filter((o) => o.category === billing && o.isActive)
               .length > 0 && (
               <div className="px-8 pt-5 flex flex-col gap-2">
@@ -533,6 +544,113 @@ export default function PricingP() {
                     handlePaymentAndRegistration();
                   }}
                 >
+                  {/* ── Profile Photo (mandatory) ── */}
+                  <div>
+                    <label className="block text-[11px] font-semibold tracking-widest text-white/40 uppercase mb-3">
+                      Profile Photo <span className="text-red-500">*</span>
+                    </label>
+                    <div className="flex items-center gap-4">
+                      {/* Avatar preview circle */}
+                      <div
+                        onClick={() => avatarInputRef.current?.click()}
+                        className="relative w-16 h-16 rounded-full bg-white/[0.04] border-2 border-dashed border-white/20 flex items-center justify-center overflow-hidden shrink-0 cursor-pointer group hover:border-red-500/50 transition"
+                      >
+                        {formData.avatar ? (
+                          <>
+                            <img
+                              src={formData.avatar}
+                              alt="Profile preview"
+                              className="w-full h-full object-cover"
+                            />
+                            {/* Overlay on hover */}
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                              <svg
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="white"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                              </svg>
+                            </div>
+                          </>
+                        ) : (
+                          <svg
+                            width="22"
+                            height="22"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.8"
+                            className="text-white/30 group-hover:text-white/50 transition"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <circle cx="12" cy="8" r="4" />
+                            <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+                          </svg>
+                        )}
+                      </div>
+
+                      {/* Upload button & hint */}
+                      <div className="flex-1">
+                        <label className="inline-flex items-center gap-2 px-4 py-2 bg-white/[0.06] border border-white/10 rounded-lg text-sm font-semibold text-white cursor-pointer hover:bg-white/10 hover:border-white/20 transition">
+                          <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="17 8 12 3 7 8" />
+                            <line x1="12" y1="3" x2="12" y2="15" />
+                          </svg>
+                          {formData.avatar ? "Change Photo" : "Upload Photo"}
+                          <input
+                            ref={avatarInputRef}
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            className="hidden"
+                            onChange={handleAvatarChange}
+                            disabled={loading || checkingUser}
+                          />
+                        </label>
+                        <p className="mt-1.5 text-xs text-white/30">
+                          JPG, PNG or WEBP · max 2MB
+                        </p>
+                        {!formData.avatar && (
+                          <p className="mt-0.5 text-xs text-red-400/60">
+                            Required to proceed
+                          </p>
+                        )}
+                        {formData.avatar && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFormData((prev) => ({ ...prev, avatar: null }));
+                              setAvatarFile(null);
+                              if (avatarInputRef.current)
+                                avatarInputRef.current.value = "";
+                            }}
+                            className="mt-1 text-xs text-white/30 hover:text-red-400 transition"
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* ── Name & Phone ── */}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-[11px] font-semibold tracking-widest text-white/40 uppercase mb-2">
@@ -564,6 +682,7 @@ export default function PricingP() {
                     </div>
                   </div>
 
+                  {/* ── Email ── */}
                   <div>
                     <label className="block text-[11px] font-semibold tracking-widest text-white/40 uppercase mb-2">
                       Email *
@@ -579,6 +698,7 @@ export default function PricingP() {
                     />
                   </div>
 
+                  {/* ── Coupon ── */}
                   <div className="bg-white/[0.02] border border-white/8 rounded-xl p-4">
                     <label className="block text-[11px] font-semibold tracking-widest text-white/40 uppercase mb-3">
                       Coupon Code
@@ -634,6 +754,7 @@ export default function PricingP() {
                     )}
                   </div>
 
+                  {/* ── Payment Breakdown ── */}
                   <div className="bg-white/[0.02] border border-white/8 rounded-xl p-4 space-y-2.5">
                     <p className="text-[11px] font-semibold tracking-widest text-white/30 uppercase mb-3">
                       Payment Breakdown
@@ -665,9 +786,7 @@ export default function PricingP() {
 
                     <div className="border-t border-white/8 pt-3 flex justify-between font-black text-white text-base">
                       <span>Total payable</span>
-                      <span className="text-red-500">
-                        ₹{totalPayableAmount}
-                      </span>
+                      <span className="text-red-500">₹{totalPayableAmount}</span>
                     </div>
                   </div>
 
@@ -677,6 +796,7 @@ export default function PricingP() {
                     </div>
                   )}
 
+                  {/* ── Action Buttons ── */}
                   <div className="flex gap-3 pt-2">
                     <button
                       type="button"
