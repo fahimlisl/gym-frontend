@@ -64,7 +64,19 @@ export default function PricingP() {
     fetchOfferAvailable();
   }, []);
 
-  const filteredPlans = plans?.filter((plan) => plan.category === billing);
+  const PT_PREMIUM_PRICES = [1500, 1999, 4200, 8200, 16000];
+
+  const filteredPlans = plans
+    ?.filter((plan) => plan.category === billing)
+    ?.sort((a, b) => {
+      if (billing === "PT") {
+        const aIsPremium = PT_PREMIUM_PRICES.includes(a.finalPrice);
+        const bIsPremium = PT_PREMIUM_PRICES.includes(b.finalPrice);
+        if (aIsPremium && !bIsPremium) return -1;
+        if (!aIsPremium && bIsPremium) return 1;
+      }
+      return 0;
+  });
 
   const handleStartNow = (plan) => {
     if (plan.category === "PT") {

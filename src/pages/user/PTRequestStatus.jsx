@@ -64,15 +64,21 @@ export default function PTRequestStatus({ status: initialStatus }) {
       setLoading(false);
     }
   };
+const EXCLUSIVE_TRAINER_ID = "69eccd38d66c81dbf39edef1";
+const EXCLUSIVE_PRICES = [1999, 1500, 8200, 16000, 4200];
 
-  const loadTrainers = async () => {
-    try {
-      const res = await api.get("/general/fetchAllTrainer");
-      setTrainers(res.data.data);
-    } catch {
-      toast.error("Failed to load trainers");
-    }
-  };
+const loadTrainers = async () => {
+  try {
+    const res = await api.get("/general/fetchAllTrainer");
+    setTrainers(res.data.data);
+  } catch {
+    toast.error("Failed to load trainers");
+  }
+};
+
+const filteredTrainers = EXCLUSIVE_PRICES.includes(status?.basePrice)
+  ? trainers.filter((t) => t._id === EXCLUSIVE_TRAINER_ID)
+  : trainers.filter((t) => t._id !== EXCLUSIVE_TRAINER_ID);
 
   const assignTrainer = async (trainerId) => {
     try {
@@ -385,7 +391,7 @@ export default function PTRequestStatus({ status: initialStatus }) {
       <AnimatePresence>
         {openTrainerModal && (
           <TrainerModal
-            trainers={trainers}
+            trainers={filteredTrainers}
             onClose={() => setOpenTrainerModal(false)}
             onSelect={assignTrainer}
             assigning={assigning}
@@ -423,7 +429,7 @@ function TrainerModal({ trainers, onClose, onSelect, assigning, hoveredTrainer, 
 
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {trainers.map((trainer) => (
+            {trainers?.map((trainer) => (
               <div
                 key={trainer._id}
                 onMouseEnter={() => setHoveredTrainer(trainer._id)}
