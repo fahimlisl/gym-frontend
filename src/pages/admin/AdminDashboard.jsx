@@ -6,6 +6,7 @@ import {
   fetchDashboardRevenue,
   fetchRevenueBySource,
   fetchRecentTransactions,
+  fetchAllTransactions,
 } from "../../api/admin.api.js";
 import RevenueTimeline from "./RevenueTimeline.jsx";
 
@@ -14,19 +15,26 @@ export default function AdminDashboard() {
   const [sources, setSources] = useState([]);
   const [recent, setRecent] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [lifetimeNetRevenue, setLifetimeNetRevenue] = useState(0);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [rev, src, tx] = await Promise.all([
+        const [rev, src, tx, allTx] = await Promise.all([
           fetchDashboardRevenue(),
           fetchRevenueBySource(),
           fetchRecentTransactions(),
+          fetchAllTransactions(), 
         ]);
+        
+        const netRevenue = calculateLifetimeNetRevenue(allTx.data.data);
+        setLifetimeNetRevenue(netRevenue);
+        
         setStats(rev.data.data);
         setSources(src.data.data);
         setRecent(tx.data.data);
-      } catch {
+      } catch (error) {
+        console.error("Failed to load dashboard data:", error);
         toast.error("Failed to load dashboard data");
       } finally {
         setLoading(false);
@@ -34,6 +42,48 @@ export default function AdminDashboard() {
     };
     load();
   }, []);
+
+  // Calculate Lifetime Net Revenue: Total Credits - Total Debits
+  const calculateLifetimeNetRevenue = (transactions) => {
+    if (!transactions || transactions.length === 0) return 0;
+    
+    let totalCredits = 0; // Money coming IN
+    let totalDebits = 0;  // Money going OUT (refunds, expenses, etc.)
+    
+    transactions.forEach(t => {
+      const amount = t.amount || 0;
+      const type = t.type; // 'credit' or 'debit' from getTransactionType()
+      const status = t.status;
+      const source = t.source;
+      
+      // Skip failed transactions
+      if (status === "failed") return;
+      
+      // For refunded transactions, treat as debit
+      if (status === "refunded") {
+        totalDebits += Math.abs(amount);
+        return;
+      }
+      
+      // Based on transaction type from getTransactionType()
+      if (type === "credit") {
+        // Credits: subscription, supplement, personal-training, paymentin, cafe
+        totalCredits += amount;
+      } else if (type === "debit") {
+        // Debits: expense, refunds
+        totalDebits += Math.abs(amount);
+      }
+      
+      // Additional check based on source
+      if (source === "expense") {
+        totalDebits += Math.abs(amount);
+      }
+    });
+    
+    const netRevenue = totalCredits - totalDebits;
+    
+    return netRevenue;
+  };
 
   if (loading) {
     return (
@@ -47,10 +97,6 @@ export default function AdminDashboard() {
       </div>
     );
   }
-
-  // Calculate lifetime revenue (sum of all periods or use total from API)
-  const lifetimeRevenue = stats?.lifetime?.totalAmount || 
-    (stats?.yearly?.totalAmount || 0) + (stats?.monthly?.totalAmount || 0);
 
   return (
     <div className="min-h-screen bg-black p-4 md:p-6 lg:p-8">
@@ -67,35 +113,35 @@ export default function AdminDashboard() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6">
           <StatCard
-            title="Lifetime Revenue"
-            value={`₹${Math.round(stats.lifetime?.totalAmount || lifetimeRevenue).toLocaleString("en-IN")}`}
+            title="Lifetime Revenue (Net)"
+            value={`₹${Math.round(lifetimeNetRevenue).toLocaleString("en-IN")}`}
             icon={<TrendingUp className="w-5 h-5 text-red-500" />}
           />
           <StatCard
             title="Today Revenue"
-            value={`₹${Math.round(stats.today.totalAmount).toLocaleString("en-IN")}`}
+            value={`₹${Math.round(stats?.today?.totalAmount || 0).toLocaleString("en-IN")}`}
             icon={<TrendingUp className="w-5 h-5 text-red-500" />}
           />
           <StatCard
             title="Weekly Revenue"
-            value={`₹${Math.round(stats.weekly.totalAmount).toLocaleString("en-IN")}`}
+            value={`₹${Math.round(stats?.weekly?.totalAmount || 0).toLocaleString("en-IN")}`}
             icon={<TrendingUp className="w-5 h-5 text-red-500" />}
           />
           <StatCard
             title="Monthly Revenue"
-            value={`₹${Math.round(stats.monthly.totalAmount).toLocaleString("en-IN")}`}
+            value={`₹${Math.round(stats?.monthly?.totalAmount || 0).toLocaleString("en-IN")}`}
             icon={<TrendingUp className="w-5 h-5 text-red-500" />}
           />
           <StatCard
             title="Yearly Revenue"
-            value={`₹${Math.round(stats.yearly.totalAmount).toLocaleString("en-IN")}`}
+            value={`₹${Math.round(stats?.yearly?.totalAmount || 0).toLocaleString("en-IN")}`}
             icon={<TrendingUp className="w-5 h-5 text-red-500" />}
           />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <Card title="REVENUE OVERVIEW" className="lg:col-span-2">
-            <RevenueTimeline data={stats} />
+            <RevenueTimeline data={stats || {}} />
           </Card>
 
           <Card title="PAYMENT SOURCES">
@@ -105,7 +151,7 @@ export default function AdminDashboard() {
                   key={s._id}
                   label={formatSource(s._id)}
                   value={s.totalAmount}
-                  max={stats.monthly.totalAmount || 1}
+                  max={stats?.monthly?.totalAmount || 1}
                 />
               ))}
             </div>
@@ -120,34 +166,57 @@ export default function AdminDashboard() {
                   <th className="py-4 text-left">S.No</th>
                   <th className="text-left">USER</th>
                   <th className="text-left hidden sm:table-cell">SOURCE</th>
+                  <th className="text-left">TYPE</th>
                   <th className="text-left">AMOUNT</th>
                   <th className="text-left hidden md:table-cell">METHOD</th>
                   <th className="text-left">DATE</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                {recent.map((t, idx) => (
-                  <tr key={t._id} className="hover:bg-red-600/5 transition">
-                    <td className="py-4 text-gray-400">{idx + 1}</td>
-                    <td className="font-medium text-white truncate max-w-xs">
-                      {t.user?.username || "—"}
-                    </td>
-                    <td className="hidden sm:table-cell text-xs">
-                      <span className="bg-red-600/10 text-red-400 px-2 py-1 rounded">
-                        {formatSource(t.source)}
-                      </span>
-                    </td>
-                    <td className="font-bold text-red-500">
-                      ₹{Math.round(t.amount).toLocaleString("en-IN")}
-                    </td>
-                    <td className="hidden md:table-cell text-gray-400 uppercase text-xs">
-                      {t.paymentMethod}
-                    </td>
-                    <td className="text-gray-400">
-                      {new Date(t.paidAt).toLocaleDateString("en-IN")}
-                    </td>
-                  </tr>
-                ))}
+                {recent.map((t, idx) => {
+                  const amount = t.amount || 0;
+                  const type = t.type; // 'credit' or 'debit' from API
+                  const status = t.status;
+                  const isRefund = status === "refunded";
+                  const isDebit = type === "debit" || isRefund || t.source === "expense";
+                  const displayAmount = isDebit ? -Math.abs(amount) : amount;
+                  
+                  return (
+                    <tr key={t._id} className="hover:bg-red-600/5 transition">
+                      <td className="py-4 text-gray-400">{idx + 1}</td>
+                      <td className="font-medium text-white truncate max-w-xs">
+                        {t.user?.username || "System"}
+                      </td>
+                      <td className="hidden sm:table-cell text-xs">
+                        <span className={`px-2 py-1 rounded ${
+                          isDebit 
+                            ? "bg-orange-600/10 text-orange-400" 
+                            : "bg-green-600/10 text-green-400"
+                        }`}>
+                          {formatSource(t.source)}
+                        </span>
+                      </td>
+                      <td className="text-xs">
+                        <span className={`px-2 py-1 rounded ${
+                          isDebit 
+                            ? "bg-red-600/10 text-red-400" 
+                            : "bg-green-600/10 text-green-400"
+                        }`}>
+                          {isDebit ? "DEBIT" : "CREDIT"}
+                        </span>
+                      </td>
+                      <td className={`font-bold ${isDebit ? "text-orange-400" : "text-green-400"}`}>
+                        {isDebit ? "-" : "+"}₹{Math.abs(Math.round(displayAmount)).toLocaleString("en-IN")}
+                      </td>
+                      <td className="hidden md:table-cell text-gray-400 uppercase text-xs">
+                        {t.paymentMethod || "—"}
+                      </td>
+                      <td className="text-gray-400">
+                        {new Date(t.paidAt).toLocaleDateString("en-IN")}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -208,5 +277,8 @@ const formatSource = (s) => {
   if (s === "personal-training") return "PERSONAL TRAINING";
   if (s === "subscription") return "SUBSCRIPTION";
   if (s === "supplement") return "SUPPLEMENTS";
+  if (s === "cafe") return "CAFE";
+  if (s === "expense") return "EXPENSE";
+  if (s === "paymentin") return "PAYMENT IN";
   return s.toUpperCase();
 };

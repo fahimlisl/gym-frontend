@@ -68,7 +68,46 @@ const TransactionModal = ({ tx, onClose }) => {
         </div>
 
         <div className="p-5 md:p-7 space-y-6">
+          {/* User Information Section - NEW */}
+          {tx.user && (
+            <div className="bg-gradient-to-r from-red-900/20 to-red-600/5 border border-red-500/20 rounded-xl p-5 space-y-0">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-red-600/20 flex items-center justify-center">
+                  <span className="text-xl">👤</span>
+                </div>
+                <p className="text-xs tracking-widest text-red-400 font-bold uppercase">
+                  USER INFORMATION
+                </p>
+              </div>
+              <InfoRow 
+                label="Username" 
+                value={tx.user.username || "—"} 
+              />
+              <InfoRow 
+                label="Phone Number" 
+                value={tx.user.phoneNumber || "—"} 
+              />
+              <InfoRow 
+                label="Email" 
+                value={tx.user.email || "—"} 
+              />
+              {tx.user._id && (
+                <InfoRow 
+                  label="User ID" 
+                  value={typeof tx.user._id === 'object' ? tx.user._id.toString().slice(-8) : String(tx.user._id).slice(-8)} 
+                />
+              )}
+            </div>
+          )}
+
+          {/* Transaction Basic Info */}
           <div className="bg-neutral-900/50 border border-white/10 rounded-xl p-5 space-y-0">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-xl">💳</span>
+              <p className="text-xs tracking-widest text-gray-500 font-bold uppercase">
+                TRANSACTION DETAILS
+              </p>
+            </div>
             <InfoRow label="Payment Method" value={tx.paymentMethod} />
             <InfoRow label="Status" value={
               <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${
@@ -80,8 +119,42 @@ const TransactionModal = ({ tx, onClose }) => {
               </span>
             } />
             <InfoRow
-              label="Date"
+              label="Transaction Date"
               value={new Date(tx.createdAt).toLocaleString()}
+            />
+            <InfoRow
+              label="Paid At"
+              value={new Date(tx.paidAt).toLocaleString()}
+            />
+          </div>
+
+          {/* Transaction Type & Amount */}
+          <div className="bg-neutral-900/50 border border-white/10 rounded-xl p-5 space-y-0">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-xl">💰</span>
+              <p className="text-xs tracking-widest text-gray-500 font-bold uppercase">
+                AMOUNT DETAILS
+              </p>
+            </div>
+            <div className="flex justify-between items-center py-2.5 border-b border-white/5">
+              <span className="text-gray-400 text-sm font-medium">Type</span>
+              <span className={`font-bold text-sm px-2 py-1 rounded ${
+                getTransactionType(tx) === 'credit' 
+                  ? 'text-green-400 bg-green-900/20' 
+                  : 'text-red-400 bg-red-900/20'
+              }`}>
+                {getTransactionType(tx).toUpperCase()}
+              </span>
+            </div>
+            <InfoRow 
+              label="Amount" 
+              value={
+                <span className={`font-black ${
+                  getTransactionType(tx) === 'credit' ? 'text-green-400' : 'text-red-400'
+                }`}>
+                  {getTransactionType(tx) === 'credit' ? '+' : '-'}₹{tx.amount.toLocaleString('en-IN')}
+                </span>
+              } 
             />
           </div>
 
@@ -305,11 +378,8 @@ export default function Payments() {
   }, []);
 
   // ─── Opening & Closing Balance ────────────────────────────────────────────────
-  // Opening Balance = cumulative net of ALL transactions strictly BEFORE fromDate
-  // Closing Balance = Opening + net of ALL transactions from fromDate to toDate
-  // (uses ALL transactions, ignoring source/method/type filters — balance is always total)
   const { openingBalance, closingBalance } = useMemo(() => {
-    const fromDateStr = fromDate; // "YYYY-MM-DD"
+    const fromDateStr = fromDate;
     const toDateStr = toDate;
 
     let opening = 0;
@@ -323,10 +393,8 @@ export default function Payments() {
       const signed = type === "credit" ? t.amount : -t.amount;
 
       if (txDate < fromDateStr) {
-        // Before the selected range → contributes to opening balance
         opening += signed;
       } else if (txDate >= fromDateStr && txDate <= toDateStr) {
-        // Within selected range → contributes to period net
         periodNet += signed;
       }
     });
@@ -515,7 +583,6 @@ export default function Payments() {
         </div>
 
         {/* ── Stat Cards ── */}
-        {/* Row 1: Opening / Closing balance */}
         <div className="grid grid-cols-2 gap-3 md:gap-4">
           <StatCard
             label="Opening Balance"
@@ -531,7 +598,6 @@ export default function Payments() {
           />
         </div>
 
-        {/* Row 2: Credit / Debit / Count / Net */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
           <StatCard
             label="Total Credit"
@@ -573,7 +639,6 @@ export default function Payments() {
             {/* ── Mobile cards ── */}
             <div className="lg:hidden space-y-3 p-4">
 
-              {/* Opening balance pill */}
               <div className="flex items-center justify-between bg-neutral-900/60 border border-white/10 rounded-xl px-4 py-3">
                 <div>
                   <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Opening Balance</p>
@@ -632,7 +697,6 @@ export default function Payments() {
                 })
               )}
 
-              {/* Closing balance pill */}
               <div className="flex items-center justify-between bg-neutral-900/60 border border-white/10 rounded-xl px-4 py-3">
                 <div>
                   <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Closing Balance</p>
@@ -660,7 +724,6 @@ export default function Payments() {
                 </thead>
 
                 <tbody>
-                  {/* ── Opening Balance pinned row ── */}
                   <tr className="border-b border-white/10 bg-neutral-900/60">
                     <td className="p-4 text-gray-500 font-medium">—</td>
                     <td className="p-4 text-gray-400 text-xs">{fromDate}</td>
@@ -733,7 +796,6 @@ export default function Payments() {
                     })
                   )}
 
-                  {/* ── Closing Balance pinned row ── */}
                   <tr className="border-t-2 border-white/10 bg-neutral-900/60">
                     <td className="p-4 text-gray-500 font-medium">—</td>
                     <td className="p-4 text-gray-400 text-xs">{toDate}</td>
