@@ -48,6 +48,10 @@ export default function AdminDashboard() {
     );
   }
 
+  // Calculate lifetime revenue (sum of all periods or use total from API)
+  const lifetimeRevenue = stats?.lifetime?.totalAmount || 
+    (stats?.yearly?.totalAmount || 0) + (stats?.monthly?.totalAmount || 0);
+
   return (
     <div className="min-h-screen bg-black p-4 md:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto space-y-10">
@@ -61,7 +65,12 @@ export default function AdminDashboard() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6">
+          <StatCard
+            title="Lifetime Revenue"
+            value={`₹${Math.round(stats.lifetime?.totalAmount || lifetimeRevenue).toLocaleString("en-IN")}`}
+            icon={<TrendingUp className="w-5 h-5 text-red-500" />}
+          />
           <StatCard
             title="Today Revenue"
             value={`₹${Math.round(stats.today.totalAmount).toLocaleString("en-IN")}`}

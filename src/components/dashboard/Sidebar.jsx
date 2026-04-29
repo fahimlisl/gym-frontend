@@ -92,7 +92,6 @@ const otherMenu = [
 const settings = [
   { label: "Plans", to: "/admin/plans", icon: Layers },
   { label: "Offers", to: "/admin/offers", icon: BadgePercent },
-  { label: "Foods", to: "/admin/foods", icon: Hamburger },
 ]
 
 export default function Sidebar({ open, onClose }) {
@@ -371,7 +370,6 @@ function CollapsibleGroup({ config, onClose, level = 0 }) {
 
   return (
     <div>
-      {/* Parent Button */}
       <button
         onClick={() => setOpen((prev) => !prev)}
         className={`w-full flex items-center justify-between px-4 py-3

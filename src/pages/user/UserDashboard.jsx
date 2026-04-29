@@ -5,7 +5,6 @@ import api from "../../api/axios.api";
 import UserHeader from "../../components/user/UserHeader";
 import SubscriptionSection from "../../components/user/SubscriptionSection";
 import PTSection from "../../components/user/PTSection";
-import DietSection from "../../components/user/DietSection";
 import QRWidget from "../../components/user/QRWidget";
 
 export default function UserDashboard() {
@@ -59,7 +58,6 @@ export default function UserDashboard() {
       />
 
       <div className="mt-4">
-        {/* <DietSection /> */}
         <QRWidget />
       </div>
       <div className="grid lg:grid-cols-2 gap-6 mt-4">

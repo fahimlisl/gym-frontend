@@ -30,9 +30,7 @@ import CafeAdmins from "./pages/admin/CafeAdmins.jsx";
 import CafeAdminDashboard from "./pages/cafe/CafeAdminDashboard.jsx";
 import Coupon from "./pages/admin/Coupon.jsx";
 import Expenses from "./pages/admin/Expenses.jsx";
-import Foods from "./pages/trainer/Foods.jsx";
 import TrainerDashboardLayout from "./components/layout/TrainerDashboardLayout.jsx";
-import TrainerDietManager from "./pages/trainer/TrainerDietManager.jsx";
 import AdminInventory from "./pages/admin/AdminInventory.jsx";
 import TrainerProfile from "./pages/TrainerProfile.jsx";
 import PublicTrainers from "./pages/PublicTrainers.jsx";
@@ -202,12 +200,9 @@ export default function App() {
           <Route path="check-in/qr" element={<GymQRPage />} />
 
           <Route path="attendance/trainer/dashboard" element={<AdminTrainerAttendance />} />
-          {/* <Route path="attendance/trainer/today" element={<TodayAttendance />} /> */}
-          {/* <Route path="attendance/trainer/month" element={<MonthlyAttendance />} /> */}
 
           <Route path="plans" element={<Plan />} />
           <Route path="offers" element={<AdminOffer />} />
-          <Route path="foods" element={<Foods />} />
 
           <Route path="pt/requests" element={<AdminPTRequests />} />
 

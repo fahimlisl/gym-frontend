@@ -11,7 +11,7 @@ import AssignPTModal from "../../components/admin/AssignPTModal";
 import RenewPTModal from "../../components/admin/RenewPTModal";
 import RenewMembershipModal from "../../components/admin/RenewMembershipModal";
 import AssignWorkoutModal from "./AssignWorkoutModal";
-import AdminDietModal from "../../components/admin/AdminDietModal";
+import DietManagementModal from "../../components/admin/DietManagementModal";
 import EditMemberModal from "../../components/admin/EditMemberModal";
 
 import { fetchParticularUser } from "../../api/admin.api";
@@ -87,7 +87,6 @@ export default function UserDetail() {
   return (
     <>
       <div className="space-y-10">
-
         <button
           onClick={() => navigate("/admin/members")}
           className="
@@ -156,6 +155,7 @@ export default function UserDetail() {
               onRenew={() => setRenewPTOpen(true)}
             />
 
+            {/* WORKOUT PLAN SECTION - UNTOUCHED */}
             <div className="border border-red-600/30 bg-gradient-to-br from-black via-neutral-900 to-black p-6 rounded-xl">
               <h2 className="text-2xl font-black tracking-widest mb-4">WORKOUT PLAN</h2>
 
@@ -205,47 +205,58 @@ export default function UserDetail() {
               {userDiet ? (
                 <div className="space-y-4">
                   <div className="bg-neutral-800/50 border border-white/10 rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className={`text-[10px] font-black tracking-widest px-2 py-1 rounded-full ${
-                        userDiet.status === "approved"
-                          ? "bg-green-500/20 text-green-400 border border-green-500/30"
-                          : "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
-                      }`}>
-                        {userDiet.status === "approved" ? "✅ APPROVED" : "⏳ DRAFT"}
-                      </span>
-                      <span className="text-xs text-gray-500">{userDiet.dietType?.toUpperCase()}</span>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-2 h-2 rounded-full ${
+                          userDiet.status === "approved"
+                            ? "bg-green-500 animate-pulse"
+                            : "bg-yellow-500"
+                        }`} />
+                        <span className={`text-sm font-bold tracking-wider ${
+                          userDiet.status === "approved"
+                            ? "text-green-400"
+                            : "text-yellow-400"
+                        }`}>
+                          {userDiet.status === "approved" ? "APPROVED" : "DRAFT"}
+                        </span>
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {userDiet.photos?.length || 0} file(s)
+                      </div>
                     </div>
-                    <div className="text-xs text-neutral-400 space-y-1 mt-3">
-                      <p><span className="text-white">Goal:</span> {userDiet.goal}</p>
-                      <p><span className="text-white">Calories:</span> {userDiet.calories} kcal / day</p>
-                      {userDiet.desiredMacros && (
-                        <p>
-                          <span className="text-white">Macros:</span>{" "}
-                          <span className="text-red-400">{userDiet.desiredMacros.protein?.grams || 0}g P</span>
-                          {" · "}
-                          <span className="text-yellow-400">{userDiet.desiredMacros.carbs?.grams || 0}g C</span>
-                          {" · "}
-                          <span className="text-green-400">{userDiet.desiredMacros.fats?.grams || 0}g F</span>
-                        </p>
-                      )}
-                      <p><span className="text-white">Meals:</span> {userDiet.meals?.length || 0} meal{userDiet.meals?.length !== 1 ? "s" : ""}</p>
-                    </div>
+                    
+                    {userDiet.status === "draft" && (
+                      <p className="text-xs text-gray-400 mt-3 flex items-center gap-1">
+                        <span>⏳</span> Pending approval from admin
+                      </p>
+                    )}
+                    
+                    {userDiet.status === "approved" && (
+                      <p className="text-xs text-gray-400 mt-3 flex items-center gap-1">
+                        <span>✅</span> Active diet plan
+                      </p>
+                    )}
                   </div>
 
                   <button
                     onClick={() => setDietModalOpen(true)}
-                    className="w-full py-2 px-4 border border-white/10 text-white text-xs font-light hover:border-red-500 hover:text-red-500 transition-all"
+                    className="w-full py-2.5 px-4 border border-white/10 text-white text-xs font-light tracking-wider hover:border-red-500 hover:text-red-500 hover:bg-red-500/5 transition-all duration-300 flex items-center justify-center gap-2"
                   >
+                    <span>📋</span>
                     MANAGE DIET CHART
                   </button>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <p className="text-neutral-400 text-sm">No diet chart assigned</p>
+                  <div className="bg-neutral-800/30 border border-white/5 rounded-lg p-6 text-center">
+                    <div className="text-4xl mb-2">🥗</div>
+                    <p className="text-neutral-400 text-sm">No diet chart assigned</p>
+                  </div>
                   <button
                     onClick={() => setDietModalOpen(true)}
-                    className="w-full py-3 px-4 bg-red-500 text-white text-xs font-light tracking-wider hover:bg-red-600 transition-all"
+                    className="w-full py-3 px-4 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white text-xs font-light tracking-wider transition-all flex items-center justify-center gap-2"
                   >
+                    <span>+</span>
                     CREATE DIET CHART
                   </button>
                 </div>
@@ -255,6 +266,7 @@ export default function UserDetail() {
         </div>
       </div>
 
+      {/* MODALS */}
       {assignPTOpen && (
         <AssignPTModal
           userId={user._id}
@@ -289,7 +301,7 @@ export default function UserDetail() {
       )}
 
       {dietModalOpen && (
-        <AdminDietModal
+        <DietManagementModal
           userId={user._id}
           onClose={() => {
             setDietModalOpen(false);
