@@ -14,6 +14,7 @@ import AddSupplement from "./pages/admin/AddSupplement";
 
 import Supplements from "./pages/supplements/Supplements";
 import SupplementDetails from "./pages/supplements/SupplementDetails";
+import SuperAdminRoute from "./components/layout/SuperAdminRoute.jsx";
 
 import Pricing from "./pages/PricingP.jsx";
 import Contact from "./pages/Contact.jsx";
@@ -56,7 +57,6 @@ import AdminOffer from "./pages/admin/AdminOffer.jsx";
 import AdminWorkoutTemplates from "./pages/admin/AdminWorkoutTemplates.jsx";
 import AdminEditWorkout from "./pages/admin/AdminEditWorkout.jsx";
 import UserWorkoutView from "./pages/user/UserWorkoutView.jsx";
-import MyQRPage from "./pages/user/MyQRPage.jsx";
 import ScannerPage from "./pages/ScannerPage.jsx";
 import SuppBillsAdmin from "./pages/admin/SuppBillsAdmin.jsx";
 import PaymentInPage from "./pages/admin/PaymentInPage.jsx";
@@ -177,17 +177,11 @@ export default function App() {
           <Route path="trainers" element={<Trainers />} />
           <Route path="coupons" element={<Coupon />} />
           <Route path="coupons/trainer" element={<TrainerCoupon />} />
-          <Route path="expenses" element={<Expenses />} />
-          <Route path="assets" element={<AdminInventory />} />
 
           {/* cafe */}
           <Route path="cafe/items" element={<CafeItems />} />
           <Route path="cafe/add-item" element={<AddCafeItemModal />} />
           <Route path="cafe/admins" element={<CafeAdmins />} />
-
-          <Route path="payments/all" element={<Payments />} />
-          <Route path="payments/cafe" element={<CafePaymentsOfAdmin />} />
-          <Route path="payments/payments-in" element={<PaymentInPage />} />
 
           {/* attendance */}
           <Route
@@ -210,6 +204,26 @@ export default function App() {
 
           <Route path="workout-templates" element={<AdminWorkoutTemplates />} />
           <Route path="workout/:workoutId" element={<AdminEditWorkout />} />
+
+          <Route path="expenses" element={
+            <SuperAdminRoute><Expenses /></SuperAdminRoute>
+          } />
+
+          <Route path="assets" element={
+            <SuperAdminRoute><AdminInventory /></SuperAdminRoute>
+          } />
+
+          <Route path="payments/all" element={
+            <SuperAdminRoute><Payments /></SuperAdminRoute>
+          } />
+
+          <Route path="payments/cafe" element={
+            <SuperAdminRoute><CafePaymentsOfAdmin /></SuperAdminRoute>
+          } />
+
+          <Route path="payments/payments-in" element={
+            <SuperAdminRoute><PaymentInPage /></SuperAdminRoute>
+          } />
         </Route>
 
         {/* cafe */}

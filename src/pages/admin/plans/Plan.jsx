@@ -10,6 +10,7 @@ import {
   addBenefit,
   removeBenefit,
 } from "../../../api/admin.api.js";
+import api from "../../../api/axios.api.js";
 
 export default function AdminPlans() {
   const [plans, setPlans] = useState([]);
@@ -27,7 +28,19 @@ export default function AdminPlans() {
     basePrice: "",
     finalPrice: "",
     bio: "",
-  });
+  });const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+
+useEffect(() => {
+  const fetchAdmin = async () => {
+    try {
+      const { data } = await api.get("/admin/get/me");
+      setIsSuperAdmin(data?.admin?.isSuperAdmin ?? false);
+    } catch {
+      setIsSuperAdmin(false);
+    }
+  };
+  fetchAdmin();
+}, []);
 
   const loadPlans = async () => {
     try {
@@ -181,9 +194,11 @@ export default function AdminPlans() {
         </div>
 
         <button
-          onClick={handleCreate}
-          className="mt-4 flex items-center gap-2 bg-red-600 px-4 py-2 rounded"
-        >
+  onClick={handleCreate}
+  disabled={!isSuperAdmin}
+  title={!isSuperAdmin ? "Super admin only" : ""}
+  className="mt-4 flex items-center gap-2 bg-red-600 px-4 py-2 rounded disabled:opacity-40 disabled:cursor-not-allowed"
+>
           <Plus size={16} />
           Create Plan
         </button>
@@ -208,17 +223,21 @@ export default function AdminPlans() {
                 </div>
 
                 <div className="flex gap-3">
-                  <button
-                    onClick={() => openEdit(plan)}
-                    className="text-yellow-400"
-                  >
+                 <button
+  onClick={() => openEdit(plan)}
+  disabled={!isSuperAdmin}
+  title={!isSuperAdmin ? "Super admin only" : ""}
+  className="text-yellow-400 disabled:opacity-40 disabled:cursor-not-allowed"
+>
                     <Pencil size={18} />
                   </button>
 
                   <button
-                    onClick={() => handleDelete(plan._id)}
-                    className="text-red-500"
-                  >
+  onClick={() => handleDelete(plan._id)}
+  disabled={!isSuperAdmin}
+  title={!isSuperAdmin ? "Super admin only" : ""}
+  className="text-red-500 disabled:opacity-40 disabled:cursor-not-allowed"
+>
                     <Trash2 size={18} />
                   </button>
                 </div>
@@ -266,8 +285,11 @@ export default function AdminPlans() {
                       </span>
 
                       <button
-                        onClick={() => handleRemoveBenefit(plan._id, b._id)}
-                      >
+  onClick={() => handleRemoveBenefit(plan._id, b._id)}
+  disabled={!isSuperAdmin}
+  title={!isSuperAdmin ? "Super admin only" : ""}
+  className="disabled:opacity-40 disabled:cursor-not-allowed"
+>
                         <X size={14} />
                       </button>
                     </li>
@@ -278,7 +300,8 @@ export default function AdminPlans() {
               <div className="mt-4 flex gap-2">
                 <input
                   placeholder="New benefit"
-                  className="flex-1 bg-black border border-white/10 p-2 rounded text-sm"
+                  disabled={!isSuperAdmin}
+                  className="flex-1 bg-black border border-white/10 p-2 rounded text-sm disabled:opacity-40 disabled:cursor-not-allowed"
                   value={benefitInputs[plan._id] || ""}
                   onChange={(e) =>
                     setBenefitInputs((prev) => ({
@@ -289,9 +312,11 @@ export default function AdminPlans() {
                 />
 
                 <button
-                  onClick={() => handleAddBenefit(plan._id)}
-                  className="bg-red-600 px-3 rounded"
-                >
+  onClick={() => handleAddBenefit(plan._id)}
+  disabled={!isSuperAdmin}
+  title={!isSuperAdmin ? "Super admin only" : ""}
+  className="bg-red-600 px-3 rounded disabled:opacity-40 disabled:cursor-not-allowed"
+>
                   <Plus size={16} />
                 </button>
 
@@ -362,9 +387,10 @@ export default function AdminPlans() {
               </button>
 
               <button
-                onClick={handleEditSave}
-                className="px-4 py-2 bg-red-600 rounded"
-              >
+  onClick={handleEditSave}
+  disabled={!isSuperAdmin}
+  className="px-4 py-2 bg-red-600 rounded disabled:opacity-40 disabled:cursor-not-allowed"
+>
                 Save
               </button>
             </div>

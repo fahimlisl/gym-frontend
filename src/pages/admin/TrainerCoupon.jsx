@@ -22,6 +22,19 @@ export default function TrainerCoupon() {
   };
 
   const [form, setForm] = useState(defaultForm);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+
+useEffect(() => {
+  const fetchAdmin = async () => {
+    try {
+      const { data } = await axios.get("/admin/get/me");
+      setIsSuperAdmin(data?.admin?.isSuperAdmin ?? false);
+    } catch {
+      setIsSuperAdmin(false);
+    }
+  };
+  fetchAdmin();
+}, []);
 
   const fetchCoupons = async () => {
     try {
@@ -128,13 +141,11 @@ export default function TrainerCoupon() {
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
           <h2 className="text-xl md:text-2xl font-bold">Trainer Coupon Management</h2>
           <button
-            onClick={() => {
-              resetForm();
-              setEditId(null);
-              setShowModal(true);
-            }}
-            className="bg-black text-white px-5 py-2 rounded-lg w-full sm:w-auto"
-          >
+  onClick={() => { resetForm(); setEditId(null); setShowModal(true); }}
+  disabled={!isSuperAdmin}
+  title={!isSuperAdmin ? "Super admin only" : ""}
+  className="bg-black text-white px-5 py-2 rounded-lg w-full sm:w-auto disabled:opacity-40 disabled:cursor-not-allowed"
+>
             + Add Trainer Coupon
           </button>
         </div>
@@ -184,8 +195,10 @@ export default function TrainerCoupon() {
                     </td>
                     <td className="p-3">
                       <button
-                        onClick={() => handleToggle(c)}
-                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          onClick={() => handleToggle(c)}
+  disabled={!isSuperAdmin}
+  title={!isSuperAdmin ? "Super admin only" : ""}
+                        className={`px-3 py-1 rounded-full text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed ${
                           c.isActive
                             ? "bg-green-100 text-green-700"
                             : "bg-red-100 text-red-700"
@@ -195,16 +208,20 @@ export default function TrainerCoupon() {
                       </button>
                     </td>
                     <td className="p-3 flex gap-3">
-                      <button
-                        onClick={() => handleEdit(c)}
-                        className="text-blue-600 font-semibold hover:underline"
-                      >
+<button
+  onClick={() => handleEdit(c)}
+  disabled={!isSuperAdmin}
+  title={!isSuperAdmin ? "Super admin only" : ""}
+  className="text-blue-600 font-semibold hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
+>
                         Edit
                       </button>
-                      <button
-                        onClick={() => handleDelete(c._id)}
-                        className="text-red-500 font-semibold hover:underline"
-                      >
+<button
+  onClick={() => handleDelete(c._id)}
+  disabled={!isSuperAdmin}
+  title={!isSuperAdmin ? "Super admin only" : ""}
+  className="text-red-500 font-semibold hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
+>
                         Delete
                       </button>
                     </td>
@@ -225,8 +242,10 @@ export default function TrainerCoupon() {
                 <div className="flex justify-between items-start">
                   <span className="font-semibold text-base">{c.code}</span>
                   <button
-                    onClick={() => handleToggle(c)}
-                    className={`text-xs px-2 py-1 rounded ${
+                      onClick={() => handleToggle(c)}
+  disabled={!isSuperAdmin}
+  title={!isSuperAdmin ? "Super admin only" : ""}
+                    className={`text-xs px-2 py-1 rounded disabled:opacity-40 disabled:cursor-not-allowed ${
                       c.isActive
                         ? "bg-green-100 text-green-700"
                         : "bg-red-100 text-red-700"
@@ -250,16 +269,20 @@ export default function TrainerCoupon() {
                 {/* <div className="text-sm">Category: {c.category}</div> */}
                 <div className="text-sm">Used: {c.usedCount || 0} times</div>
                 <div className="flex gap-4 pt-2">
-                  <button
-                    onClick={() => handleEdit(c)}
-                    className="text-blue-600 font-semibold"
-                  >
+<button
+  onClick={() => handleEdit(c)}
+  disabled={!isSuperAdmin}
+  title={!isSuperAdmin ? "Super admin only" : ""}
+  className="text-blue-600 font-semibold hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
+>
                     Edit
                   </button>
-                  <button
-                    onClick={() => handleDelete(c._id)}
-                    className="text-red-500 font-semibold"
-                  >
+<button
+  onClick={() => handleDelete(c._id)}
+  disabled={!isSuperAdmin}
+  title={!isSuperAdmin ? "Super admin only" : ""}
+  className="text-red-500 font-semibold hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
+>
                     Delete
                   </button>
                 </div>
@@ -376,11 +399,11 @@ export default function TrainerCoupon() {
               >
                 Cancel
               </button>
-              <button
-                onClick={handleSubmit}
-                disabled={loading}
-                className="px-6 py-2 bg-black text-white rounded w-full sm:w-auto disabled:opacity-50"
-              >
+<button
+  onClick={handleSubmit}
+  disabled={loading || !isSuperAdmin}
+  className="px-6 py-2 bg-black text-white rounded w-full sm:w-auto disabled:opacity-50"
+>
                 {loading ? "Saving..." : editId ? "Update" : "Create"}
               </button>
             </div>

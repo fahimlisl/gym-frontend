@@ -20,6 +20,19 @@ export default function Coupon() {
     value: 0,
     usageLimit: "", 
   });
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+
+useEffect(() => {
+  const fetchAdmin = async () => {
+    try {
+      const { data } = await axios.get("/admin/get/me");
+      setIsSuperAdmin(data?.admin?.isSuperAdmin ?? false);
+    } catch {
+      setIsSuperAdmin(false);
+    }
+  };
+  fetchAdmin();
+}, []);
 
   const fetchCoupons = async () => {
     try {
@@ -100,12 +113,10 @@ export default function Coupon() {
           <h2 className="text-xl md:text-2xl font-bold">Coupon Management</h2>
 
           <button
-            onClick={() => {
-              resetForm();
-              setEditId(null);
-              setShowModal(true);
-            }}
-            className="bg-black text-white px-5 py-2 rounded-lg w-full sm:w-auto"
+            onClick={() => { resetForm(); setEditId(null); setShowModal(true); }}
+            disabled={!isSuperAdmin}
+            title={!isSuperAdmin ? "Super admin only" : ""}
+            className="bg-black text-white px-5 py-2 rounded-lg w-full sm:w-auto disabled:opacity-40 disabled:cursor-not-allowed"
           >
             + Add Coupon
           </button>
@@ -186,7 +197,9 @@ export default function Coupon() {
                   <td className="p-3">
                     <button
                       onClick={() => handleEdit(c)}
-                      className="text-blue-600 font-semibold"
+                      disabled={!isSuperAdmin}
+                      title={!isSuperAdmin ? "Super admin only" : ""}
+                      className="text-blue-600 font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       Edit
                     </button>
@@ -246,7 +259,9 @@ export default function Coupon() {
 
               <button
                 onClick={() => handleEdit(c)}
-                className="text-blue-600 font-semibold pt-2"
+                disabled={!isSuperAdmin}
+                title={!isSuperAdmin ? "Super admin only" : ""}
+                className="text-blue-600 font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Edit
               </button>
@@ -395,8 +410,8 @@ export default function Coupon() {
 
               <button
                 onClick={handleSubmit}
-                disabled={loading}
-                className="px-6 py-2 bg-black text-white rounded w-full sm:w-auto"
+                disabled={loading || !isSuperAdmin}
+                className="px-6 py-2 bg-black text-white rounded w-full sm:w-auto disabled:opacity-50"
               >
                 {editId ? "Update" : "Create"}
               </button>

@@ -1,4 +1,4 @@
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { data, NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
@@ -27,6 +27,7 @@ import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { adminLogout, changePasswordRequest } from "../../api/auth.api.js";
 import { useForm } from "react-hook-form";
+import api from "../../api/axios.api.js"
 
 const mainMenu = [
   { label: "Dashboard", to: "/admin/dashboard", icon: LayoutDashboard },
@@ -95,6 +96,7 @@ const settings = [
 ]
 
 export default function Sidebar({ open, onClose }) {
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const [showChangeModal, setShowChangeModal] = useState(false);
@@ -105,6 +107,27 @@ export default function Sidebar({ open, onClose }) {
     reset,
     formState: { isSubmitting },
   } = useForm();
+
+  useEffect(() => {
+    const fetchAdmin = async () => {
+      try {
+        const { data } = await api.get("/admin/get/me");
+        setIsSuperAdmin(data?.admin?.isSuperAdmin ?? false);
+        console.log(data)
+      } catch {
+        setIsSuperAdmin(false);
+      }
+    };
+    fetchAdmin();
+  }, []);
+
+  const visibleOtherMenu = isSuperAdmin
+    ? otherMenu
+    : otherMenu.filter((item) => !["Expenses", "Assets"].includes(item.label));
+
+  const visibleSettings = isSuperAdmin
+    ? settings
+    : settings.filter((item) => !["Offers"].includes(item.label));
 
   useEffect(() => {
     if (open) {
@@ -177,22 +200,19 @@ export default function Sidebar({ open, onClose }) {
               <SidebarLink key={item.to} item={item} onClose={onClose} />
             ))}
             <CollapsibleGroup config={attendanceMenu} onClose={onClose} />
-            <CollapsibleGroup config={paymentsMenu} onClose={onClose} />
-          </Section>
-
-          <Section title="CAFE" icon={Coffee} accent="emerald">
-            {cafeMenu.map((item) => (
-              <SidebarLink key={item.to} item={item} onClose={onClose} />
-            ))}
+            {isSuperAdmin && (                                      
+              <CollapsibleGroup config={paymentsMenu} onClose={onClose} />
+            )}
           </Section>
 
           <Section title="INVENTORY">
-            {otherMenu.map((item) => (
+            {visibleOtherMenu.map((item) => (   
               <SidebarLink key={item.to} item={item} onClose={onClose} />
             ))}
           </Section>
+
           <Section title="SETTINGS">
-            {settings.map((item) => (
+            {visibleSettings.map((item) => (   
               <SidebarLink key={item.to} item={item} onClose={onClose} />
             ))}
           </Section>
