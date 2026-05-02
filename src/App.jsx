@@ -2,6 +2,7 @@ import { Routes, Route } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 
 import PublicLayout from "./components/layout/PublicLayout";
 
@@ -132,6 +133,7 @@ export default function App() {
           <Route path="/about" element={<AboutUs />} />
           <Route path="/trainers" element={<PublicTrainers />} />
           <Route path="/trainers/:id" element={<TrainerProfile />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
 
         {/* trainer */}
@@ -224,6 +226,7 @@ export default function App() {
           <Route path="payments/payments-in" element={
             <SuperAdminRoute><PaymentInPage /></SuperAdminRoute>
           } />
+          <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
         </Route>
 
         {/* cafe */}
