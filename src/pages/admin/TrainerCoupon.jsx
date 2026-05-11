@@ -95,7 +95,7 @@ useEffect(() => {
       trainerId: coupon.trainerId?._id || coupon.trainerId || "",
       code: coupon.code,
       typeOfCoupon: coupon.typeOfCoupon,
-      minCartAmount: coupon.minCartAmount || "",
+      minCartAmount: coupon?.minCartAmount || "",
       maxDiscount: coupon.maxDiscount || "",
       expiryDate: coupon.expiryDate?.slice(0, 10) || "",
       isActive: coupon.isActive,
@@ -141,11 +141,11 @@ useEffect(() => {
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
           <h2 className="text-xl md:text-2xl font-bold">Trainer Coupon Management</h2>
           <button
-  onClick={() => { resetForm(); setEditId(null); setShowModal(true); }}
-  disabled={!isSuperAdmin}
-  title={!isSuperAdmin ? "Super admin only" : ""}
-  className="bg-black text-white px-5 py-2 rounded-lg w-full sm:w-auto disabled:opacity-40 disabled:cursor-not-allowed"
->
+            onClick={() => { resetForm(); setEditId(null); setShowModal(true); }}
+            disabled={!isSuperAdmin}
+            title={!isSuperAdmin ? "Super admin only" : ""}
+            className="bg-black text-white px-5 py-2 rounded-lg w-full sm:w-auto disabled:opacity-40 disabled:cursor-not-allowed"
+          >
             + Add Trainer Coupon
           </button>
         </div>
@@ -159,10 +159,9 @@ useEffect(() => {
                 <th className="p-3">Trainer</th>
                 <th className="p-3">Type</th>
                 <th className="p-3">Value</th>
-                <th className="p-3">Min Cart</th>
+                {/* <th className="p-3">Min Cart</th>*/}
                 <th className="p-3">Max Discount</th>
                 <th className="p-3">Expiry</th>
-                {/* <th className="p-3">Category</th> */}
                 <th className="p-3">Used</th>
                 <th className="p-3">Status</th>
                 <th className="p-3">Actions</th>
@@ -184,10 +183,9 @@ useEffect(() => {
                     <td className="p-3">
                       {c.typeOfCoupon === "percentage" ? `${c.value}%` : `₹${c.value}`}
                     </td>
-                    <td className="p-3">{c.minCartAmount ? `₹${c.minCartAmount}` : "—"}</td>
+                    {/* <td className="p-3">{c.minCartAmount ? `₹${c.minCartAmount}` : "—"}</td>*/}
                     <td className="p-3">{c.maxDiscount ? `₹${c.maxDiscount}` : "—"}</td>
                     <td className="p-3">{new Date(c.expiryDate).toLocaleDateString("en-IN")}</td>
-                    {/* <td className="p-3">{c.category}</td> */}
                     <td className="p-3">
                       <span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-700">
                         {c.usedCount || 0}
@@ -196,32 +194,32 @@ useEffect(() => {
                     <td className="p-3">
                       <button
                           onClick={() => handleToggle(c)}
-  disabled={!isSuperAdmin}
-  title={!isSuperAdmin ? "Super admin only" : ""}
-                        className={`px-3 py-1 rounded-full text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed ${
-                          c.isActive
-                            ? "bg-green-100 text-green-700"
-                            : "bg-red-100 text-red-700"
-                        }`}
+                          disabled={!isSuperAdmin}
+                          title={!isSuperAdmin ? "Super admin only" : ""}
+                          className={`px-3 py-1 rounded-full text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed ${
+                            c.isActive
+                              ? "bg-green-100 text-green-700"
+                              : "bg-red-100 text-red-700"
+                          }`}
                       >
                         {c.isActive ? "Active" : "Inactive"}
                       </button>
                     </td>
                     <td className="p-3 flex gap-3">
-<button
-  onClick={() => handleEdit(c)}
-  disabled={!isSuperAdmin}
-  title={!isSuperAdmin ? "Super admin only" : ""}
-  className="text-blue-600 font-semibold hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
->
-                        Edit
-                      </button>
-<button
-  onClick={() => handleDelete(c._id)}
-  disabled={!isSuperAdmin}
-  title={!isSuperAdmin ? "Super admin only" : ""}
-  className="text-red-500 font-semibold hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
->
+                    <button
+                      onClick={() => handleEdit(c)}
+                      disabled={!isSuperAdmin}
+                      title={!isSuperAdmin ? "Super admin only" : ""}
+                      className="text-blue-600 font-semibold hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                                            Edit
+                                          </button>
+                    <button
+                      onClick={() => handleDelete(c._id)}
+                      disabled={!isSuperAdmin}
+                      title={!isSuperAdmin ? "Super admin only" : ""}
+                      className="text-red-500 font-semibold hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
                         Delete
                       </button>
                     </td>
@@ -243,13 +241,13 @@ useEffect(() => {
                   <span className="font-semibold text-base">{c.code}</span>
                   <button
                       onClick={() => handleToggle(c)}
-  disabled={!isSuperAdmin}
-  title={!isSuperAdmin ? "Super admin only" : ""}
-                    className={`text-xs px-2 py-1 rounded disabled:opacity-40 disabled:cursor-not-allowed ${
-                      c.isActive
-                        ? "bg-green-100 text-green-700"
-                        : "bg-red-100 text-red-700"
-                    }`}
+                      disabled={!isSuperAdmin}
+                      title={!isSuperAdmin ? "Super admin only" : ""}
+                      className={`text-xs px-2 py-1 rounded disabled:opacity-40 disabled:cursor-not-allowed ${
+                        c.isActive
+                          ? "bg-green-100 text-green-700"
+                          : "bg-red-100 text-red-700"
+                      }`}
                   >
                     {c.isActive ? "Active" : "Inactive"}
                   </button>
@@ -261,28 +259,27 @@ useEffect(() => {
                 <div className="text-sm">
                   Value: {c.typeOfCoupon === "percentage" ? `${c.value}%` : `₹${c.value}`}
                 </div>
-                <div className="text-sm">Min Cart: {c.minCartAmount ? `₹${c.minCartAmount}` : "—"}</div>
+                {/* <div className="text-sm">Min Cart: {c.minCartAmount ? `₹${c.minCartAmount}` : "—"}</div>*/}
                 <div className="text-sm">Max Discount: {c.maxDiscount ? `₹${c.maxDiscount}` : "—"}</div>
                 <div className="text-sm">
                   Expiry: {new Date(c.expiryDate).toLocaleDateString("en-IN")}
                 </div>
-                {/* <div className="text-sm">Category: {c.category}</div> */}
                 <div className="text-sm">Used: {c.usedCount || 0} times</div>
                 <div className="flex gap-4 pt-2">
-<button
-  onClick={() => handleEdit(c)}
-  disabled={!isSuperAdmin}
-  title={!isSuperAdmin ? "Super admin only" : ""}
-  className="text-blue-600 font-semibold hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
->
-                    Edit
-                  </button>
-<button
-  onClick={() => handleDelete(c._id)}
-  disabled={!isSuperAdmin}
-  title={!isSuperAdmin ? "Super admin only" : ""}
-  className="text-red-500 font-semibold hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
->
+                <button
+                  onClick={() => handleEdit(c)}
+                  disabled={!isSuperAdmin}
+                  title={!isSuperAdmin ? "Super admin only" : ""}
+                  className="text-blue-600 font-semibold hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                                    Edit
+                                  </button>
+                <button
+                  onClick={() => handleDelete(c._id)}
+                  disabled={!isSuperAdmin}
+                  title={!isSuperAdmin ? "Super admin only" : ""}
+                  className="text-red-500 font-semibold hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
+                >
                     Delete
                   </button>
                 </div>
@@ -352,13 +349,13 @@ useEffect(() => {
                 onChange={(e) => setForm({ ...form, value: e.target.value })}
               />
 
-              <input
+              {/* <input
                 className="w-full border p-2 rounded"
                 placeholder="Min Cart Amount (Optional)"
                 type="number"
                 value={form.minCartAmount}
                 onChange={(e) => setForm({ ...form, minCartAmount: e.target.value })}
-              />
+              />*/}
 
               {form.typeOfCoupon === "percentage" && (
                 <input
@@ -399,11 +396,11 @@ useEffect(() => {
               >
                 Cancel
               </button>
-<button
-  onClick={handleSubmit}
-  disabled={loading || !isSuperAdmin}
-  className="px-6 py-2 bg-black text-white rounded w-full sm:w-auto disabled:opacity-50"
->
+              <button
+                onClick={handleSubmit}
+                disabled={loading || !isSuperAdmin}
+                className="px-6 py-2 bg-black text-white rounded w-full sm:w-auto disabled:opacity-50"
+              >
                 {loading ? "Saving..." : editId ? "Update" : "Create"}
               </button>
             </div>
