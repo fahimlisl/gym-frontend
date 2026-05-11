@@ -165,12 +165,12 @@ export default function Sidebar({ open, onClose }) {
     <>
       <aside
         className={`
-          fixed md:static inset-y-0 left-0 z-40
-          w-72 flex flex-col
+          fixed inset-y-0 left-0 z-40
+          w-72 h-screen flex flex-col
           border-r border-white/10 bg-black
           transform transition-all duration-300 ease-in-out
           ${open ? "translate-x-0 opacity-100" : "-translate-x-full opacity-0 md:opacity-100"}
-          md:translate-x-0
+          md:translate-x-0 md:sticky md:top-0
         `}
       >
         <div className="h-16 flex items-center justify-between px-6 border-b border-white/10">

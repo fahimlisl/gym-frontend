@@ -3,6 +3,7 @@ import toast from "react-hot-toast";
 import { registerMember } from "../../api/admin.api";
 import { X, Loader, ChevronRight, AlertCircle } from "lucide-react";
 import api from "../../api/axios.api";
+import useRazorpay from "../../hooks/useRazorpay.js";
 
 // hardcoded admission fee
 const ADMISSION_FEE = 1099;
@@ -54,6 +55,11 @@ export default function AddMemberModal({ onClose, onSuccess }) {
   const [couponLoading, setCouponLoading] = useState(false);
   
   const [initialLoading, setInitialLoading] = useState(true);
+  const [referralInput, setReferralInput] = useState("");
+  const [appliedReferral, setAppliedReferral] = useState(null);
+  const [referralLoading, setReferralLoading] = useState(false);
+
+  const { handlePayment, loading: razorpayLoading, error: razorpayError } = useRazorpay();
 
   const [form, setForm] = useState({
     username: "",
@@ -74,6 +80,8 @@ export default function AddMemberModal({ onClose, onSuccess }) {
       setCouponInput("");
       setAppliedCoupon(null);
       setCouponDiscount(0);
+      setReferralInput("");    
+      setAppliedReferral(null);  
     }
   }, [selectedPlan]);
 
@@ -195,6 +203,36 @@ export default function AddMemberModal({ onClose, onSuccess }) {
     toast("Coupon removed");
   };
 
+  const applyReferral = async () => {
+    if (!referralInput.trim()) {
+      toast.error("Enter a referral code");
+      return;
+    }
+    try {
+      setReferralLoading(true);
+      const res = await api.post("/general/fetch/trainer/coupon", {
+        code: referralInput.trim().toUpperCase(),
+      });
+      const tc = res.data.data;
+      if (!tc.isActive) throw new Error("This referral code is inactive");
+      if (tc.expiryDate && new Date(tc.expiryDate) < new Date())
+        throw new Error("This referral code has expired");
+      setAppliedReferral(tc);
+      toast.success("Referral code applied!");
+    } catch (err) {
+      toast.error(err?.response?.data?.message || err.message || "Invalid referral code");
+      setAppliedReferral(null);
+    } finally {
+      setReferralLoading(false);
+    }
+  };
+  
+  const removeReferral = () => {
+    setReferralInput("");
+    setAppliedReferral(null);
+    toast("Referral code removed");
+  };
+
   const getFinalPlanPrice = () => {
     if (!selectedPlan) return 0;
     return selectedPlan.finalPrice - couponDiscount;
@@ -216,43 +254,61 @@ export default function AddMemberModal({ onClose, onSuccess }) {
 
   const submit = async (e) => {
     e.preventDefault();
-
-    // if (!avatar) {
-    //   toast.error("Avatar is required");
-    //   return;
-    // }
-
+    
     if (!selectedPlan) {
       toast.error("Please select a plan");
       return;
     }
 
-    try {
-      setLoading(true);
-
+    const buildFormData = (paymentId = "", orderId = "") => {
       const fd = new FormData();
-      
       fd.append("username", form.username);
       fd.append("email", form.email || "");
       fd.append("phoneNumber", form.phoneNumber);
-      
       fd.append("planId", selectedPlan._id);
-      
       fd.append("admissionFee", ADMISSION_FEE);
       fd.append("discountTypeOnAdFee", form.discountTypeOnAdFee);
       fd.append("discountOnAdFee", form.discountOnAdFee || "0");
-      
       fd.append("paymentMethod", form.paymentMethod);
       fd.append("paymentStatus", "paid");
-      
-      if (appliedCoupon) {
-        fd.append("coupon", appliedCoupon.code);
-      }
-      
-      fd.append("avatar", avatar);
-
-      await registerMember(fd);
-
+      if (appliedCoupon) fd.append("coupon", appliedCoupon.code);
+      if (appliedReferral) fd.append("ReferralCode", appliedReferral.code);
+      if (paymentId) fd.append("paymentId", paymentId);
+      if (orderId) fd.append("orderId", orderId);
+      if (avatar) fd.append("avatar", avatar);
+      return fd;
+    };
+  
+    if (form.paymentMethod === "razorpay") {
+      await handlePayment({
+        amount: Math.floor(totalAmount),
+        productName: `${selectedPlan.title} - ${selectedPlan.duration}`,
+        userEmail: form.email,
+        userName: form.username,
+        userPhone: form.phoneNumber,
+        onSuccess: async (paymentResult) => {
+          try {
+            setLoading(true);
+            await registerMember(buildFormData(paymentResult.paymentId, paymentResult.orderId));
+            toast.success("Member added successfully");
+            onSuccess?.();
+            onClose();
+          } catch (err) {
+            toast.error(err?.response?.data?.message || "Registration failed after payment");
+          } finally {
+            setLoading(false);
+          }
+        },
+        onError: (err) => {
+          toast.error(err.message || "Payment failed");
+        },
+      });
+      return;
+    }
+  
+    try {
+      setLoading(true);
+      await registerMember(buildFormData());
       toast.success("Member added successfully");
       onSuccess?.();
       onClose();
@@ -339,6 +395,7 @@ export default function AddMemberModal({ onClose, onSuccess }) {
           </div>
 
           {selectedPlan && (
+            <>
             <div className="border border-white/10 p-4 rounded-xl space-y-3">
               <p className="text-xs tracking-widest text-green-500">APPLY COUPON</p>
               
@@ -378,6 +435,49 @@ export default function AddMemberModal({ onClose, onSuccess }) {
                 </div>
               )}
             </div>
+
+            <div className="border border-white/10 p-4 rounded-xl space-y-3">
+              <p className="text-xs tracking-widest text-purple-400">TRAINER REFERRAL CODE</p>
+            
+              {!appliedReferral ? (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Enter trainer referral code..."
+                    value={referralInput}
+                    onChange={(e) => setReferralInput(e.target.value.toUpperCase())}
+                    className="flex-1 bg-neutral-900 border border-white/10 px-3 py-2 rounded-lg text-sm focus:border-purple-600 outline-none font-mono tracking-widest"
+                  />
+                  <button
+                    type="button"
+                    onClick={applyReferral}
+                    disabled={referralLoading || !referralInput.trim()}
+                    className="px-4 py-2 bg-purple-700 hover:bg-purple-600 text-white font-bold text-sm rounded-lg disabled:opacity-50 whitespace-nowrap transition"
+                  >
+                    {referralLoading ? <Loader className="w-4 h-4 animate-spin" /> : "APPLY"}
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between bg-purple-600/10 border border-purple-600/30 rounded-lg p-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-purple-400 font-bold font-mono tracking-widest">
+                      {appliedReferral.code}
+                    </span>
+                    <span className="text-gray-400 text-xs">— referral applied</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={removeReferral}
+                    className="text-gray-400 hover:text-red-400 transition"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+            
+              <p className="text-xs text-gray-600">Optional — only if the member was referred by a trainer.</p>
+            </div>
+            </>
           )}
 
           <div className="border border-white/10 p-4 rounded-xl space-y-3">
@@ -488,7 +588,7 @@ export default function AddMemberModal({ onClose, onSuccess }) {
             </div>
           )}
 
-          <Actions loading={loading} onClose={onClose} />
+          <Actions loading={loading} razorpayLoading={razorpayLoading} onClose={onClose} />
         </form>
       )}
     </Modal>
@@ -539,17 +639,19 @@ function FileInput({ label, onChange }) {
   );
 }
 
-function Actions({ loading, onClose }) {
+
+function Actions({ loading, razorpayLoading, onClose }) {
+  const busy = loading || razorpayLoading;
   return (
     <div className="flex justify-end gap-4 pt-4">
-      <button type="button" onClick={onClose}
-              className="border border-white/20 px-6 py-3 text-xs font-bold">
+      <button type="button" onClick={onClose} disabled={busy}
+              className="border border-white/20 px-6 py-3 text-xs font-bold disabled:opacity-40">
         CANCEL
       </button>
-      <button type="submit" disabled={loading}
+      <button type="submit" disabled={busy}
               className="bg-red-600 hover:bg-red-700 px-8 py-3
-                         text-xs font-extrabold tracking-widest rounded-lg">
-        {loading ? "ADDING..." : "ADD MEMBER"}
+                         text-xs font-extrabold tracking-widest rounded-lg disabled:opacity-40">
+        {busy ? "PROCESSING..." : "ADD MEMBER"}
       </button>
     </div>
   );

@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { useEffect, useState, useMemo } from "react";
 import toast from "react-hot-toast";
 
@@ -39,6 +40,21 @@ export default function Members() {
     }
   };
 
+  const ptAlerts = useMemo(() => {
+    return users.filter((u) => {
+      const ptSubs = u?.personalTraning?.subscription;
+      const latestPT = ptSubs?.[ptSubs.length - 1];
+      const isPTActive = latestPT?.status === "active";
+      if (!isPTActive) return false;
+      return !u?.diet || !u?.workout;
+    }).map((u) => {
+      const missing = [];
+      if (!u?.diet) missing.push("diet");
+      if (!u?.workout) missing.push("workout");
+      return { id: u._id, name: u.username, missing };
+    });
+  }, [users]);
+
   useEffect(() => {
     loadMembers();
   }, []);
@@ -47,7 +63,7 @@ export default function Members() {
   const filteredUsers = useMemo(() => {
     return users.filter((u) => {
       const status = getLatestStatus(u);
-      const hasPT = u?.personalTraning?.subscription[u?.personalTraning?.subscription.length - 1].status;
+      const hasPT = u?.personalTraning?.subscription[u?.personalTraning?.subscription.length - 1]?.status;
 
       const matchesSearch =
         u.username?.toLowerCase().includes(search.toLowerCase());
@@ -117,6 +133,45 @@ export default function Members() {
           <div className="absolute -top-24 -right-24 w-96 h-96
                           bg-red-600/10 blur-3xl rounded-full" />
         </div>
+        {ptAlerts.length > 0 && (
+          <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/5 p-4 space-y-2">
+            <div className="flex items-center gap-2 mb-1">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
+                strokeLinejoin="round" className="text-yellow-400 shrink-0">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+              <p className="text-yellow-400 text-xs font-black tracking-widest">
+                ACTION REQUIRED — {ptAlerts.length} PT {ptAlerts.length === 1 ? "MEMBER" : "MEMBERS"} PENDING
+              </p>
+            </div>
+            <div className="space-y-1.5">
+              {ptAlerts.map((alert) => (
+                <div key={alert.id}
+                  className="flex items-center justify-between
+                             bg-yellow-500/[0.06] border border-yellow-500/20
+                             rounded-lg px-3 py-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-white text-xs font-bold">{alert.name}</span>
+                    <span className="text-yellow-400/70 text-[10px]">
+                      — {alert.missing.join(" & ")} not provided
+                    </span>
+                  </div>
+                  <Link
+                    to={`/admin/members/${alert.id}`}
+                    className="text-[10px] font-black tracking-widest text-yellow-400
+                               hover:text-white border border-yellow-500/30
+                               hover:bg-yellow-500/20 px-2.5 py-1 rounded-md transition"
+                  >
+                    ASSIGN →
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="flex flex-col sm:flex-row gap-4">
 

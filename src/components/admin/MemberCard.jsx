@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 
 export default function MemberCard({ user, latestStatus }) {
-  const hasPT = user?.personalTraning?.subscription[user?.personalTraning?.subscription.length - 1].status;
+  const hasPT = user?.personalTraning?.subscription[user?.personalTraning?.subscription.length - 1]?.status;
   const isExpired = latestStatus === "expired";
 
   return (
@@ -55,13 +55,22 @@ export default function MemberCard({ user, latestStatus }) {
             {user.email || user.phoneNumber}
           </p>
 
-          <div className="flex gap-2 mt-2 flex-wrap">
-            <Badge text="MEMBER" />
-            {hasPT === "active"
-              ? <Badge text="PT ACTIVE" active />
-              : <Badge text="NO PT" />}
-            {isExpired && <Badge text="EXPIRED" danger />}
-          </div>
+            <div className="flex gap-2 mt-2 flex-wrap">
+              {hasPT === "active"
+                ? <Badge text="PT ACTIVE" active />
+                : <Badge text="NO PT" />}
+              {user?.personalTraning && (
+                user?.diet 
+                  ? <Badge text="Diet Provided" success /> 
+                  : <Badge text="Diet Not Provided" warning />
+              )}
+              {user?.personalTraning && (
+                user?.workout
+                ? <Badge text="Workout Provided" successWorkout />
+                : <Badge text="Workout Not Provided" warningWorkout />
+              )}
+              {isExpired && <Badge text="EXPIRED" danger />}
+            </div>
         </div>
 
         <Link
@@ -96,7 +105,7 @@ export default function MemberCard({ user, latestStatus }) {
   );
 }
 
-function Badge({ text, active, danger }) {
+function Badge({ text, active, danger, warning, success, successWorkout, warningWorkout }) {
   return (
     <span
       className={`px-2 sm:px-3 py-0.5 sm:py-1 
@@ -108,6 +117,14 @@ function Badge({ text, active, danger }) {
             ? "bg-red-600 text-black"
             : active
             ? "bg-red-600 text-black"
+            : success
+            ? "bg-green-500 text-black"
+            : warning
+            ? "bg-yellow-400 text-black"
+            : successWorkout
+            ? "bg-blue-500 text-white"
+            : warningWorkout
+            ? "bg-orange-500 text-white"
             : "border border-white/20 text-gray-300"
         }
       `}

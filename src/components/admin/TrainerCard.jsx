@@ -17,8 +17,8 @@ export default function TrainerCard({ trainer, onUpdate }) {
     }
   };
 
-  const totalBonus = trainer.bonus?.totalBonus ?? 0;
-  const monthBonus = trainer.bonus?.monthBonus ?? 0;
+  const totalBonus = Math.floor(trainer.bonus?.totalBonus) ?? 0;
+  const monthBonus = Math.floor(trainer.bonus?.monthBonus) ?? 0;
 
   return (
     <>

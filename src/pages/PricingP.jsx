@@ -28,6 +28,11 @@ export default function PricingP() {
   const [offerDetails, setOfferDetails] = useState([]);
 
   const [avatarFile, setAvatarFile] = useState(null); // raw File object for FormData upload
+  // for trianer coupon 
+  const [referralCode, setReferralCode] = useState("");
+  const [appliedReferral, setAppliedReferral] = useState(null);
+  const [referralError, setReferralError] = useState("");
+  const [referralLoading, setReferralLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -109,6 +114,9 @@ export default function PricingP() {
     setCouponCode(plan.duration === "yearly" ? "ADD1099" : "");
     setAppliedCoupon(null);
     setCouponDiscount(0);
+    setReferralCode("");
+    setAppliedReferral(null);
+    setReferralError("");
     setCouponError("");
   };
 
@@ -251,6 +259,55 @@ export default function PricingP() {
     setCouponError("");
   };
 
+  const applyReferral = async () => {
+    if (!referralCode.trim()) {
+      setReferralError("Please enter a referral code");
+      return;
+    }
+    setReferralLoading(true);
+    setReferralError("");
+    setAppliedReferral(null);
+  
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/general/fetch/trainer/coupon`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: referralCode.trim().toUpperCase() }),
+        }
+      );
+  
+      const text = await response.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        throw new Error("Invalid referral code");
+      }
+  
+      if (!response.ok) throw new Error(data.message || "Invalid referral code");
+  
+      const tc = data.data;
+      if (!tc.isActive) throw new Error("This referral code is inactive");
+      if (tc.expiryDate && new Date(tc.expiryDate) < new Date())
+        throw new Error("This referral code has expired");
+  
+      setAppliedReferral(tc);
+      setReferralError("");
+      toast.success("Referral code applied!");
+    } catch (err) {
+      setReferralError(err.message);
+      setAppliedReferral(null);
+    } finally {
+      setReferralLoading(false);
+    }
+  };
+  const removeReferral = () => {
+    setAppliedReferral(null);
+    setReferralCode("");
+    setReferralError("");
+  };
   const getFinalPlanPrice = () => {
     if (!selectedPlan) return 0;
     return selectedPlan.finalPrice - couponDiscount;
@@ -337,6 +394,7 @@ export default function PricingP() {
           payload.append("phoneNumber", formData.phoneNumber);
           payload.append("planId", selectedPlan._id);
           if (appliedCoupon?.code) payload.append("coupon", appliedCoupon.code);
+          if (appliedReferral?.code) payload.append("ReferralCode", appliedReferral.code);
           payload.append("admissionFee", ADMISSION_FEE);
           payload.append("discountTypeOnAdFee", formData.discountTypeOnAdFee);
           payload.append("discountOnAdFee", formData.discountOnAdFee);
@@ -710,7 +768,6 @@ export default function PricingP() {
                     />
                   </div>
 
-                  {/* ── Coupon ── */}
                   <div className="bg-white/[0.02] border border-white/8 rounded-xl p-4">
                     <label className="block text-[11px] font-semibold tracking-widest text-white/40 uppercase mb-3">
                       Coupon Code
@@ -763,6 +820,66 @@ export default function PricingP() {
                     )}
                     {couponError && (
                       <p className="mt-2 text-xs text-red-400">{couponError}</p>
+                    )}
+                  </div>
+
+                  <div className="bg-white/[0.02] border border-white/8 rounded-xl p-4">
+                    <label className="block text-[11px] font-semibold tracking-widest text-white/40 uppercase mb-3">
+                      Referral Code{" "}
+                      <span className="normal-case text-white/25 font-normal tracking-normal">
+                        (optional)
+                      </span>
+                    </label>
+                  
+                    {!appliedReferral ? (
+                      <>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <input
+                            type="text"
+                            value={referralCode}
+                            onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                            placeholder="Enter trainer referral code"
+                            className="flex-1 px-4 py-2.5 bg-white/[0.04] border border-white/10 rounded-lg text-white placeholder-white/20 focus:outline-none focus:border-purple-500/40 font-mono tracking-widest text-sm transition"
+                            disabled={referralLoading || loading || checkingUser}
+                          />
+                          <button
+                            type="button"
+                            onClick={applyReferral}
+                            disabled={referralLoading || loading || checkingUser || !referralCode.trim()}
+                            className="px-5 py-2.5 bg-white/10 border border-white/15 text-white rounded-lg font-bold text-sm hover:bg-white/15 disabled:opacity-40 transition whitespace-nowrap tracking-wide"
+                          >
+                            {referralLoading ? "Checking..." : "Apply"}
+                          </button>
+                        </div>
+                        <p className="mt-2 text-xs text-white/25">
+                          Got a code from your trainer? Enter it here.
+                        </p>
+                      </>
+                    ) : (
+                      <div className="flex items-center justify-between bg-green-500/10 border border-green-500/25 rounded-lg px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-green-400">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                            <polyline points="22 4 12 14.01 9 11.01" />
+                          </svg>
+                          <span className="text-green-400 font-bold font-mono tracking-widest text-sm">
+                            {appliedReferral.code}
+                          </span>
+                          <span className="text-white/40 text-xs">— referral applied</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={removeReferral}
+                          disabled={loading || checkingUser}
+                          className="text-white/30 hover:text-red-400 transition text-sm"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
+                  
+                    {referralError && (
+                      <p className="mt-2 text-xs text-red-400">{referralError}</p>
                     )}
                   </div>
 
