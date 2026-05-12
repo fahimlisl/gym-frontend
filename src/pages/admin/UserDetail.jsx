@@ -13,6 +13,7 @@ import RenewMembershipModal from "../../components/admin/RenewMembershipModal";
 import AssignWorkoutModal from "./AssignWorkoutModal";
 import DietManagementModal from "../../components/admin/DietManagementModal";
 import EditMemberModal from "../../components/admin/EditMemberModal";
+import ChangeTrainerModal from "../../components/admin/ChangeTrainerModal"
 
 import { fetchParticularUser } from "../../api/admin.api";
 
@@ -31,6 +32,7 @@ export default function UserDetail() {
   const [assignWorkoutOpen, setAssignWorkoutOpen] = useState(false);
   const [dietModalOpen, setDietModalOpen] = useState(false);
   const [editMemberOpen, setEditMemberOpen] = useState(false);
+  const [showChangeTrainer, setShowChangeTrainer] = useState(false);
 
   const loadUser = async () => {
     try {
@@ -148,12 +150,19 @@ export default function UserDetail() {
           </div>
 
           <div className="space-y-6">
-            <PTSection
+            {/* <PTSection
               pt={user.personalTraning}
               subscription={user.subscription}
               onAssign={() => setAssignPTOpen(true)}
               onRenew={() => setRenewPTOpen(true)}
-            />
+            /> */}
+            <PTSection
+  pt={user.personalTraning}
+  onAssign={() => setShowAssign(true)}
+  onRenew={() => setShowRenew(true)}
+  onChangeTrainer={() => setShowChangeTrainer(true)}
+  subscription={user.subscription}
+/>
 
             {/* WORKOUT PLAN SECTION - UNTOUCHED */}
             <div className="border border-red-600/30 bg-gradient-to-br from-black via-neutral-900 to-black p-6 rounded-xl">
@@ -309,6 +318,15 @@ export default function UserDetail() {
           }}
         />
       )}
+
+      {showChangeTrainer && (
+  <ChangeTrainerModal
+    userId={user._id}
+    currentTrainerId={user.personalTraning?.subscription?.[user.personalTraning.subscription.length - 1]?.trainer?._id}
+    onClose={() => setShowChangeTrainer(false)}
+    // onSuccess={refetch} // whatever you call to reload the member data
+  />
+)}
 
       {editMemberOpen && (
         <EditMemberModal
