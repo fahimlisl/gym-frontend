@@ -29,6 +29,10 @@ const StatCard = ({ label, value, sub, color = "text-white" }) => (
   </div>
 );
 
+const SectionLabel = ({ children }) => (
+  <p className="text-[10px] text-gray-500 tracking-widest uppercase font-semibold px-1">{children}</p>
+);
+
 const PaymentFormFields = ({ data, setData }) => (
   <div className="space-y-4">
     <div className="space-y-1.5">
@@ -171,8 +175,7 @@ const EditPaymentModal = ({ payment, onClose, onSuccess }) => {
       return toast.error("Enter a valid amount");
     setLoading(true);
     try {
-      await axios.patch(`/admin/edit/payment/in/${payment.referenceId
-._id}`, {
+      await axios.patch(`/admin/edit/payment/in/${payment.referenceId._id}`, {
         ...form,
         amount: Number(form.amount),
       });
@@ -244,12 +247,93 @@ const DeleteWarning = ({ target, onCancel, onConfirm }) => (
   </div>
 );
 
+const calcStatBlocks = (txList, view) => {
+  if (view === "paymentin") {
+    const paymentins = txList.filter((t) => t.source === "paymentin");
+    return {
+      cash:     paymentins.filter((t) => t.paymentMethod === "cash").reduce((s, t) => s + t.amount, 0),
+      upi:      paymentins.filter((t) => t.paymentMethod === "upi").reduce((s, t) => s + t.amount, 0),
+      razorpay: paymentins.filter((t) => t.paymentMethod === "razorpay").reduce((s, t) => s + t.amount, 0),
+    };
+  }
+  const netByMethod = (m) => {
+    const credits = txList
+      .filter((t) => CREDIT_SOURCES.includes(t.source) && (m === "all" || t.paymentMethod === m))
+      .reduce((s, t) => s + t.amount, 0);
+    const debits = txList
+      .filter((t) => t.source === "expense" && (m === "all" || t.paymentMethod === m))
+      .reduce((s, t) => s + t.amount, 0);
+    return credits - debits;
+  };
+  return { cash: netByMethod("cash"), upi: netByMethod("upi"), razorpay: netByMethod("razorpay") };
+};
+
+const StatRow = ({ blocks, view }) => {
+  const upiPlusRazorpay = blocks.upi + blocks.razorpay;
+  const netTotal = blocks.cash + blocks.upi + blocks.razorpay;
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+      <StatCard
+        label={view === "paymentin" ? "Cash (Payment In)" : "Net Cash (All)"}
+        value={fmt(blocks.cash)}
+        color={blocks.cash >= 0 ? "text-green-400" : "text-red-500"}
+        sub={view === "all" ? (blocks.cash >= 0 ? "↑ Positive" : "↓ Negative") : undefined}
+      />
+      <StatCard
+        label={view === "paymentin" ? "UPI (Payment In)" : "Net UPI (All)"}
+        value={fmt(blocks.upi)}
+        color={blocks.upi >= 0 ? "text-green-400" : "text-red-500"}
+        sub={view === "all" ? (blocks.upi >= 0 ? "↑ Positive" : "↓ Negative") : undefined}
+      />
+      <div className="col-span-2 md:col-span-1 flex flex-col rounded-xl bg-gradient-to-br from-black via-neutral-900 to-black border border-white/10 p-5">
+        <p className="text-[10px] text-gray-500 tracking-widest uppercase font-semibold">
+          {view === "paymentin" ? "Digital (Payment In)" : "Net Digital (All)"}
+        </p>
+        <p className={`text-2xl font-black mt-2 ${upiPlusRazorpay >= 0 ? "text-green-400" : "text-red-500"}`}>
+          ₹{fmt(upiPlusRazorpay)}
+        </p>
+        {view === "all" && (
+          <p className="text-xs text-gray-500 mt-1">
+            {upiPlusRazorpay >= 0 ? "↑ Positive" : "↓ Negative"}
+          </p>
+        )}
+        <div className="flex items-center gap-2 mt-2">
+          <span className="text-[10px] text-gray-500">UPI ₹{fmt(blocks.upi)}</span>
+          <span className="text-[10px] text-gray-600">+</span>
+          <span className="text-[10px] text-gray-500">Razorpay ₹{fmt(blocks.razorpay)}</span>
+        </div>
+        <p className="text-[10px] text-yellow-500/70 mt-2 leading-relaxed">
+          ⚠ Razorpay settlements go directly to bank — not reflected in physical cash.
+        </p>
+      </div>
+
+      <div className="col-span-2 md:col-span-1 flex flex-col rounded-xl bg-gradient-to-br from-black via-neutral-900 to-black border border-white/10 p-5 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-red-600/5 to-transparent pointer-events-none" />
+        <p className="text-[10px] text-gray-500 tracking-widest uppercase font-semibold">
+          {view === "paymentin" ? "Net Total (Payment In)" : "Net Total (All)"}
+        </p>
+        <p className={`text-2xl font-black mt-2 ${netTotal >= 0 ? "text-white" : "text-red-500"}`}>
+          ₹{fmt(netTotal)}
+        </p>
+        <p className={`text-xs mt-1 font-semibold ${netTotal >= 0 ? "text-green-400" : "text-red-400"}`}>
+          {netTotal >= 0 ? "↑ Net Positive" : "↓ Net Negative"}
+        </p>
+        <div className="flex flex-col gap-1 mt-3 pt-3 border-t border-white/5">
+          <span className="text-[10px] text-gray-500">Cash ₹{fmt(blocks.cash)}</span>
+          <span className="text-[10px] text-gray-500">UPI ₹{fmt(blocks.upi)}</span>
+          <span className="text-[10px] text-gray-500">Razorpay ₹{fmt(blocks.razorpay)}</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function PaymentInPage() {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading]           = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [editTarget, setEditTarget]     = useState(null); 
-  const [deleteTarget, setDeleteTarget] = useState(null); 
+  const [editTarget, setEditTarget]     = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   const [view, setView]     = useState("paymentin");
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
@@ -281,25 +365,13 @@ export default function PaymentInPage() {
     });
   }, [transactions, view, fromDate, toDate, source, method]);
 
-  const statBlocks = useMemo(() => {
+  const allTimeBlocks = useMemo(() => calcStatBlocks(transactions, view), [transactions, view]);
+  const filteredBlocks = useMemo(() => {
     const inRange = transactions.filter((t) => {
       const txDate = new Date(t.createdAt).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
       return txDate >= fromDate && txDate <= toDate;
     });
-    if (view === "paymentin") {
-      const paymentins = inRange.filter((t) => t.source === "paymentin");
-      return {
-        cash:     paymentins.filter((t) => t.paymentMethod === "cash").reduce((s, t) => s + t.amount, 0),
-        upi:      paymentins.filter((t) => t.paymentMethod === "upi").reduce((s, t) => s + t.amount, 0),
-        razorpay: paymentins.filter((t) => t.paymentMethod === "razorpay").reduce((s, t) => s + t.amount, 0),
-      };
-    }
-    const netByMethod = (m) => {
-      const credits = inRange.filter((t) => CREDIT_SOURCES.includes(t.source) && (m === "all" || t.paymentMethod === m)).reduce((s, t) => s + t.amount, 0);
-      const debits  = inRange.filter((t) => t.source === "expense" && (m === "all" || t.paymentMethod === m)).reduce((s, t) => s + t.amount, 0);
-      return credits - debits;
-    };
-    return { cash: netByMethod("cash"), upi: netByMethod("upi"), razorpay: netByMethod("razorpay") };
+    return calcStatBlocks(inRange, view);
   }, [transactions, view, fromDate, toDate]);
 
   const exportExcel = () => {
@@ -364,42 +436,18 @@ export default function PaymentInPage() {
           ))}
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
-          <StatCard
-            label={view === "paymentin" ? "Total Cash (Payment In)" : "Net Cash (All)"}
-            value={fmt(statBlocks.cash)}
-            color={statBlocks.cash >= 0 ? "text-green-400" : "text-red-500"}
-            sub={view === "all" ? (statBlocks.cash >= 0 ? "↑ Positive" : "↓ Negative") : undefined}
-          />
-          <StatCard
-            label={view === "paymentin" ? "Total UPI (Payment In)" : "Net UPI (All)"}
-            value={fmt(statBlocks.upi)}
-            color={statBlocks.upi >= 0 ? "text-green-400" : "text-red-500"}
-            sub={view === "all" ? (statBlocks.upi >= 0 ? "↑ Positive" : "↓ Negative") : undefined}
-          />
-          <div className="col-span-2 md:col-span-1 flex flex-col rounded-xl bg-gradient-to-br from-black via-neutral-900 to-black border border-white/10 p-5">
-            <p className="text-[10px] text-gray-500 tracking-widest uppercase font-semibold">
-              {view === "paymentin" ? "Total Digital (Payment In)" : "Net Digital (All)"}
-            </p>
-            <p className={`text-2xl font-black mt-2 ${statBlocks.upi + statBlocks.razorpay >= 0 ? "text-green-400" : "text-red-500"}`}>
-              ₹{fmt(statBlocks.upi + statBlocks.razorpay)}
-            </p>
-            {view === "all" && (
-              <p className="text-xs text-gray-500 mt-1">
-                {statBlocks.upi + statBlocks.razorpay >= 0 ? "↑ Positive" : "↓ Negative"}
-              </p>
-            )}
-            <div className="flex items-center gap-2 mt-2">
-              <span className="text-[10px] text-gray-500">UPI ₹{fmt(statBlocks.upi)}</span>
-              <span className="text-[10px] text-gray-600">+</span>
-              <span className="text-[10px] text-gray-500">Razorpay ₹{fmt(statBlocks.razorpay)}</span>
-            </div>
-            <p className="text-[10px] text-yellow-500/70 mt-2 leading-relaxed">
-              ⚠ Razorpay settlements go directly to bank — not reflected in physical cash.
-            </p>
-          </div>
+        <div className="space-y-2">
+          <SectionLabel>All-Time Totals</SectionLabel>
+          <StatRow blocks={allTimeBlocks} view={view} />
         </div>
-
+        <div className="space-y-2">
+          <SectionLabel>
+            {fromDate === toDate
+              ? `Totals for ${new Date(fromDate).toLocaleDateString("en-IN")}`
+              : `Totals: ${new Date(fromDate).toLocaleDateString("en-IN")} – ${new Date(toDate).toLocaleDateString("en-IN")}`}
+          </SectionLabel>
+          <StatRow blocks={filteredBlocks} view={view} />
+        </div>
         <div className="border border-white/10 bg-gradient-to-br from-black via-neutral-900 to-black rounded-xl p-4 md:p-6 space-y-4">
           <h3 className="text-xs font-extrabold text-white tracking-widest uppercase">Filters</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
@@ -440,7 +488,6 @@ export default function PaymentInPage() {
             </div>
           </div>
         </div>
-
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <div className="text-center">
