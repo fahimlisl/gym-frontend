@@ -92,11 +92,9 @@ function CouponBonusSection({ coupon, bonus }) {
           </div>
           <p className="text-white/40 text-[10px] tracking-[0.25em] uppercase font-medium mb-1.5">My Coupon</p>
           {coupon ? (
-            <>
-              <p className="text-2xl font-black tracking-widest mb-1" style={{ color: "#eab308" }}>
-                {coupon.code}
-              </p>
-            </>
+            <p className="text-2xl font-black tracking-widest mb-1" style={{ color: "#eab308" }}>
+              {coupon.code}
+            </p>
           ) : (
             <p className="text-white/20 text-sm font-medium mt-1">No coupon assigned yet</p>
           )}
@@ -135,7 +133,6 @@ function CouponBonusSection({ coupon, bonus }) {
           </div>
         </div>
       </div>
-
     </div>
   );
 }
@@ -164,7 +161,7 @@ function StudentGridCard({ student, index }) {
         <div className="flex items-start justify-between mb-4">
           <div className="relative">
             <div
-              className="w-11 h-11 rounded-xl flex items-center justify-center text-sm font-black text-white"
+              className="w-11 h-11 rounded-xl flex items-center justify-center text-sm font-black text-white overflow-hidden"
               style={{ background: `${accent}20`, border: `1.5px solid ${accent}40`, color: accent }}
             >
               {student?.avatar?.url
@@ -297,26 +294,19 @@ function StudentListRow({ student, index }) {
 }
 
 export default function TrainerDashboard() {
-  const [allStudents, setAllStudents] = useState([]);
   const [assignedStudents, setAssignedStudents] = useState([]);
   const [coupon, setCoupon] = useState(null);
   const [bonus, setBonus] = useState(null);
-  const [loadingAll, setLoadingAll] = useState(true);
-  const [loadingAssigned, setLoadingAssigned] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [view, setView] = useState("grid");
 
   useEffect(() => {
-    api.get("/trainer/fetchAllUser")
-      .then((res) => setAllStudents(res.data.data || []))
-      .catch(() => toast.error("Failed to load students"))
-      .finally(() => setLoadingAll(false));
-
     api.get("/trainer/fetchAssignedStudents")
       .then((res) => setAssignedStudents(res.data.data || []))
-      .catch(() => toast.error("Failed to load assigned students"))
-      .finally(() => setLoadingAssigned(false));
+      .catch(() => toast.error("Failed to load students"))
+      .finally(() => setLoading(false));
 
     api.get("/trainer/fetch/self/coupon")
       .then((res) => {
@@ -330,25 +320,15 @@ export default function TrainerDashboard() {
       .catch(() => {});
   }, []);
 
-  const loading = loadingAll || loadingAssigned;
-
-  const sourceStudents = filterStatus === "students" ? assignedStudents : allStudents;
-
   const activeCount = useMemo(
-    () => allStudents.filter((s) => getLatestSub(s)?.status?.toLowerCase() === "active").length,
-    [allStudents]
-  );
-
-  const assignedActiveCount = useMemo(
     () => assignedStudents.filter((s) => getLatestSub(s)?.status?.toLowerCase() === "active").length,
     [assignedStudents]
   );
 
   const filtered = useMemo(() => {
-    return sourceStudents.filter((s) => {
+    return assignedStudents.filter((s) => {
       const q = search.toLowerCase();
       const matchSearch = !q || s.username?.toLowerCase().includes(q) || s.email?.toLowerCase().includes(q);
-      if (filterStatus === "students") return matchSearch;
       const isActive = getLatestSub(s)?.status?.toLowerCase() === "active";
       const matchFilter =
         filterStatus === "all" ||
@@ -356,12 +336,11 @@ export default function TrainerDashboard() {
         (filterStatus === "inactive" && !isActive);
       return matchSearch && matchFilter;
     });
-  }, [sourceStudents, search, filterStatus]);
-
-  const isStudentsMode = filterStatus === "students";
+  }, [assignedStudents, search, filterStatus]);
 
   return (
     <div className="min-h-screen text-white" style={{ background: "#080808" }}>
+      {/* Header */}
       <div
         className="relative overflow-hidden border-b"
         style={{ borderColor: "rgba(255,255,255,0.06)", background: "linear-gradient(180deg, #0d0d0d, #080808)" }}
@@ -402,9 +381,7 @@ export default function TrainerDashboard() {
               <p className="text-white/30 text-sm font-light tracking-wide">
                 {loading
                   ? "Loading..."
-                  : isStudentsMode
-                    ? `${assignedStudents.length} assigned · ${assignedActiveCount} active`
-                    : `${allStudents.length} total members · ${activeCount} active`}
+                  : `${assignedStudents.length} assigned · ${activeCount} active`}
               </p>
             </div>
 
@@ -434,19 +411,9 @@ export default function TrainerDashboard() {
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
 
         <div className="grid grid-cols-3 gap-3">
-          {isStudentsMode ? (
-            <>
-              <StatCard label="My Students" value={assignedStudents.length} icon="◈" accent="#f97316" delay={0} />
-              <StatCard label="Active" value={assignedActiveCount} icon="◉" accent="#22c55e" delay={70} />
-              <StatCard label="Inactive" value={assignedStudents.length - assignedActiveCount} icon="◎" accent="#6b7280" delay={140} />
-            </>
-          ) : (
-            <>
-              <StatCard label="Total Members" value={allStudents.length} icon="◈" accent="#ef4444" delay={0} />
-              <StatCard label="Active Subs" value={activeCount} icon="◉" accent="#22c55e" delay={70} />
-              <StatCard label="Inactive" value={allStudents.length - activeCount} icon="◎" accent="#6b7280" delay={140} />
-            </>
-          )}
+          <StatCard label="My Students" value={assignedStudents.length} icon="◈" accent="#f97316" delay={0} />
+          <StatCard label="Active" value={activeCount} icon="◉" accent="#22c55e" delay={70} />
+          <StatCard label="Inactive" value={assignedStudents.length - activeCount} icon="◎" accent="#6b7280" delay={140} />
         </div>
 
         <CouponBonusSection coupon={coupon} bonus={bonus} />
@@ -480,10 +447,9 @@ export default function TrainerDashboard() {
             style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}
           >
             {[
-              { key: "all",      label: "All",      c: "#ef4444" },
+              { key: "all",      label: "All",      c: "#f97316" },
               { key: "active",   label: "Active",   c: "#22c55e" },
               { key: "inactive", label: "Inactive", c: "#6b7280" },
-              { key: "students", label: "My Students", c: "#f97316" },
             ].map(({ key, label, c }) => (
               <button
                 key={key}
@@ -530,11 +496,9 @@ export default function TrainerDashboard() {
           >
             <p className="text-3xl mb-3 opacity-20">◎</p>
             <p className="text-white/25 text-sm tracking-widest uppercase mb-3">
-              {isStudentsMode
-                ? "No students assigned to you yet"
-                : search || filterStatus !== "all"
-                  ? "No members match"
-                  : "No members found"}
+              {search || filterStatus !== "all"
+                ? "No members match"
+                : "No students assigned to you yet"}
             </p>
             {(search || filterStatus !== "all") && (
               <button
