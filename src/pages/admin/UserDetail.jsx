@@ -13,6 +13,7 @@ import RenewMembershipModal from "../../components/admin/RenewMembershipModal";
 import AssignWorkoutModal from "./AssignWorkoutModal";
 import DietManagementModal from "../../components/admin/DietManagementModal";
 import EditMemberModal from "../../components/admin/EditMemberModal";
+import ChangeTrainerModal from "../../components/admin/ChangeTrainerModal"
 
 import { fetchParticularUser } from "../../api/admin.api";
 
@@ -21,6 +22,7 @@ export default function UserDetail() {
   const navigate = useNavigate();
 
   const [user, setUser] = useState(null);
+  const [checkTempBill,setCheckTempBill] = useState(null);
   const [loading, setLoading] = useState(true);
   const [userWorkout, setUserWorkout] = useState(null);
   const [userDiet, setUserDiet] = useState(null);
@@ -31,12 +33,15 @@ export default function UserDetail() {
   const [assignWorkoutOpen, setAssignWorkoutOpen] = useState(false);
   const [dietModalOpen, setDietModalOpen] = useState(false);
   const [editMemberOpen, setEditMemberOpen] = useState(false);
+  const [showChangeTrainer, setShowChangeTrainer] = useState(false);
 
   const loadUser = async () => {
     try {
       setLoading(true);
       const res = await fetchParticularUser(id);
       setUser(res.data.data);
+      const checkptbill = await api.get(`/admin/personal-training/check/self/pt/${id}`);
+      setCheckTempBill(checkptbill.data.data)
       await Promise.all([fetchUserWorkout(), fetchUserDiet()]);
     } catch {
       toast.error("Failed to load member");
@@ -149,11 +154,12 @@ export default function UserDetail() {
 
           <div className="space-y-6">
             <PTSection
-              pt={user.personalTraning}
-              subscription={user.subscription}
-              onAssign={() => setAssignPTOpen(true)}
-              onRenew={() => setRenewPTOpen(true)}
-            />
+            pt={user.personalTraning}
+            onAssign={() => setShowAssign(true)}
+            onRenew={() => setShowRenew(true)}
+            onChangeTrainer={() => setShowChangeTrainer(true)}
+            subscription={user.subscription}
+          />
 
             {/* WORKOUT PLAN SECTION - UNTOUCHED */}
             <div className="border border-red-600/30 bg-gradient-to-br from-black via-neutral-900 to-black p-6 rounded-xl">
@@ -307,6 +313,16 @@ export default function UserDetail() {
             setDietModalOpen(false);
             fetchUserDiet();
           }}
+        />
+      )}
+
+      {showChangeTrainer && (
+        <ChangeTrainerModal
+          userId={user._id}
+          currentTrainerId={user.personalTraning?.subscription?.[user.personalTraning.subscription.length - 1]?.trainer?._id}
+          onClose={() => setShowChangeTrainer(false)}
+          onSuccess={loadUser}
+          tempBillExist={checkTempBill}
         />
       )}
 

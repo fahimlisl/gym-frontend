@@ -1,4 +1,4 @@
-export default function PTSection({ pt, onAssign, onRenew, subscription }) {
+export default function PTSection({ pt, onAssign, onRenew, onChangeTrainer, subscription }) {
   if (!pt) {
     return (
       <div className="rounded-xl border border-red-600/30
@@ -7,16 +7,16 @@ export default function PTSection({ pt, onAssign, onRenew, subscription }) {
         <p className="text-sm text-gray-400 tracking-widest">
           NO PERSONAL TRAINING ASSIGNED
         </p>
-        {subscription?.subscription[subscription?.subscription.length - 1]?.status === "active" ? 
+        {subscription?.subscription[subscription?.subscription.length - 1]?.status === "active" ?
         <button
-        onClick={onAssign}
-        className="bg-red-600 hover:bg-red-700
-        px-10 py-4 text-xs font-extrabold tracking-widest
-        shadow-[0_0_35px_rgba(239,68,68,0.4)]"
+          onClick={onAssign}
+          className="bg-red-600 hover:bg-red-700
+          px-10 py-4 text-xs font-extrabold tracking-widest
+          shadow-[0_0_35px_rgba(239,68,68,0.4)]"
         >
           ASSIGN PERSONAL TRAINING
         </button>
-        : 
+        :
         <p className="text-xs text-gray-500 tracking-widest">To assign Personal training must have a active plan</p>
         }
       </div>
@@ -25,7 +25,7 @@ export default function PTSection({ pt, onAssign, onRenew, subscription }) {
 
   const current = pt.subscription?.[pt.subscription.length - 1];
   const isPTActive = current?.status?.toLowerCase() === "active";
-  const isSubActive = subscription.subscription[subscription.subscription.length -1]?.status?.toLowerCase() === "active";
+  const isSubActive = subscription.subscription[subscription.subscription.length - 1]?.status?.toLowerCase() === "active";
   const canRenew = !isPTActive && isSubActive;
 
   return (
@@ -40,7 +40,7 @@ export default function PTSection({ pt, onAssign, onRenew, subscription }) {
         />
         <div>
           <p className="text-lg font-extrabold tracking-wide">
-            {current.trainer?.fullName.toUpperCase()}
+            {current.trainer?.fullName?.toUpperCase()}
           </p>
           <p className="text-xs text-gray-400">
             {current.trainer?.experience?.toUpperCase() || "TRAINER"} years
@@ -69,6 +69,17 @@ export default function PTSection({ pt, onAssign, onRenew, subscription }) {
         >
           RENEW PT
         </button>
+
+        {isPTActive && (
+          <button
+            onClick={onChangeTrainer}
+            className="flex-1 border border-white/20 text-white/70
+                       px-6 py-3 text-xs font-extrabold tracking-widest
+                       hover:border-white/40 hover:text-white transition"
+          >
+            CHANGE TRAINER
+          </button>
+        )}
       </div>
     </div>
   );

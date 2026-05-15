@@ -6,10 +6,12 @@ import UserHeader from "../../components/user/UserHeader";
 import SubscriptionSection from "../../components/user/SubscriptionSection";
 import PTSection from "../../components/user/PTSection";
 import QRWidget from "../../components/user/QRWidget";
+import { useNavigate } from "react-router-dom";
 
 export default function UserDashboard() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -38,6 +40,7 @@ export default function UserDashboard() {
   }
 
   if (!user) {
+    navigate("/login");
     return (
       <div
         className="min-h-screen bg-neutral-950 flex items-center justify-center

@@ -59,44 +59,85 @@ export default function Members() {
     loadMembers();
   }, []);
 
-
-  const filteredUsers = useMemo(() => {
-    return users.filter((u) => {
-      const status = getLatestStatus(u);
-      const hasPT = u?.personalTraning?.subscription[u?.personalTraning?.subscription.length - 1]?.status;
-
-      const matchesSearch =
-        u.username?.toLowerCase().includes(search.toLowerCase());
-
-      let matchesFilter = true;
-
-      switch (filter) {
-        case "expired":
-          matchesFilter = status === "expired";
-          break;
-        case "active":
-          matchesFilter = status === "active";
-          break;
-        case "withPT":
-          matchesFilter = hasPT === "active";
-          break;
-        case "withoutPT":
-          matchesFilter = !hasPT;
-          break;
-        case "expiredWithPT":
-          matchesFilter = status === "expired" && hasPT;
-          break;
-        case "expiredWithoutPT":
-          matchesFilter = status === "expired" && !hasPT;
-          break;
-        default:
-          matchesFilter = true;
+  const sortMembers = (members) => {
+    return [...members].sort((a, b) => {
+      const statusA = getLatestStatus(a);
+      const statusB = getLatestStatus(b);
+      
+      const subA = getLatestSubscription(a);
+      const subB = getLatestSubscription(b);
+      const dateA = subA?.createdAt ? new Date(subA.createdAt) : new Date(a.createdAt || 0);
+      const dateB = subB?.createdAt ? new Date(subB.createdAt) : new Date(b.createdAt || 0);
+      
+      const priority = {
+        "expired": 1,
+        "active": 2,
+        "none": 3
+      };
+      
+      const priorityA = priority[statusA] || 3;
+      const priorityB = priority[statusB] || 3;
+      
+      if (priorityA !== priorityB) {
+        return priorityA - priorityB;
       }
-
-      return matchesSearch && matchesFilter;
+      
+      return dateB - dateA;
     });
-  }, [users, search, filter]);
+  };
 
+const filteredUsers = useMemo(() => {
+  let filtered = users.filter((u) => {
+    if (!u) return false;
+    
+    const status = getLatestStatus(u);
+    
+    const ptSubscriptions = u?.personalTraning?.subscription;
+    const latestPT = ptSubscriptions?.[ptSubscriptions.length - 1];
+    const hasPT = latestPT?.status === "active";
+
+    const searchLower = search.toLowerCase().trim();
+    let matchesSearch = true;
+    
+    if (searchLower) {
+      const nameMatch = u.username?.toLowerCase().includes(searchLower) || false;
+      
+      const phoneNumberStr = u.phoneNumber ? String(u.phoneNumber) : '';
+      const phoneMatch = phoneNumberStr.toLowerCase().includes(searchLower) || false;
+      
+      matchesSearch = nameMatch || phoneMatch;
+    }
+
+    let matchesFilter = true;
+
+    switch (filter) {
+      case "expired":
+        matchesFilter = status === "expired";
+        break;
+      case "active":
+        matchesFilter = status === "active";
+        break;
+      case "withPT":
+        matchesFilter = hasPT === true;
+        break;
+      case "withoutPT":
+        matchesFilter = !hasPT;
+        break;
+      case "expiredWithPT":
+        matchesFilter = status === "expired" && hasPT;
+        break;
+      case "expiredWithoutPT":
+        matchesFilter = status === "expired" && !hasPT;
+        break;
+      default:
+        matchesFilter = true;
+    }
+
+    return matchesSearch && matchesFilter;
+  });
+
+  return sortMembers(filtered);
+}, [users, search, filter]);
   return (
     <>
       <div className="space-y-10">
@@ -133,6 +174,7 @@ export default function Members() {
           <div className="absolute -top-24 -right-24 w-96 h-96
                           bg-red-600/10 blur-3xl rounded-full" />
         </div>
+
         {ptAlerts.length > 0 && (
           <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/5 p-4 space-y-2">
             <div className="flex items-center gap-2 mb-1">
@@ -177,7 +219,7 @@ export default function Members() {
 
           <input
             type="text"
-            placeholder="Search by member name..."
+            placeholder="Search by name or phone number..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="flex-1 bg-black border border-white/10
@@ -208,11 +250,11 @@ export default function Members() {
           <StatBox label="TOTAL MEMBERS" value={users.length} />
           <StatBox
             label="WITH PT"
-            value={users.filter(u => u.personalTraning).length}
+            value={users.filter(u => u.personalTraning?.subscription?.length > 0).length}
           />
           <StatBox
             label="WITHOUT PT"
-            value={users.filter(u => !u.personalTraning).length}
+            value={users.filter(u => !u.personalTraning?.subscription?.length).length}
           />
           <StatBox
             label="ACTIVE"

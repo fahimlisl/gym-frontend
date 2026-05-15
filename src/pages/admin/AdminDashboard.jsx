@@ -15,7 +15,6 @@ export default function AdminDashboard() {
   const [sources, setSources] = useState([]);
   const [recent, setRecent] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [lifetimeNetRevenue, setLifetimeNetRevenue] = useState(0);
 
   useEffect(() => {
     const load = async () => {
@@ -27,12 +26,9 @@ export default function AdminDashboard() {
           fetchAllTransactions(), 
         ]);
         
-        const netRevenue = calculateLifetimeNetRevenue(allTx.data.data);
-        setLifetimeNetRevenue(netRevenue);
-        
-        setStats(rev.data.data);
-        setSources(src.data.data);
-        setRecent(tx.data.data);
+        setStats(rev?.data?.data);
+        setSources(src?.data?.data);
+        setRecent(tx?.data?.data);
       } catch (error) {
         console.error("Failed to load dashboard data:", error);
         toast.error("Failed to load dashboard data");
@@ -43,47 +39,6 @@ export default function AdminDashboard() {
     load();
   }, []);
 
-  // Calculate Lifetime Net Revenue: Total Credits - Total Debits
-  const calculateLifetimeNetRevenue = (transactions) => {
-    if (!transactions || transactions.length === 0) return 0;
-    
-    let totalCredits = 0; // Money coming IN
-    let totalDebits = 0;  // Money going OUT (refunds, expenses, etc.)
-    
-    transactions.forEach(t => {
-      const amount = t.amount || 0;
-      const type = t.type; // 'credit' or 'debit' from getTransactionType()
-      const status = t.status;
-      const source = t.source;
-      
-      // Skip failed transactions
-      if (status === "failed") return;
-      
-      // For refunded transactions, treat as debit
-      if (status === "refunded") {
-        totalDebits += Math.abs(amount);
-        return;
-      }
-      
-      // Based on transaction type from getTransactionType()
-      if (type === "credit") {
-        // Credits: subscription, supplement, personal-training, paymentin, cafe
-        totalCredits += amount;
-      } else if (type === "debit") {
-        // Debits: expense, refunds
-        totalDebits += Math.abs(amount);
-      }
-      
-      // Additional check based on source
-      if (source === "expense") {
-        totalDebits += Math.abs(amount);
-      }
-    });
-    
-    const netRevenue = totalCredits - totalDebits;
-    
-    return netRevenue;
-  };
 
   if (loading) {
     return (
@@ -114,7 +69,7 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6">
           <StatCard
             title="Lifetime Revenue (Net)"
-            value={`₹${Math.round(lifetimeNetRevenue).toLocaleString("en-IN")}`}
+            value={`₹${Math.round(stats?.lifetime?.totalAmount || 0).toLocaleString("en-IN")}`}
             icon={<TrendingUp className="w-5 h-5 text-red-500" />}
           />
           <StatCard
@@ -224,7 +179,7 @@ export default function AdminDashboard() {
 
       </div>
 
-      <style jsx>{`
+      <style>{`
         .custom-scrollbar::-webkit-scrollbar {
           width: 6px;
         }

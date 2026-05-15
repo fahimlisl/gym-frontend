@@ -3,6 +3,10 @@ import { Link } from "react-router-dom";
 export default function MemberCard({ user, latestStatus }) {
   const hasPT = user?.personalTraning?.subscription[user?.personalTraning?.subscription.length - 1]?.status;
   const isExpired = latestStatus === "expired";
+  
+  const latestSubscription = user?.subscription?.subscription[user?.subscription?.subscription.length - 1];
+  const startDate = latestSubscription?.startDate ? new Date(latestSubscription.startDate).toLocaleDateString() : null;
+  const expiryDate = latestSubscription?.endDate ? new Date(latestSubscription.endDate).toLocaleDateString() : null;
 
   return (
     <div
@@ -55,22 +59,30 @@ export default function MemberCard({ user, latestStatus }) {
             {user.email || user.phoneNumber}
           </p>
 
-            <div className="flex gap-2 mt-2 flex-wrap">
-              {hasPT === "active"
-                ? <Badge text="PT ACTIVE" active />
-                : <Badge text="NO PT" />}
-              {user?.personalTraning && (
-                user?.diet 
-                  ? <Badge text="Diet Provided" success /> 
-                  : <Badge text="Diet Not Provided" warning />
-              )}
-              {user?.personalTraning && (
-                user?.workout
-                ? <Badge text="Workout Provided" successWorkout />
-                : <Badge text="Workout Not Provided" warningWorkout />
-              )}
-              {isExpired && <Badge text="EXPIRED" danger />}
+          {startDate && expiryDate && (
+            <div className="flex gap-2 mt-1 text-[9px] sm:text-[10px] font-mono">
+              <span className="text-gray-500">
+                📅 {startDate} → {expiryDate}
+              </span>
             </div>
+          )}
+
+          <div className="flex gap-2 mt-2 flex-wrap">
+            {hasPT === "active"
+              ? <Badge text="PT ACTIVE" active />
+              : <Badge text="NO PT" />}
+            {user?.personalTraning && (
+              user?.diet 
+                ? <Badge text="Diet Provided" success /> 
+                : <Badge text="Diet Not Provided" warning />
+            )}
+            {user?.personalTraning && (
+              user?.workout
+              ? <Badge text="Workout Provided" successWorkout />
+              : <Badge text="Workout Not Provided" warningWorkout />
+            )}
+            {isExpired && <Badge text="EXPIRED" danger />}
+          </div>
         </div>
 
         <Link
