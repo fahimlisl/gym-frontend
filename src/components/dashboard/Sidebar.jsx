@@ -59,8 +59,6 @@ const attendanceMenu = {
       base: "/admin/attendance/trainer",
       items: [
         { label: "Monthly & Today", to: "/admin/attendance/trainer/dashboard" },
-        // { label: "Today", to: "/admin/attendance/trainer/today" },
-        // { label: "Monthly", to: "/admin/attendance/trainer/month" },
       ],
     },
   ],
@@ -113,7 +111,6 @@ export default function Sidebar({ open, onClose }) {
       try {
         const { data } = await api.get("/admin/get/me");
         setIsSuperAdmin(data?.admin?.isSuperAdmin ?? false);
-        console.log(data)
       } catch {
         setIsSuperAdmin(false);
       }

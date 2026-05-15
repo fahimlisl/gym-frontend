@@ -24,7 +24,6 @@ export default function SubscriptionCard({ subscription, onRenew }) {
         <p className="text-xs tracking-widest text-red-500">CURRENT PLAN</p>
 
         <Row label="Plan" value={current.plan.toUpperCase()} />
-        {console.log(current)}
         <Row label="Base Price" value={`₹${current.baseAmount}`} />
 
         {current.discountType !== "none" && (
@@ -58,6 +57,7 @@ export default function SubscriptionCard({ subscription, onRenew }) {
               label="Final Admission Fee"
               value={`₹${subscription.finalAdFee}`}
             />
+            <Row label="subtotal" value={`₹${subscription.finalAdFee + current.finalAmount}`}/>
           </>
         )}
 
@@ -68,14 +68,6 @@ export default function SubscriptionCard({ subscription, onRenew }) {
           value={`${fmt(current.startDate)} → ${fmt(current.endDate)}`}
         />
 
-        {/* <button
-          onClick={onRenew}
-          className="w-full mt-4 border border-red-600 py-3
-               font-extrabold tracking-widest
-               hover:bg-red-600 transition"
-        >
-          RENEW MEMBERSHIP
-        </button> */}
         <button
           onClick={!isActive ? onRenew : undefined}
           disabled={isActive}
