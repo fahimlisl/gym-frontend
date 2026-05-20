@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../../api/axios.api";
@@ -155,7 +155,7 @@ export default function UserDetail() {
           <div className="space-y-6">
             <PTSection
             pt={user.personalTraning}
-            onAssign={() => setShowAssign(true)}
+            onAssign={() => setAssignPTOpen(true)}
             onRenew={() => setShowRenew(true)}
             onChangeTrainer={() => setShowChangeTrainer(true)}
             subscription={user.subscription}
