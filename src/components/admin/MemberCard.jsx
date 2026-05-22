@@ -8,6 +8,40 @@ export default function MemberCard({ user, latestStatus }) {
   const startDate = latestSubscription?.startDate ? new Date(latestSubscription.startDate).toLocaleDateString() : null;
   const expiryDate = latestSubscription?.endDate ? new Date(latestSubscription.endDate).toLocaleDateString() : null;
 
+  const workoutStatus = user?.workout?.status;
+  
+  let workoutDisplay = {
+    text: "Workout Not Provided",
+    type: "warningWorkout"
+  };
+  
+  if (!user?.workout) {
+    workoutDisplay = {
+      text: "Workout Not Provided",
+      type: "warningWorkout"
+    };
+  } else if (workoutStatus === "Paused") {
+    workoutDisplay = {
+      text: "Workout Paused",
+      type: "paused"
+    };
+  } else if (workoutStatus === "Completed") {
+    workoutDisplay = {
+      text: "Workout Completed",
+      type: "completed"
+    };
+  } else if (workoutStatus === "Active") {
+    workoutDisplay = {
+      text: "Workout Active",
+      type: "successWorkout"
+    };
+  } else {
+    workoutDisplay = {
+      text: "Workout Not Provided",
+      type: "warningWorkout"
+    };
+  }
+
   return (
     <div
       className={`group relative rounded-xl
@@ -44,6 +78,7 @@ export default function MemberCard({ user, latestStatus }) {
                      rounded-full object-cover 
                      border-2 border-red-600
                      flex-shrink-0"
+          alt={user.username}
         />
 
         <div className="flex-1 min-w-0">
@@ -77,9 +112,14 @@ export default function MemberCard({ user, latestStatus }) {
                 : <Badge text="Diet Not Provided" warning />
             )}
             {user?.personalTraning && (
-              user?.workout
-              ? <Badge text="Workout Provided" successWorkout />
-              : <Badge text="Workout Not Provided" warningWorkout />
+              <Badge 
+                text={workoutDisplay.text} 
+                type={workoutDisplay.type}
+                successWorkout={workoutDisplay.type === "successWorkout"}
+                warningWorkout={workoutDisplay.type === "warningWorkout"}
+                paused={workoutDisplay.type === "paused"}
+                completed={workoutDisplay.type === "completed"}
+              />
             )}
             {isExpired && <Badge text="EXPIRED" danger />}
           </div>
@@ -117,28 +157,36 @@ export default function MemberCard({ user, latestStatus }) {
   );
 }
 
-function Badge({ text, active, danger, warning, success, successWorkout, warningWorkout }) {
+function Badge({ text, active, danger, warning, success, successWorkout, warningWorkout, paused, completed, type }) {
+  let badgeStyles = "";
+  
+  if (danger) {
+    badgeStyles = "bg-red-600 text-black";
+  } else if (active) {
+    badgeStyles = "bg-red-600 text-black";
+  } else if (success) {
+    badgeStyles = "bg-green-500 text-black";
+  } else if (warning) {
+    badgeStyles = "bg-yellow-400 text-black";
+  } else if (successWorkout) {
+    badgeStyles = "bg-blue-500 text-white";
+  } else if (warningWorkout) {
+    badgeStyles = "bg-orange-500 text-white";
+  } else if (paused) {
+    badgeStyles = "bg-purple-500 text-white";
+  } else if (completed) {
+    badgeStyles = "bg-emerald-500 text-white";
+  } else {
+    badgeStyles = "border border-white/20 text-gray-300";
+  }
+  
   return (
     <span
       className={`px-2 sm:px-3 py-0.5 sm:py-1 
         text-[9px] sm:text-[10px]
         font-extrabold tracking-widest 
         rounded-full whitespace-nowrap
-        ${
-          danger
-            ? "bg-red-600 text-black"
-            : active
-            ? "bg-red-600 text-black"
-            : success
-            ? "bg-green-500 text-black"
-            : warning
-            ? "bg-yellow-400 text-black"
-            : successWorkout
-            ? "bg-blue-500 text-white"
-            : warningWorkout
-            ? "bg-orange-500 text-white"
-            : "border border-white/20 text-gray-300"
-        }
+        ${badgeStyles}
       `}
     >
       {text}
