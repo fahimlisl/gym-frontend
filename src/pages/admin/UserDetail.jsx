@@ -34,6 +34,7 @@ export default function UserDetail() {
   const [dietModalOpen, setDietModalOpen] = useState(false);
   const [editMemberOpen, setEditMemberOpen] = useState(false);
   const [showChangeTrainer, setShowChangeTrainer] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   const loadUser = async () => {
     try {
@@ -49,6 +50,17 @@ export default function UserDetail() {
       setLoading(false);
     }
   };
+  useEffect(() => {
+  const fetchAdmin = async () => {
+    try {
+      const { data } = await api.get("/admin/get/me");
+      setIsSuperAdmin(data?.admin?.isSuperAdmin ?? false);
+    } catch {
+      setIsSuperAdmin(false);
+    }
+  };
+  fetchAdmin();
+}, []);
 
   const fetchUserWorkout = async () => {
     try {
@@ -147,8 +159,11 @@ export default function UserDetail() {
           <div className="space-y-6">
             <UserHeader user={user} />
             <SubscriptionCard
+            userId={user._id}  
               subscription={user.subscription}
               onRenew={() => setRenewMembershipOpen(true)}
+              onRefresh={loadUser} 
+               isSuperAdmin={isSuperAdmin}
             />
           </div>
 
@@ -161,7 +176,7 @@ export default function UserDetail() {
             subscription={user.subscription}
           />
 
-            {/* WORKOUT PLAN SECTION - UNTOUCHED */}
+
             <div className="border border-red-600/30 bg-gradient-to-br from-black via-neutral-900 to-black p-6 rounded-xl">
               <h2 className="text-2xl font-black tracking-widest mb-4">WORKOUT PLAN</h2>
 
