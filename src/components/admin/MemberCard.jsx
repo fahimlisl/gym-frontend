@@ -165,7 +165,7 @@ function Badge({ text, active, danger, warning, success, successWorkout, warning
   if (danger) {
     badgeStyles = "bg-red-600 text-black";
   } else if (active) {
-    badgeStyles = "bg-red-600 text-black";
+    badgeStyles = "bg-green-600 text-black";
   } else if (success) {
     badgeStyles = "bg-green-500 text-black";
   } else if (warning) {
@@ -179,7 +179,7 @@ function Badge({ text, active, danger, warning, success, successWorkout, warning
   } else if (completed) {
     badgeStyles = "bg-emerald-500 text-white";
   }  else if (ptExpired) {
-  badgeStyles = "bg-orange-500/20 border border-orange-500/50 text-orange-400";
+    badgeStyles = "bg-red-500 border border-orange-500/50 text-black";
   }else  {
     badgeStyles = "border border-white/20 text-gray-300";
   }
