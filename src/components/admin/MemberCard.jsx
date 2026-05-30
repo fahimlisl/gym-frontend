@@ -104,8 +104,10 @@ export default function MemberCard({ user, latestStatus }) {
 
           <div className="flex gap-2 mt-2 flex-wrap">
             {hasPT === "active"
-              ? <Badge text="PT ACTIVE" active />
-              : <Badge text="NO PT" />}
+            ? <Badge text="PT ACTIVE" active />
+            : hasPT === "expired"
+            ? <Badge text="PT EXPIRED" ptExpired />
+            : <Badge text="NO PT" />}
             {user?.personalTraning && (
               user?.diet 
                 ? <Badge text="Diet Provided" success /> 
@@ -157,7 +159,7 @@ export default function MemberCard({ user, latestStatus }) {
   );
 }
 
-function Badge({ text, active, danger, warning, success, successWorkout, warningWorkout, paused, completed, type }) {
+function Badge({ text, active, danger, warning, success, successWorkout, warningWorkout, paused, completed,ptExpired, type }) {
   let badgeStyles = "";
   
   if (danger) {
@@ -176,7 +178,9 @@ function Badge({ text, active, danger, warning, success, successWorkout, warning
     badgeStyles = "bg-purple-500 text-white";
   } else if (completed) {
     badgeStyles = "bg-emerald-500 text-white";
-  } else {
+  }  else if (ptExpired) {
+  badgeStyles = "bg-orange-500/20 border border-orange-500/50 text-orange-400";
+  }else  {
     badgeStyles = "border border-white/20 text-gray-300";
   }
   
