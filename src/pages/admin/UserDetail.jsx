@@ -171,7 +171,7 @@ export default function UserDetail() {
             <PTSection
             pt={user.personalTraning}
             onAssign={() => setAssignPTOpen(true)}
-            onRenew={() => setShowRenew(true)}
+            onRenew={() => setRenewPTOpen(true)}
             onChangeTrainer={() => setShowChangeTrainer(true)}
             subscription={user.subscription}
           />
