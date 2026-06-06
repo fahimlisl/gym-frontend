@@ -12,6 +12,7 @@ export default function Members() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openAdd, setOpenAdd] = useState(false);
+  const [activeTab, setActiveTab] = useState("members");
 
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -27,6 +28,7 @@ export default function Members() {
 
   const search = searchParams.get("search") || "";
   const filter = searchParams.get("filter") || "all";
+  
   useEffect(() => {
     sessionStorage.setItem(STORAGE_KEY, searchParams.toString());
   }, [searchParams]);
@@ -44,6 +46,18 @@ export default function Members() {
     return latest?.status || "none";
   };
 
+  const getDaysExpired = (user) => {
+    const latestSubscription = getLatestSubscription(user);
+    if (!latestSubscription || latestSubscription.status !== "expired") return null;
+    const diff = Date.now() - new Date(latestSubscription.endDate).getTime();
+    return Math.floor(diff / (1000 * 60 * 60 * 24));
+  };
+
+  const isInactive = (user) => {
+    const daysExpired = getDaysExpired(user);
+    return daysExpired !== null && daysExpired > 10;
+  };
+
   const loadMembers = async () => {
     try {
       setLoading(true);
@@ -59,6 +73,7 @@ export default function Members() {
   const ptAlerts = useMemo(() => {
     return users
       .filter((u) => {
+        if (isInactive(u)) return false;
         const ptSubs = u?.personalTraning?.subscription;
         const latestPT = ptSubs?.[ptSubs.length - 1];
         const isPTActive = latestPT?.status === "active";
@@ -123,6 +138,31 @@ export default function Members() {
     return sortMembers(filtered);
   }, [users, search, filter]);
 
+  const { activeMembers, inactiveMembers } = useMemo(() => {
+    const isSearching = search.trim().length > 0;
+    const active = [];
+    const inactive = [];
+    
+    filteredUsers.forEach((u) => {
+      const isInactiveMember = isInactive(u);
+      
+      if (isInactiveMember) {
+        inactive.push(u);
+        if (isSearching) {
+          active.push(u);
+        }
+      } else {
+        active.push(u);
+      }
+    });
+    
+    return { activeMembers: active, inactiveMembers: inactive };
+  }, [filteredUsers, search]);
+
+  const getDisplayMembers = () => {
+    return activeTab === "members" ? activeMembers : inactiveMembers;
+  };
+
   return (
     <>
       <div className="space-y-10">
@@ -144,7 +184,49 @@ export default function Members() {
           <div className="absolute -top-24 -right-24 w-96 h-96 bg-red-600/10 blur-3xl rounded-full" />
         </div>
 
-        {ptAlerts.length > 0 && (
+        {/* Tab Navigation */}
+        <div className="flex gap-2 border-b border-white/10">
+          <button
+            onClick={() => setActiveTab("members")}
+            className={`px-6 py-3 text-xs font-black tracking-widest transition-all relative ${
+              activeTab === "members"
+                ? "text-red-500"
+                : "text-gray-400 hover:text-white"
+            }`}
+          >
+            MEMBERS
+            {activeTab === "members" && (
+              <span className="absolute bottom-0 left-0 w-full h-0.5 bg-red-500" />
+            )}
+            <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-white/10 rounded-full">
+              {activeMembers.length}
+            </span>
+          </button>
+          <button
+            onClick={() => setActiveTab("inactive")}
+            className={`px-6 py-3 text-xs font-black tracking-widest transition-all relative ${
+              activeTab === "inactive"
+                ? "text-red-500"
+                : "text-gray-400 hover:text-white"
+            }`}
+          >
+            INACTIVE MEMBERS
+            {activeTab === "inactive" && (
+              <span className="absolute bottom-0 left-0 w-full h-0.5 bg-red-500" />
+            )}
+            <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-white/10 rounded-full">
+              {inactiveMembers.length}
+            </span>
+          </button>
+        </div>
+
+        {search.trim().length > 0 && activeTab === "members" && (
+          <div className="text-xs text-gray-400 bg-white/5 px-3 py-2 rounded-lg">
+            🔍 Showing search results for "{search}" (including inactive members)
+          </div>
+        )}
+
+        {ptAlerts.length > 0 && activeTab === "members" && search.trim().length === 0 && (
           <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/5 p-4 space-y-2">
             <div className="flex items-center gap-2 mb-1">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-yellow-400 shrink-0">
@@ -217,16 +299,22 @@ export default function Members() {
 
         {loading && <div className="text-gray-500 tracking-widest">LOADING MEMBERS...</div>}
 
-        {!loading && filteredUsers.length === 0 && (
+        {!loading && getDisplayMembers().length === 0 && (
           <div className="rounded-xl border border-white/10 bg-neutral-900/40 p-10 text-center text-gray-500">
-            NO MEMBERS FOUND
+            NO {activeTab === "members" ? "MEMBERS" : "INACTIVE MEMBERS"} FOUND
           </div>
         )}
 
-        {!loading && filteredUsers.length > 0 && (
+        {!loading && getDisplayMembers().length > 0 && (
           <div className="space-y-4">
-            {filteredUsers.map((u) => (
-              <MemberCard key={u._id} user={u} latestStatus={getLatestStatus(u)} />
+            {getDisplayMembers().map((u) => (
+              <MemberCard 
+                key={u._id} 
+                user={u} 
+                latestStatus={getLatestStatus(u)}
+                isInactiveTab={activeTab === "inactive"}
+                daysExpired={getDaysExpired(u)}
+              />
             ))}
           </div>
         )}

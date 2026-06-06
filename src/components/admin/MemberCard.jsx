@@ -1,8 +1,9 @@
 import { Link } from "react-router-dom";
 
-export default function MemberCard({ user, latestStatus }) {
+export default function MemberCard({ user, latestStatus, isInactiveTab, daysExpired }) {
   const hasPT = user?.personalTraning?.subscription[user?.personalTraning?.subscription.length - 1]?.status;
   const isExpired = latestStatus === "expired";
+  const isInactiveView = isInactiveTab === true;
   
   const latestSubscription = user?.subscription?.subscription[user?.subscription?.subscription.length - 1];
   const startDate = latestSubscription?.startDate ? new Date(latestSubscription.startDate).toLocaleDateString() : null;
@@ -42,37 +43,25 @@ export default function MemberCard({ user, latestStatus }) {
     };
   }
 
-  const daysExpired = (() => {
-    if (!isExpired || !latestSubscription?.endDate) return null;
-    const diff = Date.now() - new Date(latestSubscription.endDate).getTime();
-    return Math.floor(diff / (1000 * 60 * 60 * 24));
-  })();
-
   return (
     <div
       className={`group relative rounded-xl
         bg-gradient-to-br from-black via-neutral-900 to-black
         transition-all duration-300
         ${
-          isExpired
+          isInactiveView
+            ? "border border-gray-600 shadow-[0_0_35px_rgba(107,114,128,0.35)] opacity-75"
+            : isExpired
             ? "border border-red-600 shadow-[0_0_35px_rgba(239,68,68,0.35)]"
             : "border border-white/10 hover:border-red-600/40"
         }
       `}
     >
-      {isExpired && (
-        <div className="absolute top-2 right-2 z-10">
-          <span className="bg-gradient-to-r from-red-600 to-red-700 text-white px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider shadow-md backdrop-blur-sm border border-red-400/30">
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-300 mr-1.5 animate-pulse"></span>
-            EXPIRED {daysExpired ? `· ${daysExpired}d ago` : ""}
-          </span>
-        </div>
-      )}
 
       <div
         className={`flex items-center gap-3 sm:gap-6 
                     p-3 sm:p-5
-                    ${isExpired ? "opacity-90" : ""}`}
+                    ${isExpired || isInactiveView ? "opacity-90" : ""}`}
       >
 
         <img
@@ -87,7 +76,7 @@ export default function MemberCard({ user, latestStatus }) {
         <div className="flex-1 min-w-0">
           <p
             className={`text-sm sm:text-lg font-extrabold tracking-wide truncate
-              ${isExpired ? "text-gray-300" : ""}
+              ${isExpired || isInactiveView ? "text-gray-300" : ""}
             `}
           >
             {user.username}
@@ -126,11 +115,18 @@ export default function MemberCard({ user, latestStatus }) {
                 completed={workoutDisplay.type === "completed"}
               />
             )}
-            {isExpired && (
+            {isExpired && !isInactiveView && (
               <Badge 
-                text={`EXPIRED ${daysExpired ? `· ${daysExpired}d ago` : ""}`} 
+                text={`EXPIRED · ${daysExpired || 0}d ago`}
                 danger 
                 className="bg-gradient-to-r from-red-600 to-red-700 font-bold tracking-wide shadow-sm border border-red-400/30"
+              />
+            )}
+            {isInactiveView && (
+              <Badge 
+                text={`INACTIVE · ${daysExpired || 0} DAYS EXPIRED`}
+                danger 
+                className="bg-gradient-to-r from-gray-700 to-gray-800 font-bold tracking-wide shadow-sm border border-gray-500/30"
               />
             )}
           </div>
@@ -144,7 +140,9 @@ export default function MemberCard({ user, latestStatus }) {
             whitespace-nowrap
             transition
             ${
-              isExpired
+              isInactiveView
+                ? "border border-gray-600 text-gray-400 hover:bg-gray-700 hover:text-white"
+                : isExpired
                 ? "border border-red-600 text-red-500 hover:bg-red-600 hover:text-black"
                 : "border border-red-600 hover:bg-red-600"
             }
@@ -158,7 +156,9 @@ export default function MemberCard({ user, latestStatus }) {
         className={`absolute inset-0 pointer-events-none rounded-xl
           transition opacity-0 group-hover:opacity-100
           ${
-            isExpired
+            isInactiveView
+              ? "shadow-[0_0_60px_rgba(107,114,128,0.15)]"
+              : isExpired
               ? "shadow-[0_0_60px_rgba(239,68,68,0.15)]"
               : "shadow-[0_0_60px_rgba(239,68,68,0.08)]"
           }
@@ -168,7 +168,7 @@ export default function MemberCard({ user, latestStatus }) {
   );
 }
 
-function Badge({ text, active, danger, warning, success, successWorkout, warningWorkout, paused, completed,ptExpired, type }) {
+function Badge({ text, active, danger, warning, success, successWorkout, warningWorkout, paused, completed, ptExpired, type }) {
   let badgeStyles = "";
   
   if (danger) {
@@ -187,9 +187,9 @@ function Badge({ text, active, danger, warning, success, successWorkout, warning
     badgeStyles = "bg-purple-500 text-white";
   } else if (completed) {
     badgeStyles = "bg-emerald-500 text-white";
-  }  else if (ptExpired) {
+  } else if (ptExpired) {
     badgeStyles = "bg-red-500 border border-orange-500/50 text-black";
-  }else  {
+  } else {
     badgeStyles = "border border-white/20 text-gray-300";
   }
   
