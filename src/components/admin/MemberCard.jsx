@@ -42,6 +42,12 @@ export default function MemberCard({ user, latestStatus }) {
     };
   }
 
+  const daysExpired = (() => {
+    if (!isExpired || !latestSubscription?.endDate) return null;
+    const diff = Date.now() - new Date(latestSubscription.endDate).getTime();
+    return Math.floor(diff / (1000 * 60 * 60 * 24));
+  })();
+
   return (
     <div
       className={`group relative rounded-xl
@@ -56,12 +62,9 @@ export default function MemberCard({ user, latestStatus }) {
     >
       {isExpired && (
         <div className="absolute top-2 right-2 z-10">
-          <span
-            className="bg-red-600 text-black
-                       px-3 py-0.5 rounded-full
-                       text-[9px] font-black tracking-widest"
-          >
-            EXPIRED
+          <span className="bg-gradient-to-r from-red-600 to-red-700 text-white px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider shadow-md backdrop-blur-sm border border-red-400/30">
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-300 mr-1.5 animate-pulse"></span>
+            EXPIRED {daysExpired ? `· ${daysExpired}d ago` : ""}
           </span>
         </div>
       )}
@@ -123,7 +126,13 @@ export default function MemberCard({ user, latestStatus }) {
                 completed={workoutDisplay.type === "completed"}
               />
             )}
-            {isExpired && <Badge text="EXPIRED" danger />}
+            {isExpired && (
+              <Badge 
+                text={`EXPIRED ${daysExpired ? `· ${daysExpired}d ago` : ""}`} 
+                danger 
+                className="bg-gradient-to-r from-red-600 to-red-700 font-bold tracking-wide shadow-sm border border-red-400/30"
+              />
+            )}
           </div>
         </div>
 
@@ -163,7 +172,7 @@ function Badge({ text, active, danger, warning, success, successWorkout, warning
   let badgeStyles = "";
   
   if (danger) {
-    badgeStyles = "bg-red-600 text-black";
+    badgeStyles = "bg-gradient-to-r from-red-600 to-red-700 font-bold tracking-wide shadow-sm border border-red-400/30"
   } else if (active) {
     badgeStyles = "bg-green-600 text-black";
   } else if (success) {
