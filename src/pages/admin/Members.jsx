@@ -28,7 +28,7 @@ export default function Members() {
 
   const search = searchParams.get("search") || "";
   const filter = searchParams.get("filter") || "all";
-  
+
   useEffect(() => {
     sessionStorage.setItem(STORAGE_KEY, searchParams.toString());
   }, [searchParams]);
@@ -56,6 +56,11 @@ export default function Members() {
   const isInactive = (user) => {
     const daysExpired = getDaysExpired(user);
     return daysExpired !== null && daysExpired > 10;
+  };
+
+  const getLatestPTStatus = (user) => {
+    const ptSubs = user?.personalTraning?.subscription;
+    return ptSubs?.[ptSubs.length - 1]?.status || "none";
   };
 
   const loadMembers = async () => {
@@ -100,9 +105,21 @@ export default function Members() {
       const subB = getLatestSubscription(b);
       const dateA = subA?.createdAt ? new Date(subA.createdAt) : new Date(a.createdAt || 0);
       const dateB = subB?.createdAt ? new Date(subB.createdAt) : new Date(b.createdAt || 0);
-      const priority = { expired: 1, active: 2, none: 3 };
-      const priorityA = priority[statusA] || 3;
-      const priorityB = priority[statusB] || 3;
+
+      const ptA = getLatestPTStatus(a);
+      const ptB = getLatestPTStatus(b);
+
+      // 1 = membership expired, 2 = pt expired (active membership), 3 = active, 4 = none
+      const getPriority = (memberStatus, ptStatus) => {
+        if (memberStatus === "expired") return 1;
+        if (ptStatus === "expired") return 2;
+        if (memberStatus === "active") return 3;
+        return 4;
+      };
+
+      const priorityA = getPriority(statusA, ptA);
+      const priorityB = getPriority(statusB, ptB);
+
       if (priorityA !== priorityB) return priorityA - priorityB;
       return dateB - dateA;
     });
@@ -142,10 +159,10 @@ export default function Members() {
     const isSearching = search.trim().length > 0;
     const active = [];
     const inactive = [];
-    
+
     filteredUsers.forEach((u) => {
       const isInactiveMember = isInactive(u);
-      
+
       if (isInactiveMember) {
         inactive.push(u);
         if (isSearching) {
@@ -155,7 +172,7 @@ export default function Members() {
         active.push(u);
       }
     });
-    
+
     return { activeMembers: active, inactiveMembers: inactive };
   }, [filteredUsers, search]);
 
@@ -275,7 +292,7 @@ export default function Members() {
                 const p = new URLSearchParams(prev);
                 e.target.value === "all" ? p.delete("filter") : p.set("filter", e.target.value);
                 return p;
-              }, { replace: false }); 
+              }, { replace: false });
             }}
             className="bg-black border border-white/10 px-4 py-3 text-sm text-white rounded-lg focus:outline-none focus:border-red-500 transition"
           >
@@ -308,9 +325,9 @@ export default function Members() {
         {!loading && getDisplayMembers().length > 0 && (
           <div className="space-y-4">
             {getDisplayMembers().map((u) => (
-              <MemberCard 
-                key={u._id} 
-                user={u} 
+              <MemberCard
+                key={u._id}
+                user={u}
                 latestStatus={getLatestStatus(u)}
                 isInactiveTab={activeTab === "inactive"}
                 daysExpired={getDaysExpired(u)}

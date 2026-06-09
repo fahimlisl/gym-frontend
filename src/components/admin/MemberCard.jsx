@@ -1,69 +1,64 @@
 import { Link } from "react-router-dom";
 
 export default function MemberCard({ user, latestStatus, isInactiveTab, daysExpired }) {
-  const hasPT = user?.personalTraning?.subscription[user?.personalTraning?.subscription.length - 1]?.status;
+  const ptSubs = user?.personalTraning?.subscription;
+  const latestPT = ptSubs?.[ptSubs?.length - 1];
+  const hasPT = latestPT?.status;
+  const isPTExpired = hasPT === "expired";
+
   const isExpired = latestStatus === "expired";
   const isInactiveView = isInactiveTab === true;
-  
+
   const latestSubscription = user?.subscription?.subscription[user?.subscription?.subscription.length - 1];
   const startDate = latestSubscription?.startDate ? new Date(latestSubscription.startDate).toLocaleDateString() : null;
   const expiryDate = latestSubscription?.endDate ? new Date(latestSubscription.endDate).toLocaleDateString() : null;
 
   const workoutStatus = user?.workout?.status;
-  
+
   let workoutDisplay = {
     text: "Workout Not Provided",
     type: "warningWorkout"
   };
-  
+
   if (!user?.workout) {
-    workoutDisplay = {
-      text: "Workout Not Provided",
-      type: "warningWorkout"
-    };
+    workoutDisplay = { text: "Workout Not Provided", type: "warningWorkout" };
   } else if (workoutStatus === "Paused") {
-    workoutDisplay = {
-      text: "Workout Paused",
-      type: "paused"
-    };
+    workoutDisplay = { text: "Workout Paused", type: "paused" };
   } else if (workoutStatus === "Completed") {
-    workoutDisplay = {
-      text: "Workout Completed",
-      type: "completed"
-    };
+    workoutDisplay = { text: "Workout Completed", type: "completed" };
   } else if (workoutStatus === "Active") {
-    workoutDisplay = {
-      text: "Workout Active",
-      type: "successWorkout"
-    };
+    workoutDisplay = { text: "Workout Active", type: "successWorkout" };
   } else {
-    workoutDisplay = {
-      text: "Workout Not Provided",
-      type: "warningWorkout"
-    };
+    workoutDisplay = { text: "Workout Not Provided", type: "warningWorkout" };
   }
+
+  const getBorderStyle = () => {
+    if (isInactiveView) return "border border-gray-600 shadow-[0_0_35px_rgba(107,114,128,0.35)] opacity-75";
+    if (isExpired) return "border border-red-600 shadow-[0_0_35px_rgba(239,68,68,0.35)]";
+    if (isPTExpired) return "border border-orange-500/50 shadow-[0_0_20px_rgba(249,115,22,0.12)]";
+    return "border border-white/10 hover:border-red-600/40";
+  };
+
+  const getHoverGlowStyle = () => {
+    if (isInactiveView) return "shadow-[0_0_60px_rgba(107,114,128,0.15)]";
+    if (isExpired) return "shadow-[0_0_60px_rgba(239,68,68,0.15)]";
+    if (isPTExpired) return "shadow-[0_0_40px_rgba(249,115,22,0.10)]";
+    return "shadow-[0_0_60px_rgba(239,68,68,0.08)]";
+  };
 
   return (
     <div
       className={`group relative rounded-xl
         bg-gradient-to-br from-black via-neutral-900 to-black
         transition-all duration-300
-        ${
-          isInactiveView
-            ? "border border-gray-600 shadow-[0_0_35px_rgba(107,114,128,0.35)] opacity-75"
-            : isExpired
-            ? "border border-red-600 shadow-[0_0_35px_rgba(239,68,68,0.35)]"
-            : "border border-white/10 hover:border-red-600/40"
-        }
+        ${getBorderStyle()}
       `}
     >
-
       <div
         className={`flex items-center gap-3 sm:gap-6 
                     p-3 sm:p-5
                     ${isExpired || isInactiveView ? "opacity-90" : ""}`}
       >
-
         <img
           src={user.avatar?.url}
           className="w-12 h-12 sm:w-16 sm:h-16 
@@ -96,18 +91,18 @@ export default function MemberCard({ user, latestStatus, isInactiveTab, daysExpi
 
           <div className="flex gap-2 mt-2 flex-wrap">
             {hasPT === "active"
-            ? <Badge text="PT ACTIVE" active />
-            : hasPT === "expired"
-            ? <Badge text="PT EXPIRED" ptExpired />
-            : <Badge text="NO PT" />}
+              ? <Badge text="PT ACTIVE" active />
+              : hasPT === "expired"
+              ? <Badge text="PT EXPIRED" ptExpired />
+              : <Badge text="NO PT" />}
             {user?.personalTraning && (
-              user?.diet 
-                ? <Badge text="Diet Provided" success /> 
+              user?.diet
+                ? <Badge text="Diet Provided" success />
                 : <Badge text="Diet Not Provided" warning />
             )}
             {user?.personalTraning && (
-              <Badge 
-                text={workoutDisplay.text} 
+              <Badge
+                text={workoutDisplay.text}
                 type={workoutDisplay.type}
                 successWorkout={workoutDisplay.type === "successWorkout"}
                 warningWorkout={workoutDisplay.type === "warningWorkout"}
@@ -116,17 +111,15 @@ export default function MemberCard({ user, latestStatus, isInactiveTab, daysExpi
               />
             )}
             {isExpired && !isInactiveView && (
-              <Badge 
+              <Badge
                 text={`EXPIRED · ${daysExpired || 0}d ago`}
-                danger 
-                className="bg-gradient-to-r from-red-600 to-red-700 font-bold tracking-wide shadow-sm border border-red-400/30"
+                danger
               />
             )}
             {isInactiveView && (
-              <Badge 
+              <Badge
                 text={`INACTIVE · ${daysExpired || 0} DAYS EXPIRED`}
-                danger 
-                className="bg-gradient-to-r from-gray-700 to-gray-800 font-bold tracking-wide shadow-sm border border-gray-500/30"
+                danger
               />
             )}
           </div>
@@ -144,6 +137,8 @@ export default function MemberCard({ user, latestStatus, isInactiveTab, daysExpi
                 ? "border border-gray-600 text-gray-400 hover:bg-gray-700 hover:text-white"
                 : isExpired
                 ? "border border-red-600 text-red-500 hover:bg-red-600 hover:text-black"
+                : isPTExpired
+                ? "border border-orange-500/50 text-orange-400 hover:bg-orange-500/20 hover:text-white"
                 : "border border-red-600 hover:bg-red-600"
             }
           `}
@@ -155,13 +150,7 @@ export default function MemberCard({ user, latestStatus, isInactiveTab, daysExpi
       <div
         className={`absolute inset-0 pointer-events-none rounded-xl
           transition opacity-0 group-hover:opacity-100
-          ${
-            isInactiveView
-              ? "shadow-[0_0_60px_rgba(107,114,128,0.15)]"
-              : isExpired
-              ? "shadow-[0_0_60px_rgba(239,68,68,0.15)]"
-              : "shadow-[0_0_60px_rgba(239,68,68,0.08)]"
-          }
+          ${getHoverGlowStyle()}
         `}
       />
     </div>
@@ -170,9 +159,9 @@ export default function MemberCard({ user, latestStatus, isInactiveTab, daysExpi
 
 function Badge({ text, active, danger, warning, success, successWorkout, warningWorkout, paused, completed, ptExpired, type }) {
   let badgeStyles = "";
-  
+
   if (danger) {
-    badgeStyles = "bg-gradient-to-r from-red-600 to-red-700 font-bold tracking-wide shadow-sm border border-red-400/30"
+    badgeStyles = "bg-gradient-to-r from-red-600 to-red-700 font-bold tracking-wide shadow-sm border border-red-400/30";
   } else if (active) {
     badgeStyles = "bg-green-600 text-black";
   } else if (success) {
@@ -188,11 +177,11 @@ function Badge({ text, active, danger, warning, success, successWorkout, warning
   } else if (completed) {
     badgeStyles = "bg-emerald-500 text-white";
   } else if (ptExpired) {
-    badgeStyles = "bg-red-500 border border-orange-500/50 text-black";
+    badgeStyles = "bg-orange-950 border border-orange-500/50 text-orange-400";
   } else {
     badgeStyles = "border border-white/20 text-gray-300";
   }
-  
+
   return (
     <span
       className={`px-2 sm:px-3 py-0.5 sm:py-1 
