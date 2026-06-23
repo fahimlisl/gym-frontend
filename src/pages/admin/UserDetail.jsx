@@ -85,6 +85,16 @@ export default function UserDetail() {
     }
   };
 
+const handleRemovePT = async () => {
+  try {
+    await api.patch(`/admin/personal-training/remove/${id}`);
+    toast.success("Personal training removed successfully");
+    // refresh the member/pt data here, e.g. refetch or mutate via SWR
+  } catch (err) {
+    toast.error(err?.response?.data?.message || "Failed to remove PT");
+  }
+};
+
   useEffect(() => {
     loadUser();
   }, [id]);
@@ -174,6 +184,7 @@ export default function UserDetail() {
             onRenew={() => setRenewPTOpen(true)}
             onChangeTrainer={() => setShowChangeTrainer(true)}
             subscription={user.subscription}
+            onRemove={handleRemovePT}
           />
 
 

@@ -120,9 +120,23 @@ export default function DietChart() {
   const [lightboxOpen,  setLightboxOpen]  = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
 
+  const [ptStatus, setPtStatus] = useState(null); // "active" | "expired" | "none"
+
   useEffect(() => {
-    const fetchDiet = async () => {
+    const checkPTAndFetchDiet = async () => {
       try {
+        setLoading(true);
+        const profileRes = await api.get("/user/getProfile");
+        const pt = profileRes.data.data?.personalTraning;
+        const latestPT = pt?.subscription?.[pt.subscription.length - 1];
+        const status = latestPT?.status?.toLowerCase() || "none";
+        setPtStatus(status);
+
+        if (status === "expired" || status === "none") {
+          setLoading(false);
+          return;
+        }
+
         const res = await api.get("/user/diet/my");
         setDiet(res.data.data);
       } catch (err) {
@@ -131,7 +145,7 @@ export default function DietChart() {
         setLoading(false);
       }
     };
-    fetchDiet();
+    checkPTAndFetchDiet();
   }, []);
 
   useEffect(() => {
@@ -184,6 +198,24 @@ export default function DietChart() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-black via-neutral-900 to-black flex items-center justify-center">
         <div className="w-10 h-10 border-4 border-white/10 border-t-red-600 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (ptStatus === "expired" || ptStatus === "none") {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-black via-neutral-900 to-black flex items-center justify-center p-6">
+        <div className="text-center max-w-sm">
+          <div className="text-6xl mb-4">🔒</div>
+          <h2 className="text-xl font-bold text-white mb-2">
+            {ptStatus === "expired" ? "PT EXPIRED" : "NO PERSONAL TRAINING"}
+          </h2>
+          <p className="text-neutral-400 text-sm">
+            {ptStatus === "expired"
+              ? "Renew your personal training plan to view your diet plan."
+              : "You don't have a personal training plan assigned yet. Contact your trainer to get started."}
+          </p>
+        </div>
       </div>
     );
   }

@@ -58,9 +58,35 @@ export default function Members() {
     return daysExpired !== null && daysExpired > 10;
   };
 
-  const getLatestPTStatus = (user) => {
+  const getLatestPTSubscription = (user) => {
     const ptSubs = user?.personalTraning?.subscription;
-    return ptSubs?.[ptSubs.length - 1]?.status || "none";
+    if (!Array.isArray(ptSubs) || ptSubs.length === 0) return null;
+    return ptSubs[ptSubs.length - 1];
+  };
+
+  const getLatestPTStatus = (user) => {
+    return getLatestPTSubscription(user)?.status || "none";
+  };
+
+  // Days remaining until endDate (negative if already passed). Returns null if no endDate.
+  const getDaysUntil = (endDate) => {
+    if (!endDate) return null;
+    const diff = new Date(endDate).getTime() - Date.now();
+    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  };
+
+  const isMembershipExpiringSoon = (user) => {
+    const latest = getLatestSubscription(user);
+    if (!latest || latest.status !== "active") return false;
+    const daysLeft = getDaysUntil(latest?.endDate);
+    return daysLeft !== null && daysLeft >= 0 && daysLeft <= 3;
+  };
+
+  const isPTExpiringSoon = (user) => {
+    const latestPT = getLatestPTSubscription(user);
+    if (!latestPT || latestPT?.status !== "active") return false;
+    const daysLeft = getDaysUntil(latestPT?.endDate);
+    return daysLeft !== null && daysLeft >= 0 && daysLeft <= 3;
   };
 
   const loadMembers = async () => {
@@ -109,16 +135,23 @@ export default function Members() {
       const ptA = getLatestPTStatus(a);
       const ptB = getLatestPTStatus(b);
 
-      // 1 = membership expired, 2 = pt expired (active membership), 3 = active, 4 = none
-      const getPriority = (memberStatus, ptStatus) => {
+      // 1 = membership expired
+      // 2 = membership expiring in <= 3 days
+      // 3 = pt expired (active membership)
+      // 4 = pt expiring in <= 3 days
+      // 5 = active
+      // 6 = none
+      const getPriority = (user, memberStatus, ptStatus) => {
         if (memberStatus === "expired") return 1;
-        if (ptStatus === "expired") return 2;
-        if (memberStatus === "active") return 3;
-        return 4;
+        if (isMembershipExpiringSoon(user)) return 2;
+        if (ptStatus === "expired") return 3;
+        if (isPTExpiringSoon(user)) return 4;
+        if (memberStatus === "active") return 5;
+        return 6;
       };
 
-      const priorityA = getPriority(statusA, ptA);
-      const priorityB = getPriority(statusB, ptB);
+      const priorityA = getPriority(a, statusA, ptA);
+      const priorityB = getPriority(b, statusB, ptB);
 
       if (priorityA !== priorityB) return priorityA - priorityB;
       return dateB - dateA;
@@ -331,6 +364,8 @@ export default function Members() {
                 latestStatus={getLatestStatus(u)}
                 isInactiveTab={activeTab === "inactive"}
                 daysExpired={getDaysExpired(u)}
+                membershipExpiringSoon={isMembershipExpiringSoon(u)}
+                ptExpiringSoon={isPTExpiringSoon(u)}
               />
             ))}
           </div>

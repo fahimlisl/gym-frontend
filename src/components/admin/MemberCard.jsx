@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 
-export default function MemberCard({ user, latestStatus, isInactiveTab, daysExpired }) {
+export default function MemberCard({ user, latestStatus, isInactiveTab, daysExpired, membershipExpiringSoon, ptExpiringSoon }) {
   const ptSubs = user?.personalTraning?.subscription;
   const latestPT = ptSubs?.[ptSubs?.length - 1];
   const hasPT = latestPT?.status;
@@ -9,9 +9,18 @@ export default function MemberCard({ user, latestStatus, isInactiveTab, daysExpi
   const isExpired = latestStatus === "expired";
   const isInactiveView = isInactiveTab === true;
 
-  const latestSubscription = user?.subscription?.subscription[user?.subscription?.subscription.length - 1];
+  const latestSubscription = user?.subscription?.subscription?.[user?.subscription?.subscription?.length - 1];
   const startDate = latestSubscription?.startDate ? new Date(latestSubscription.startDate).toLocaleDateString() : null;
   const expiryDate = latestSubscription?.endDate ? new Date(latestSubscription.endDate).toLocaleDateString() : null;
+
+  const getDaysLeft = (endDate) => {
+    if (!endDate) return null;
+    const diff = new Date(endDate).getTime() - Date.now();
+    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  };
+
+  const membershipDaysLeft = getDaysLeft(latestSubscription?.endDate);
+  const ptDaysLeft = getDaysLeft(latestPT?.endDate);
 
   const workoutStatus = user?.workout?.status;
 
@@ -35,14 +44,18 @@ export default function MemberCard({ user, latestStatus, isInactiveTab, daysExpi
   const getBorderStyle = () => {
     if (isInactiveView) return "border border-gray-600 shadow-[0_0_35px_rgba(107,114,128,0.35)] opacity-75";
     if (isExpired) return "border border-red-600 shadow-[0_0_35px_rgba(239,68,68,0.35)]";
+    if (membershipExpiringSoon) return "border border-yellow-500/40 shadow-[0_0_18px_rgba(234,179,8,0.10)]";
     if (isPTExpired) return "border border-orange-500/50 shadow-[0_0_20px_rgba(249,115,22,0.12)]";
+    if (ptExpiringSoon) return "border border-yellow-500/25 shadow-[0_0_14px_rgba(234,179,8,0.07)]";
     return "border border-white/10 hover:border-red-600/40";
   };
 
   const getHoverGlowStyle = () => {
     if (isInactiveView) return "shadow-[0_0_60px_rgba(107,114,128,0.15)]";
     if (isExpired) return "shadow-[0_0_60px_rgba(239,68,68,0.15)]";
+    if (membershipExpiringSoon) return "shadow-[0_0_35px_rgba(234,179,8,0.08)]";
     if (isPTExpired) return "shadow-[0_0_40px_rgba(249,115,22,0.10)]";
+    if (ptExpiringSoon) return "shadow-[0_0_30px_rgba(234,179,8,0.06)]";
     return "shadow-[0_0_60px_rgba(239,68,68,0.08)]";
   };
 
@@ -116,6 +129,18 @@ export default function MemberCard({ user, latestStatus, isInactiveTab, daysExpi
                 danger
               />
             )}
+            {membershipExpiringSoon && !isExpired && !isInactiveView && (
+              <Badge
+                text={`MEMBERSHIP EXPIRING · ${membershipDaysLeft ?? 0}d left`}
+                expiringSoon
+              />
+            )}
+            {ptExpiringSoon && !isPTExpired && (
+              <Badge
+                text={`PT EXPIRING · ${ptDaysLeft ?? 0}d left`}
+                expiringSoon
+              />
+            )}
             {isInactiveView && (
               <Badge
                 text={`INACTIVE · ${daysExpired || 0} DAYS EXPIRED`}
@@ -157,7 +182,7 @@ export default function MemberCard({ user, latestStatus, isInactiveTab, daysExpi
   );
 }
 
-function Badge({ text, active, danger, warning, success, successWorkout, warningWorkout, paused, completed, ptExpired, type }) {
+function Badge({ text, active, danger, warning, success, successWorkout, warningWorkout, paused, completed, ptExpired, expiringSoon, type }) {
   let badgeStyles = "";
 
   if (danger) {
@@ -178,6 +203,8 @@ function Badge({ text, active, danger, warning, success, successWorkout, warning
     badgeStyles = "bg-emerald-500 text-white";
   } else if (ptExpired) {
     badgeStyles = "bg-orange-950 border border-orange-500/50 text-orange-400";
+  } else if (expiringSoon) {
+    badgeStyles = "bg-yellow-950/60 border border-yellow-500/40 text-yellow-400";
   } else {
     badgeStyles = "border border-white/20 text-gray-300";
   }

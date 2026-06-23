@@ -8,16 +8,38 @@ const UserWorkoutView = () => {
   const [todayDay, setTodayDay] = useState(null);
   const [selectedDay, setSelectedDay] = useState(null);
   const [expandedExercise, setExpandedExercise] = useState(null);
+  const [ptStatus, setPtStatus] = useState(null);
 
   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
   useEffect(() => {
-    fetchWorkout();
+    checkPTAndFetchWorkout();
   }, []);
+
+  const checkPTAndFetchWorkout = async () => {
+    try {
+      setLoading(true);
+      const profileRes = await api.get('/user/getProfile');
+      const pt = profileRes.data.data?.personalTraning;
+      const latestPT = pt?.subscription?.[pt.subscription.length - 1];
+      const status = latestPT?.status?.toLowerCase() || "none";
+      setPtStatus(status);
+
+      if (status === "expired" || status === "none") {
+        setLoading(false);
+        return;
+      }
+
+      await fetchWorkout();
+    } catch (err) {
+      console.error('Error:', err);
+      toast.error('Failed to load workout');
+      setLoading(false);
+    }
+  };
 
   const fetchWorkout = async () => {
     try {
-      setLoading(true);
       const res = await api.get('/user/workout');
       setWorkout(res.data.data);
 
@@ -31,7 +53,7 @@ const UserWorkoutView = () => {
         const currentWeek = res.data.data.weeks.find(
           w => w.weekNumber === res.data.data.currentWeek
         );
-        
+
         if (currentWeek) {
           const todayWorkout = currentWeek.days.find(d => d.day === dayName);
           if (todayWorkout) {
@@ -60,6 +82,24 @@ const UserWorkoutView = () => {
     );
   }
 
+  if (ptStatus === "expired" || ptStatus === "none") {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-black via-neutral-900 to-black flex items-center justify-center px-4">
+        <div className="text-center max-w-sm">
+          <p className="text-5xl mb-4">🔒</p>
+          <h2 className="text-xl font-light text-white mb-2">
+            {ptStatus === "expired" ? "PT EXPIRED" : "NO PERSONAL TRAINING"}
+          </h2>
+          <p className="text-neutral-400 text-sm font-light">
+            {ptStatus === "expired"
+              ? "Renew your personal training plan to view your workout plan."
+              : "You don't have a personal training plan assigned yet. Contact your trainer to get started."}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (!workout) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-black via-neutral-900 to-black flex items-center justify-center px-4">
@@ -77,7 +117,6 @@ const UserWorkoutView = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-neutral-900 to-black px-4 py-8 sm:px-6 lg:px-8">
       <div className="max-w-2xl mx-auto">
-        {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl sm:text-4xl font-light text-white mb-2 tracking-tight">
             Your Workout
@@ -87,7 +126,6 @@ const UserWorkoutView = () => {
           </p>
         </div>
 
-        {/* Workout Info Card */}
         <div className="bg-neutral-900/50 border border-red-600/30 rounded-xl p-6 mb-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
             <div>
@@ -115,7 +153,6 @@ const UserWorkoutView = () => {
           </div>
         </div>
 
-        {/* Days Navigation */}
         <div className="mb-8">
           <p className="text-xs font-light text-neutral-400 tracking-wider mb-3">
             WEEK {workout.currentWeek} - SELECT A DAY
@@ -148,10 +185,8 @@ const UserWorkoutView = () => {
           </div>
         </div>
 
-        {/* Selected Day Workout */}
         {selectedDay && (
           <div className="space-y-4">
-            {/* Day Header */}
             <div className="bg-gradient-to-r from-red-600/10 to-transparent border border-red-600/30 rounded-lg p-4">
               <h2 className="text-2xl font-light text-white mb-1">
                 {selectedDay.day}
@@ -164,7 +199,6 @@ const UserWorkoutView = () => {
               </p>
             </div>
 
-            {/* Rest Day Message */}
             {selectedDay.isRestDay ? (
               <div className="bg-neutral-900/50 border border-yellow-600/30 rounded-lg p-8 text-center">
                 <p className="text-3xl mb-2">😌</p>
@@ -271,7 +305,6 @@ const UserWorkoutView = () => {
               </div>
             )}
 
-            {/* Day Notes */}
             {selectedDay.notes && !selectedDay.isRestDay && (
               <div className="bg-neutral-900/50 border border-white/10 rounded-lg p-4">
                 <p className="text-xs font-light text-neutral-400 tracking-wider mb-2">
