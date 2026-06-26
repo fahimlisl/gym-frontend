@@ -64,9 +64,25 @@ const FormFields = ({ data, setData }) => (
   </div>
 );
 
+const StatCard = ({ label, value, sub, color = "text-white", icon }) => (
+  <div className="flex flex-col rounded-xl bg-gradient-to-br from-black via-neutral-900 to-black border border-white/10 p-3 md:p-5">
+    <div className="flex items-center justify-between">
+      <p className="text-[8px] md:text-[10px] text-gray-500 tracking-widest uppercase font-semibold">{label}</p>
+      {icon && <span className="text-base md:text-xl">{icon}</span>}
+    </div>
+    <p className={`text-base md:text-2xl font-black mt-1 md:mt-2 ${color} truncate`}>₹{value}</p>
+    {sub && <p className="text-[8px] md:text-xs text-gray-500 mt-0.5 md:mt-1">{sub}</p>}
+  </div>
+);
+
+const SectionLabel = ({ children }) => (
+  <p className="text-[10px] text-gray-500 tracking-widest uppercase font-semibold px-1">{children}</p>
+);
+
 export default function Expenses() {
   const [expenses, setExpenses]     = useState([]);
   const [loading, setLoading]       = useState(true);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
   const [fromDate, setFromDate]           = useState(today);
@@ -84,6 +100,18 @@ export default function Expenses() {
 
   const [submitting, setSubmitting] = useState(false);
 
+  useEffect(() => {
+    const fetchAdmin = async () => {
+      try {
+        const { data } = await axios.get("/admin/get/me");
+        setIsSuperAdmin(data?.admin?.isSuperAdmin ?? false);
+      } catch {
+        setIsSuperAdmin(false);
+      }
+    };
+    fetchAdmin();
+  }, []);
+
   const fetchExpenses = async () => {
     try {
       const res = await axios.get("/admin/fetchAllExpenses");
@@ -97,6 +125,24 @@ export default function Expenses() {
 
   useEffect(() => { fetchExpenses(); }, []);
 
+  const calculateStats = (expenseList) => {
+    const total = expenseList.reduce((sum, e) => sum + e.amount, 0);
+    const cash = expenseList.filter(e => e.paymentMethod === "cash").reduce((sum, e) => sum + e.amount, 0);
+    const upi = expenseList.filter(e => e.paymentMethod === "upi").reduce((sum, e) => sum + e.amount, 0);
+    const online = expenseList.filter(e => e.paymentMethod === "card" || e.paymentMethod === "netbanking").reduce((sum, e) => sum + e.amount, 0);
+    const count = expenseList.length;
+    
+    const categoryBreakdown = {};
+    expenseList.forEach(e => {
+      if (!categoryBreakdown[e.category]) {
+        categoryBreakdown[e.category] = 0;
+      }
+      categoryBreakdown[e.category] += e.amount;
+    });
+
+    return { total, cash, upi, online, count, categoryBreakdown };
+  };
+
   const filteredExpenses = useMemo(() => {
     return expenses.filter((e) => {
       const expenseDate = new Date(e.createdAt).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
@@ -108,6 +154,13 @@ export default function Expenses() {
       );
     });
   }, [expenses, fromDate, toDate, categoryFilter]);
+
+  const filteredStats = useMemo(() => {
+    return calculateStats(filteredExpenses);
+  }, [filteredExpenses]);
+  const allTimeStats = useMemo(() => {
+    return calculateStats(expenses);
+  }, [expenses]);
 
   const exportExcel = () => {
     if (!filteredExpenses.length) return toast.error("No data to export");
@@ -179,6 +232,18 @@ export default function Expenses() {
     }
   };
 
+  const fmt = (n) => Math.round(n).toLocaleString("en-IN");
+
+  // Get top category
+  const getTopCategory = (breakdown) => {
+    if (!breakdown || Object.keys(breakdown).length === 0) return null;
+    const entries = Object.entries(breakdown);
+    const top = entries.reduce((a, b) => a[1] > b[1] ? a : b);
+    return { category: top[0], amount: top[1] };
+  };
+
+  const topCategory = getTopCategory(filteredStats.categoryBreakdown);
+
   return (
     <>
       <div className="space-y-8">
@@ -187,13 +252,93 @@ export default function Expenses() {
           <div>
             <h1 className="text-2xl sm:text-3xl font-black tracking-widest">EXPENSES</h1>
             <p className="text-sm text-gray-400 mt-2">Track & manage outgoing payments</p>
+            {!isSuperAdmin && (
+              <p className="text-xs text-yellow-500 mt-1">🔒 View-only mode - You can view & export but cannot modify</p>
+            )}
           </div>
-          <button
-            onClick={() => setShowModal(true)}
-            className="bg-red-600 hover:bg-red-700 px-6 py-3 font-bold tracking-widest w-full sm:w-auto"
-          >
-            + ADD EXPENSE
-          </button>
+          <div className="flex gap-3 w-full sm:w-auto">
+            <button onClick={exportExcel}
+              className="bg-green-600 hover:bg-green-700 px-6 py-3 font-bold tracking-widest flex-1 sm:flex-none">
+              EXPORT
+            </button>
+            {isSuperAdmin && (
+              <button
+                onClick={() => setShowModal(true)}
+                className="bg-red-600 hover:bg-red-700 px-6 py-3 font-bold tracking-widest flex-1 sm:flex-none"
+              >
+                + ADD
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="space-y-2">
+          <SectionLabel>Lifetime Statistics (All Time)</SectionLabel>
+          <div className="grid grid-cols-3 gap-1.5 md:gap-3">
+            <StatCard 
+              label="Total" 
+              value={fmt(allTimeStats.total)} 
+              color="text-red-500" 
+              icon="💰"
+              sub={`${allTimeStats.count} txns`}
+            />
+            <StatCard 
+              label="Cash" 
+              value={fmt(allTimeStats.cash)} 
+              color="text-green-400" 
+              icon="💵"
+            />
+            <StatCard 
+              label="UPI" 
+              value={fmt(allTimeStats.upi)} 
+              color="text-blue-400" 
+              icon="📱"
+            />
+          </div>
+          {allTimeStats.count > 0 && (
+            <div className="text-[10px] md:text-xs text-gray-500 px-1">
+              Avg: ₹{fmt(allTimeStats.total / allTimeStats.count)} / txn
+            </div>
+          )}
+        </div>
+        <div className="space-y-2">
+          <SectionLabel>
+            {fromDate === toDate
+              ? `Stats for ${new Date(fromDate).toLocaleDateString("en-IN")}`
+              : `Stats: ${new Date(fromDate).toLocaleDateString("en-IN")} – ${new Date(toDate).toLocaleDateString("en-IN")}`}
+          </SectionLabel>
+          <div className="grid grid-cols-3 gap-1.5 md:gap-3">
+            <StatCard 
+              label="Total" 
+              value={fmt(filteredStats.total)} 
+              color="text-red-500" 
+              icon="💰"
+              sub={`${filteredStats.count} txns`}
+            />
+            <StatCard 
+              label="Cash" 
+              value={fmt(filteredStats.cash)} 
+              color="text-green-400" 
+              icon="💵"
+            />
+            <StatCard 
+              label="UPI" 
+              value={fmt(filteredStats.upi)} 
+              color="text-blue-400" 
+              icon="📱"
+            />
+          </div>
+          {filteredStats.count > 0 && (
+            <div className="flex flex-wrap items-center gap-1 md:gap-3 text-[10px] md:text-xs text-gray-500 px-1">
+              <span>Avg: ₹{fmt(filteredStats.total / filteredStats.count)}</span>
+              {topCategory && (
+                <span className="flex items-center gap-1">
+                  <span className="text-yellow-500">🏆</span>
+                  <span className="text-white font-semibold">{topCategory.category}</span>
+                  <span className="text-gray-400">(₹{fmt(topCategory.amount)})</span>
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="flex flex-col sm:flex-row flex-wrap gap-4 items-stretch sm:items-end">
@@ -241,24 +386,41 @@ export default function Expenses() {
                       <td className="p-3 uppercase text-sm">{e.paymentMethod}</td>
                       <td className="p-3 text-gray-400 text-sm">{e.remarks || "—"}</td>
                       <td className="p-3">
-                        <div className="flex items-center justify-center gap-2">
-                          <button
-                            onClick={() => openEdit(e)}
-                            className="px-3 py-1 text-xs border border-white/20 hover:bg-white/10 tracking-widest"
-                          >
-                            EDIT
-                          </button>
-                          <button
-                            onClick={() => setDeleteTarget({ id: e._id, title: e.title })}
-                            className="px-3 py-1 text-xs border border-red-600/50 text-red-500 hover:bg-red-600/10 tracking-widest"
-                          >
-                            DELETE
-                          </button>
-                        </div>
-                       </td>
-                     </tr>
+                        {isSuperAdmin ? (
+                          <div className="flex items-center justify-center gap-2">
+                            <button
+                              onClick={() => openEdit(e)}
+                              className="px-3 py-1 text-xs border border-white/20 hover:bg-white/10 tracking-widest"
+                            >
+                              EDIT
+                            </button>
+                            <button
+                              onClick={() => setDeleteTarget({ id: e._id, title: e.title })}
+                              className="px-3 py-1 text-xs border border-red-600/50 text-red-500 hover:bg-red-600/10 tracking-widest"
+                            >
+                              DELETE
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-gray-500 text-xs font-semibold tracking-widest">
+                            VIEW ONLY
+                          </span>
+                        )}
+                      </td>
+                    </tr>
                   ))}
                 </tbody>
+                <tfoot>
+                  <tr className="border-t border-white/10 bg-neutral-900/60">
+                    <td colSpan={3} className="p-3 text-xs text-gray-500 font-extrabold uppercase tracking-widest">
+                      Total ({filteredExpenses.length} records)
+                    </td>
+                    <td className="p-3 text-right font-black text-red-500">
+                      ₹{fmt(filteredStats.total)}
+                    </td>
+                    <td colSpan={3} />
+                  </tr>
+                </tfoot>
               </table>
             </div>
 
@@ -288,32 +450,46 @@ export default function Expenses() {
                   {e.remarks && (
                     <div className="text-sm text-gray-400 pt-1">{e.remarks}</div>
                   )}
-                  <div className="flex gap-2 pt-2 border-t border-white/10">
-                    <button
-                      onClick={() => openEdit(e)}
-                      className="flex-1 py-2 text-xs border border-white/20 hover:bg-white/10 tracking-widest"
-                    >
-                      EDIT
-                    </button>
-                    <button
-                      onClick={() => setDeleteTarget({ id: e._id, title: e.title })}
-                      className="flex-1 py-2 text-xs border border-red-600/50 text-red-500 hover:bg-red-600/10 tracking-widest"
-                    >
-                      DELETE
-                    </button>
-                  </div>
+                  {isSuperAdmin ? (
+                    <div className="flex gap-2 pt-2 border-t border-white/10">
+                      <button
+                        onClick={() => openEdit(e)}
+                        className="flex-1 py-2 text-xs border border-white/20 hover:bg-white/10 tracking-widest"
+                      >
+                        EDIT
+                      </button>
+                      <button
+                        onClick={() => setDeleteTarget({ id: e._id, title: e.title })}
+                        className="flex-1 py-2 text-xs border border-red-600/50 text-red-500 hover:bg-red-600/10 tracking-widest"
+                      >
+                        DELETE
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="text-center py-2 text-xs text-gray-500 font-semibold tracking-widest border-t border-white/10">
+                      VIEW ONLY
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
 
             {!filteredExpenses.length && (
-              <p className="text-center text-gray-500 py-6">No expenses found for selected filters</p>
+              <div className="border border-white/10 bg-gradient-to-br from-black via-neutral-900 to-black rounded-xl p-12 text-center">
+                <p className="text-gray-500 font-semibold text-sm">NO EXPENSES FOUND</p>
+                {isSuperAdmin && (
+                  <button onClick={() => setShowModal(true)}
+                    className="mt-4 flex items-center gap-2 mx-auto bg-red-600 hover:bg-red-700 transition px-4 py-2 text-[11px] font-extrabold rounded-lg text-white">
+                    + ADD YOUR FIRST EXPENSE
+                  </button>
+                )}
+              </div>
             )}
           </>
         )}
       </div>
 
-      {showModal && (
+      {showModal && isSuperAdmin && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <div className="bg-black border border-white/10 w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-black tracking-widest mb-6">ADD EXPENSE</h2>
@@ -334,7 +510,7 @@ export default function Expenses() {
         </div>
       )}
 
-      {showEditModal && (
+      {showEditModal && isSuperAdmin && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <div className="bg-black border border-white/10 w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-black tracking-widest mb-6">EDIT EXPENSE</h2>
@@ -356,7 +532,7 @@ export default function Expenses() {
         </div>
       )}
 
-      {deleteTarget && (
+      {deleteTarget && isSuperAdmin && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <div className="bg-black border border-red-600/40 w-full max-w-sm p-6 space-y-6">
 

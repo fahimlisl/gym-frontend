@@ -3,7 +3,7 @@ import toast from "react-hot-toast";
 import { X, Plus, Download, Pencil, Trash2 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { fetchAllTransactions, createPaymentIn } from "../../api/admin.api.js";
-import axios from "../../api/axios.api.js";
+import api from "../../api/axios.api.js";
 
 const CREDIT_SOURCES = [
   "subscription", "supplement", "personal-training", "cafe", "paymentin",
@@ -175,7 +175,7 @@ const EditPaymentModal = ({ payment, onClose, onSuccess }) => {
       return toast.error("Enter a valid amount");
     setLoading(true);
     try {
-      await axios.patch(`/admin/edit/payment/in/${payment.referenceId._id}`, {
+      await api.patch(`/admin/edit/payment/in/${payment.referenceId._id}`, {
         ...form,
         amount: Number(form.amount),
       });
@@ -334,6 +334,7 @@ export default function PaymentInPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editTarget, setEditTarget]     = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   const [view, setView]     = useState("paymentin");
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
@@ -341,6 +342,19 @@ export default function PaymentInPage() {
   const [toDate, setToDate]     = useState(today);
   const [method, setMethod]     = useState("all");
   const [source, setSource]     = useState("all");
+
+  // Check admin permissions
+  useEffect(() => {
+    const fetchAdmin = async () => {
+      try {
+        const { data } = await api.get("/admin/get/me");
+        setIsSuperAdmin(data?.admin?.isSuperAdmin ?? false);
+      } catch {
+        setIsSuperAdmin(false);
+      }
+    };
+    fetchAdmin();
+  }, []);
 
   const load = async () => {
     try {
@@ -390,7 +404,7 @@ export default function PaymentInPage() {
 
   const confirmDelete = async () => {
     try {
-      await axios.delete(`/admin/delete/payment/in/${deleteTarget.id}`);
+      await api.delete(`/admin/delete/payment/in/${deleteTarget.id}`);
       toast.success("Payment deleted!");
       setDeleteTarget(null);
       load();
@@ -414,16 +428,21 @@ export default function PaymentInPage() {
               PAYMENT <span className="text-red-600">IN</span>
             </h1>
             <p className="text-xs sm:text-sm text-gray-400 mt-2">Track incoming payments & credits</p>
+            {!isSuperAdmin && (
+              <p className="text-xs text-yellow-500 mt-1">🔒 View-only mode - You cannot modify any data</p>
+            )}
           </div>
           <div className="flex gap-3 h-fit">
             <button onClick={exportExcel}
               className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 transition px-4 py-2 text-[11px] font-extrabold rounded-lg text-gray-300">
               <Download size={14} /> EXPORT
             </button>
-            <button onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-2 bg-red-600 hover:bg-red-700 transition px-4 py-2 text-[11px] font-extrabold rounded-lg text-white">
-              <Plus size={14} /> ADD PAYMENT
-            </button>
+            {isSuperAdmin && (
+              <button onClick={() => setShowAddModal(true)}
+                className="flex items-center gap-2 bg-red-600 hover:bg-red-700 transition px-4 py-2 text-[11px] font-extrabold rounded-lg text-white">
+                <Plus size={14} /> ADD PAYMENT
+              </button>
+            )}
           </div>
         </div>
 
@@ -498,7 +517,7 @@ export default function PaymentInPage() {
         ) : baseFiltered.length === 0 ? (
           <div className="border border-white/10 bg-gradient-to-br from-black via-neutral-900 to-black rounded-xl p-12 text-center">
             <p className="text-gray-500 font-semibold text-sm">NO RECORDS FOUND</p>
-            {view === "paymentin" && (
+            {view === "paymentin" && isSuperAdmin && (
               <button onClick={() => setShowAddModal(true)}
                 className="mt-4 flex items-center gap-2 mx-auto bg-red-600 hover:bg-red-700 transition px-4 py-2 text-[11px] font-extrabold rounded-lg text-white">
                 <Plus size={13} /> ADD YOUR FIRST PAYMENT
@@ -537,18 +556,26 @@ export default function PaymentInPage() {
                     </div>
                     {isPaymentIn && (
                       <div className="flex gap-2 pt-2 border-t border-white/10">
-                        <button
-                          onClick={() => setEditTarget(tx)}
-                          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg border border-white/10 text-gray-300 text-[10px] font-extrabold hover:bg-white/5 transition"
-                        >
-                          <Pencil size={11} /> EDIT
-                        </button>
-                        <button
-                          onClick={() => setDeleteTarget({ id: tx.referenceId._id, title: tx.referenceId?.title || "this payment" })}
-                          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg border border-red-600/30 text-red-500 text-[10px] font-extrabold hover:bg-red-600/10 transition"
-                        >
-                          <Trash2 size={11} /> DELETE
-                        </button>
+                        {isSuperAdmin ? (
+                          <>
+                            <button
+                              onClick={() => setEditTarget(tx)}
+                              className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg border border-white/10 text-gray-300 text-[10px] font-extrabold hover:bg-white/5 transition"
+                            >
+                              <Pencil size={11} /> EDIT
+                            </button>
+                            <button
+                              onClick={() => setDeleteTarget({ id: tx.referenceId._id, title: tx.referenceId?.title || "this payment" })}
+                              className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg border border-red-600/30 text-red-500 text-[10px] font-extrabold hover:bg-red-600/10 transition"
+                            >
+                              <Trash2 size={11} /> DELETE
+                            </button>
+                          </>
+                        ) : (
+                          <div className="w-full text-center py-1.5 text-[10px] text-gray-500 font-semibold uppercase">
+                            View Only
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -601,20 +628,24 @@ export default function PaymentInPage() {
                         </td>
                         <td className="p-4">
                           {isPaymentIn ? (
-                            <div className="flex items-center justify-center gap-2">
-                              <button
-                                onClick={() => setEditTarget(tx)}
-                                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-white/10 text-gray-300 text-[10px] font-extrabold hover:bg-white/5 transition"
-                              >
-                                <Pencil size={11} /> EDIT
-                              </button>
-                              <button
-                                onClick={() => setDeleteTarget({ id: tx.referenceId._id, title: tx.referenceId?.title || "this payment" })}
-                                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-red-600/30 text-red-500 text-[10px] font-extrabold hover:bg-red-600/10 transition"
-                              >
-                                <Trash2 size={11} /> DELETE
-                              </button>
-                            </div>
+                            isSuperAdmin ? (
+                              <div className="flex items-center justify-center gap-2">
+                                <button
+                                  onClick={() => setEditTarget(tx)}
+                                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-white/10 text-gray-300 text-[10px] font-extrabold hover:bg-white/5 transition"
+                                >
+                                  <Pencil size={11} /> EDIT
+                                </button>
+                                <button
+                                  onClick={() => setDeleteTarget({ id: tx.referenceId._id, title: tx.referenceId?.title || "this payment" })}
+                                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-red-600/30 text-red-500 text-[10px] font-extrabold hover:bg-red-600/10 transition"
+                                >
+                                  <Trash2 size={11} /> DELETE
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="text-gray-500 text-xs flex justify-center font-semibold">VIEW ONLY</span>
+                            )
                           ) : (
                             <span className="text-gray-600 text-xs flex justify-center">—</span>
                           )}

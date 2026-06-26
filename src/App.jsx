@@ -208,7 +208,7 @@ export default function App() {
           <Route path="workout/:workoutId" element={<AdminEditWorkout />} />
 
           <Route path="expenses" element={
-            <SuperAdminRoute><Expenses /></SuperAdminRoute>
+            <Expenses />
           } />
 
           <Route path="assets" element={
@@ -216,7 +216,7 @@ export default function App() {
           } />
 
           <Route path="payments/all" element={
-            <SuperAdminRoute><Payments /></SuperAdminRoute>
+            <Payments />
           } />
 
           <Route path="payments/cafe" element={
@@ -224,7 +224,7 @@ export default function App() {
           } />
 
           <Route path="payments/payments-in" element={
-            <SuperAdminRoute><PaymentInPage /></SuperAdminRoute>
+            <PaymentInPage />
           } />
           <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
         </Route>

@@ -120,7 +120,7 @@ export default function Sidebar({ open, onClose }) {
 
   const visibleOtherMenu = isSuperAdmin
     ? otherMenu
-    : otherMenu.filter((item) => !["Expenses", "Assets"].includes(item.label));
+    : otherMenu.filter((item) => ![, "Assets"].includes(item.label));
 
   const visibleSettings = isSuperAdmin
     ? settings
@@ -197,9 +197,7 @@ export default function Sidebar({ open, onClose }) {
               <SidebarLink key={item.to} item={item} onClose={onClose} />
             ))}
             <CollapsibleGroup config={attendanceMenu} onClose={onClose} />
-            {isSuperAdmin && (                                      
-              <CollapsibleGroup config={paymentsMenu} onClose={onClose} />
-            )}
+            <CollapsibleGroup config={paymentsMenu} onClose={onClose} />
           </Section>
 
           <Section title="INVENTORY">
@@ -411,12 +409,10 @@ function CollapsibleGroup({ config, onClose, level = 0 }) {
         )}
       </button>
 
-      {/* Children */}
       {open && config.items && (
         <div className="mt-1 space-y-1">
           {config.items.map((item, idx) =>
             item.items ? (
-              // 🔁 Recursive call for nested groups
               <CollapsibleGroup
                 key={idx}
                 config={item}
@@ -424,7 +420,6 @@ function CollapsibleGroup({ config, onClose, level = 0 }) {
                 level={level + 1}
               />
             ) : (
-              // 📍 Final links
               <NavLink
                 key={item.to}
                 to={item.to}
