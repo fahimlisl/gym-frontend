@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Bot, Sparkles, X, Send } from "lucide-react";
 
 const WEBHOOK_URL = import.meta.env.VITE_N8N_CHATBOT_WEBHOOK_URL;
 
@@ -9,13 +10,9 @@ function generateSessionId() {
 
 function BotIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5 text-red-500 shrink-0 mt-0.5">
-      <rect x="3" y="8" width="18" height="12" rx="3" stroke="currentColor" strokeWidth="1.8" />
-      <path d="M8 8V6a4 4 0 0 1 8 0v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-      <circle cx="9" cy="14" r="1.5" fill="currentColor" />
-      <circle cx="15" cy="14" r="1.5" fill="currentColor" />
-      <path d="M9 17.5h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
+    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-600 to-purple-600 flex items-center justify-center shadow-lg shadow-red-600/20">
+      <Bot size={18} className="text-white" />
+    </div>
   );
 }
 
@@ -44,6 +41,7 @@ function TypingDots() {
 
 export default function ChatWidget() {
   const [open, setOpen] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(true);
   const [messages, setMessages] = useState([
     {
       role: "bot",
@@ -56,6 +54,28 @@ export default function ChatWidget() {
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
 
+  // Show welcome popup when user first visits
+  useEffect(() => {
+    const hasSeenWelcome = sessionStorage.getItem("hasSeenWelcome");
+    if (!hasSeenWelcome) {
+      // Show welcome after 2 seconds
+      const timer = setTimeout(() => {
+        setShowWelcome(true);
+      }, 2000);
+      
+      // Auto-hide welcome after 8 seconds
+      const hideTimer = setTimeout(() => {
+        setShowWelcome(false);
+        sessionStorage.setItem("hasSeenWelcome", "true");
+      }, 8000);
+      
+      return () => {
+        clearTimeout(timer);
+        clearTimeout(hideTimer);
+      };
+    }
+  }, []);
+
   useEffect(() => {
     if (open) {
       setTimeout(() => inputRef.current?.focus(), 300);
@@ -65,6 +85,19 @@ export default function ChatWidget() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
+
+  const closeWelcome = () => {
+    setShowWelcome(false);
+    sessionStorage.setItem("hasSeenWelcome", "true");
+  };
+
+  const handleQuickAction = (text) => {
+    setInput(text);
+    closeWelcome();
+    setOpen(true);
+    // Focus input after chat opens
+    setTimeout(() => inputRef.current?.focus(), 400);
+  };
 
   async function sendMessage() {
     const text = input.trim();
@@ -85,7 +118,6 @@ export default function ChatWidget() {
       });
 
       const data = await res.json();
-      // n8n chat webhook returns { output: "..." }
       const reply =
         data?.output ||
         data?.text ||
@@ -112,6 +144,87 @@ export default function ChatWidget() {
 
   return (
     <>
+      {/* Welcome Popup */}
+      <AnimatePresence>
+        {showWelcome && !open && (
+          <motion.div
+            key="welcome-popup"
+            initial={{ opacity: 0, y: 20, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.9 }}
+            transition={{ type: "spring", stiffness: 300, damping: 28 }}
+            className="fixed bottom-24 right-4 sm:right-6 z-50 max-w-xs sm:max-w-sm"
+          >
+            <div className="relative bg-gradient-to-br from-neutral-900 via-black to-neutral-900 border border-red-500/30 rounded-2xl p-4 shadow-2xl shadow-red-500/10">
+              {/* Close button */}
+              <button 
+                onClick={closeWelcome}
+                className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center transition-colors shadow-lg"
+              >
+                <X size={14} />
+              </button>
+              
+              {/* Header */}
+              <div className="flex items-center gap-3 mb-3">
+                <div className="relative">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-600 to-purple-600 flex items-center justify-center">
+                    <Bot size={20} className="text-white" />
+                  </div>
+                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-black animate-pulse"></div>
+                </div>
+                <div>
+                  <h3 className="text-sm font-black tracking-widest text-white">
+                    AI <span className="text-red-500">Assistant</span>
+                  </h3>
+                  <p className="text-[10px] text-gray-400">Online • Ready to help</p>
+                </div>
+              </div>
+
+              {/* Message */}
+              <div className="bg-black/50 border border-white/10 rounded-xl p-3 mb-3">
+                <div className="flex items-start gap-2">
+                  <Sparkles size={16} className="text-yellow-500 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-gray-200 leading-relaxed">
+                    Hi there! 👋 I'm your AI assistant. How may I help you today?
+                  </p>
+                </div>
+              </div>
+
+              {/* Quick actions */}
+              <div className="flex flex-wrap gap-2">
+                <button 
+                  onClick={() => handleQuickAction("Tell me about gym memberships and pricing")}
+                  className="text-[10px] px-3 py-1.5 rounded-full border border-white/10 hover:border-red-500/50 text-gray-300 hover:text-white transition-all hover:bg-red-500/10"
+                >
+                  💪 Memberships
+                </button>
+                <button 
+                  onClick={() => handleQuickAction("What are your working hours?")}
+                  className="text-[10px] px-3 py-1.5 rounded-full border border-white/10 hover:border-red-500/50 text-gray-300 hover:text-white transition-all hover:bg-red-500/10"
+                >
+                  🕐 Hours
+                </button>
+                <button 
+                  onClick={() => handleQuickAction("Tell me about personal training")}
+                  className="text-[10px] px-3 py-1.5 rounded-full border border-white/10 hover:border-red-500/50 text-gray-300 hover:text-white transition-all hover:bg-red-500/10"
+                >
+                  🏋️ Training
+                </button>
+                <button 
+                  onClick={() => handleQuickAction("Do you have any offers or discounts?")}
+                  className="text-[10px] px-3 py-1.5 rounded-full border border-white/10 hover:border-red-500/50 text-gray-300 hover:text-white transition-all hover:bg-red-500/10"
+                >
+                  🎯 Offers
+                </button>
+              </div>
+
+              {/* Decorative pulse ring */}
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-red-600/20 to-purple-600/20 rounded-2xl -z-10 blur-sm"></div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Chat Window */}
       <AnimatePresence>
         {open && (
@@ -125,22 +238,32 @@ export default function ChatWidget() {
             style={{ height: "min(520px, 75vh)" }}
           >
             {/* Header */}
-            <div className="flex items-center gap-3 px-4 py-3 bg-neutral-900 border-b border-white/[0.08] shrink-0">
-              <div className="w-8 h-8 rounded-full bg-red-600/20 border border-red-500/30 flex items-center justify-center">
-                <BotIcon />
+            <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-red-600/20 to-purple-600/20 border-b border-white/[0.08] shrink-0">
+              <div className="relative">
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-red-600 to-purple-600 flex items-center justify-center">
+                  <Bot size={18} className="text-white" />
+                </div>
+                <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-black animate-pulse"></div>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-white leading-tight">AlphaGym AI</p>
-                <p className="text-[10px] text-white/40 tracking-wide uppercase">Always online</p>
+                <p className="text-[10px] text-white/40 tracking-wide uppercase flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 bg-green-500 rounded-full inline-block animate-pulse"></span>
+                  Online
+                </p>
               </div>
               <button
-                onClick={() => setOpen(false)}
+                onClick={() => {
+                  setOpen(false);
+                  // Show welcome again when chat is closed if not seen
+                  if (!sessionStorage.getItem("hasSeenWelcome")) {
+                    setTimeout(() => setShowWelcome(true), 300);
+                  }
+                }}
                 className="text-white/40 hover:text-white/80 transition-colors p-1"
                 aria-label="Close chat"
               >
-                <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4">
-                  <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                </svg>
+                <X size={18} />
               </button>
             </div>
 
@@ -210,47 +333,58 @@ export default function ChatWidget() {
 
       {/* FAB Trigger */}
       <motion.button
-        onClick={() => setOpen((prev) => !prev)}
-        className="fixed bottom-5 right-4 sm:right-6 z-50 w-14 h-14 rounded-full bg-red-600 hover:bg-red-500 shadow-lg shadow-red-900/40 flex items-center justify-center transition-colors"
+        onClick={() => {
+          setOpen((prev) => !prev);
+          if (!open) {
+            setShowWelcome(false);
+            sessionStorage.setItem("hasSeenWelcome", "true");
+          }
+        }}
+        className="fixed bottom-5 right-4 sm:right-6 z-50 group"
         whileHover={{ scale: 1.07 }}
         whileTap={{ scale: 0.93 }}
         aria-label={open ? "Close chat" : "Open chat"}
       >
-        <AnimatePresence mode="wait" initial={false}>
-          {open ? (
-            <motion.svg
-              key="close"
-              initial={{ rotate: -90, opacity: 0 }}
-              animate={{ rotate: 0, opacity: 1 }}
-              exit={{ rotate: 90, opacity: 0 }}
-              transition={{ duration: 0.18 }}
-              viewBox="0 0 24 24"
-              fill="none"
-              className="w-6 h-6 text-white"
-            >
-              <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-            </motion.svg>
-          ) : (
-            <motion.svg
-              key="chat"
-              initial={{ rotate: 90, opacity: 0 }}
-              animate={{ rotate: 0, opacity: 1 }}
-              exit={{ rotate: -90, opacity: 0 }}
-              transition={{ duration: 0.18 }}
-              viewBox="0 0 24 24"
-              fill="none"
-              className="w-6 h-6 text-white"
-            >
-              <path
-                d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </motion.svg>
+        <div className="relative">
+          {/* Pulse ring */}
+          {!open && (
+            <div className="absolute inset-0 rounded-full bg-red-600/30 animate-ping"></div>
           )}
-        </AnimatePresence>
+          
+          {/* Button */}
+          <div className="relative w-14 h-14 rounded-full bg-gradient-to-br from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 shadow-lg shadow-red-600/30 flex items-center justify-center transition-all">
+            <AnimatePresence mode="wait" initial={false}>
+              {open ? (
+                <motion.div
+                  key="close"
+                  initial={{ rotate: -90, opacity: 0 }}
+                  animate={{ rotate: 0, opacity: 1 }}
+                  exit={{ rotate: 90, opacity: 0 }}
+                  transition={{ duration: 0.18 }}
+                >
+                  <X size={24} className="text-white" />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="chat"
+                  initial={{ rotate: 90, opacity: 0 }}
+                  animate={{ rotate: 0, opacity: 1 }}
+                  exit={{ rotate: -90, opacity: 0 }}
+                  transition={{ duration: 0.18 }}
+                  className="relative"
+                >
+                  <Bot size={28} className="text-white" />
+                  <div className="absolute -top-1 -right-1">
+                    <span className="flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                    </span>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
       </motion.button>
     </>
   );
