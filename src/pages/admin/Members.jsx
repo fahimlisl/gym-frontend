@@ -213,6 +213,61 @@ export default function Members() {
     return activeTab === "members" ? activeMembers : inactiveMembers;
   };
 
+  const exportToCSV = () => {
+    const isExpiredView = filter === "expired" || filter === "expiredWithPT" || filter === "expiredWithoutPT";
+
+    const headers = [
+      "Name",
+      "Phone Number",
+      "Membership Status",
+      isExpiredView ? "Days Expired" : "Expiring In (days)",
+      "PT Status",
+    ];
+
+    const rows = getDisplayMembers().map((u) => {
+      const status = getLatestStatus(u);
+      const daysExpired = getDaysExpired(u);
+      const latestSub = getLatestSubscription(u);
+      const daysLeft = latestSub?.endDate ? getDaysUntil(latestSub.endDate) : null;
+
+      let dayColumnValue = "-";
+      if (isExpiredView) {
+        dayColumnValue = daysExpired !== null ? daysExpired : "-";
+      } else {
+        if (status === "active" && daysLeft !== null) {
+          dayColumnValue = daysLeft >= 0 ? daysLeft : "Expired";
+        } else if (status === "expired") {
+          dayColumnValue = daysExpired !== null ? `Expired (${daysExpired}d ago)` : "Expired";
+        } else {
+          dayColumnValue = "-";
+        }
+      }
+
+      return [
+        u.username || "-",
+        u.phoneNumber || "-",
+        status,
+        dayColumnValue,
+        getLatestPTStatus(u),
+      ];
+    });
+
+    const csvContent = [headers, ...rows]
+      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    const tabLabel = activeTab === "members" ? "members" : "inactive-members";
+    link.setAttribute("download", `${tabLabel}_${filter}_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <>
       <div className="space-y-10">
@@ -337,6 +392,13 @@ export default function Members() {
             <option value="expiredWithPT">Expired + PT</option>
             <option value="expiredWithoutPT">Expired + No PT</option>
           </select>
+          <button
+            onClick={exportToCSV}
+            disabled={getDisplayMembers().length === 0}
+            className="bg-white/5 hover:bg-white/10 border border-white/10 px-6 py-3 text-xs font-extrabold tracking-widest text-white rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+          >
+            EXPORT CSV
+          </button>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 sm:gap-6">
