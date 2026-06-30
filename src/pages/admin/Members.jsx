@@ -75,6 +75,13 @@ export default function Members() {
     return Math.ceil(diff / (1000 * 60 * 60 * 24));
   };
 
+  const getPTDaysExpired = (user) => {
+    const latestPT = getLatestPTSubscription(user);
+    if (!latestPT || latestPT.status !== "expired" || !latestPT.endDate) return null;
+    const diff = Date.now() - new Date(latestPT.endDate).getTime();
+    return Math.floor(diff / (1000 * 60 * 60 * 24));
+  };
+
   const isMembershipExpiringSoon = (user) => {
     const latest = getLatestSubscription(user);
     if (!latest || latest.status !== "active") return false;
@@ -165,6 +172,7 @@ export default function Members() {
       const ptSubscriptions = u?.personalTraning?.subscription;
       const latestPT = ptSubscriptions?.[ptSubscriptions.length - 1];
       const hasPT = latestPT?.status === "active";
+      const ptStatus = latestPT?.status || "none";
       const searchLower = search.toLowerCase().trim();
       let matchesSearch = true;
       if (searchLower) {
@@ -181,6 +189,7 @@ export default function Members() {
         case "withoutPT": matchesFilter = !hasPT; break;
         case "expiredWithPT": matchesFilter = status === "expired" && hasPT; break;
         case "expiredWithoutPT": matchesFilter = status === "expired" && !hasPT; break;
+        case "ptExpired": matchesFilter = ptStatus === "expired"; break;
         default: matchesFilter = true;
       }
       return matchesSearch && matchesFilter;
@@ -222,6 +231,7 @@ export default function Members() {
       "Membership Status",
       isExpiredView ? "Days Expired" : "Expiring In (days)",
       "PT Status",
+      "PT Days Info",
     ];
 
     const rows = getDisplayMembers().map((u) => {
@@ -243,12 +253,27 @@ export default function Members() {
         }
       }
 
+      const ptStatus = getLatestPTStatus(u);
+      const latestPT = getLatestPTSubscription(u);
+      const ptDaysLeft = latestPT?.endDate ? getDaysUntil(latestPT.endDate) : null;
+      const ptDaysExpired = getPTDaysExpired(u);
+
+      let ptDaysInfo = "-";
+      if (ptStatus === "active" && ptDaysLeft !== null) {
+        ptDaysInfo = ptDaysLeft >= 0 ? `${ptDaysLeft} days left` : "Expired";
+      } else if (ptStatus === "expired") {
+        ptDaysInfo = ptDaysExpired !== null ? `${ptDaysExpired} days ago` : "Expired";
+      } else {
+        ptDaysInfo = "-";
+      }
+
       return [
         u.username || "-",
         u.phoneNumber || "-",
         status,
         dayColumnValue,
-        getLatestPTStatus(u),
+        ptStatus,
+        ptDaysInfo,
       ];
     });
 
@@ -391,6 +416,7 @@ export default function Members() {
             <option value="withoutPT">Without PT</option>
             <option value="expiredWithPT">Expired + PT</option>
             <option value="expiredWithoutPT">Expired + No PT</option>
+            <option value="ptExpired">PT Expired</option>
           </select>
           <button
             onClick={exportToCSV}
