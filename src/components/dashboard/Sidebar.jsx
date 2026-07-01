@@ -22,6 +22,7 @@ import {
   GitPullRequestDraft,
   Hamburger,
   QrCode,
+  PackageOpen,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
@@ -82,6 +83,7 @@ const cafeMenu = [
 
 const otherMenu = [
   { label: "Supplements", to: "/admin/supplements", icon: Package },
+  { label: "Sell Supplements", to: "/admin/supplements/dashboard", icon: PackageOpen },
   { label: "Coupons", to: "/admin/coupons", icon: TicketPercent },
   { label: "Trainer Coupons", to: "/admin/coupons/trainer", icon: BadgePercent },
   { label: "Expenses", to: "/admin/expenses", icon: BanknoteArrowDown },
@@ -199,6 +201,12 @@ export default function Sidebar({ open, onClose }) {
             <CollapsibleGroup config={attendanceMenu} onClose={onClose} />
             <CollapsibleGroup config={paymentsMenu} onClose={onClose} />
           </Section>
+
+          <Section title="CAFE">
+  {cafeMenu.map((item) => (
+    <SidebarLink key={item.to} item={item} onClose={onClose} />
+  ))}
+</Section>
 
           <Section title="INVENTORY">
             {visibleOtherMenu.map((item) => (   
