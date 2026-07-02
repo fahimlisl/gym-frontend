@@ -1,44 +1,84 @@
 import { useEffect, useRef, useState } from "react";
-import { X, Plus, Minus, ShoppingCart, Loader2 } from "lucide-react";
+import { createPortal } from "react-dom";
+import { Plus, Minus, ShoppingCart, Loader } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../../api/axios.api.js";
 
-export default function SellSupplementModal({ isOpen, onClose, onSaleComplete }) {
+function Modal({ title, children, onClose }) {
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => (document.body.style.overflow = "auto");
+  }, []);
+
+  return createPortal(
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur
+                    flex items-center justify-center px-4">
+      <div className="w-full max-w-3xl max-h-[90vh]
+                      overflow-hidden
+                      rounded-2xl
+                      bg-gradient-to-br from-black via-neutral-900 to-black
+                      border border-red-600/30">
+        <div className="flex justify-between items-center
+                        px-4 sm:px-6 py-4 border-b border-white/10">
+          <h2 className="text-xl font-black tracking-widest">
+            {title}
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-red-500 text-xl"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="p-4 sm:p-6 overflow-y-auto overflow-x-hidden max-h-[calc(90vh-64px)]">
+          {children}
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+export default function SellSupplementModal({ onClose, onSaleComplete }) {
   const [supplements, setSupplements] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [cart, setCart] = useState([]);
-  const [paymentMethod, setPaymentMethod] = useState("cash");
-  const [customerName, setCustomerName] = useState("");
-  const [customerPhone, setCustomerPhone] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  // Coupon state
-  const [couponCode, setCouponCode] = useState("");
+  const [customerName, setCustomerName] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("cash");
+
+  const [couponInput, setCouponInput] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState(null);
-  const [couponMessage, setCouponMessage] = useState("");
-  const [validatingCoupon, setValidatingCoupon] = useState(false);
+  const [couponDiscount, setCouponDiscount] = useState(0);
+  const [couponLoading, setCouponLoading] = useState(false);
   const revalidateTimer = useRef(null);
 
   useEffect(() => {
-    if (!isOpen) return;
-    setLoading(true);
-    api
-      .get("/admin/fetch-supplements") 
-      .then((res) => setSupplements(res.data.data))
-      .catch(() => toast.error("Failed to load supplements"))
-      .finally(() => setLoading(false));
-  }, [isOpen]);
+    fetchSupplements();
+  }, []);
 
-  useEffect(() => {
-    if (!isOpen) {
-      setCart([]);
-      setSearch("");
-      setCouponCode("");
-      setAppliedCoupon(null);
-      setCouponMessage("");
+  const fetchSupplements = async () => {
+    try {
+      setInitialLoading(true);
+      const res = await api.get("/admin/fetch-supplements");
+      setSupplements(res.data.data || []);
+    } catch (err) {
+      if (err.response?.status === 401) {
+        toast.error("Unauthorized - Please login again");
+        onClose();
+      } else if (err.response?.status === 403) {
+        toast.error("Forbidden - Admin access required");
+        onClose();
+      } else {
+        toast.error(err?.response?.data?.message || "Failed to load supplements");
+      }
+    } finally {
+      setInitialLoading(false);
     }
-  }, [isOpen]);
+  };
 
   const filtered = supplements.filter((s) =>
     s.productName.toLowerCase().includes(search.toLowerCase())
@@ -46,7 +86,6 @@ export default function SellSupplementModal({ isOpen, onClose, onSaleComplete })
 
   const addToCart = (product) => {
     const stockItem = supplements.find((s) => s._id === product._id) || product;
-
     if (stockItem.quantity <= 0) {
       toast.error("Out of stock");
       return;
@@ -74,287 +113,324 @@ export default function SellSupplementModal({ isOpen, onClose, onSaleComplete })
     );
   };
 
-  const total = cart.reduce((sum, i) => sum + i.salePrice * i.quantity, 0);
-  const discount = appliedCoupon?.discountAmount || 0;
-  const grandTotal = Math.max(total - discount, 0);
+  const subtotal = cart.reduce((sum, i) => sum + i.salePrice * i.quantity, 0);
+  const totalAmount = Math.max(subtotal - couponDiscount, 0);
 
   const applyCoupon = async ({ silent = false } = {}) => {
-    const code = couponCode.trim();
-    if (!code) return;
-    if (total <= 0) {
+    const code = couponInput.trim();
+    if (!code) {
+      if (!silent) toast.error("Enter coupon code");
+      return;
+    }
+    if (subtotal <= 0) {
       if (!silent) toast.error("Add items to the cart first");
       return;
     }
-    setValidatingCoupon(true);
     try {
+      setCouponLoading(true);
       const res = await api.post("/admin/validate-coupon/supplement", {
         code,
-        cartTotal: total,
+        cartTotal: subtotal,
       });
       const discountAmount = res.data.coupon.discountAmount;
+      setCouponDiscount(discountAmount);
       setAppliedCoupon({ code, discountAmount });
-      setCouponMessage(`Coupon applied: -₹${discountAmount}`);
-      if (!silent) toast.success("Coupon applied!");
+      if (!silent) toast.success("Coupon applied successfully!");
     } catch (err) {
       setAppliedCoupon(null);
-      const msg = err?.response?.data?.message || "Invalid coupon";
-      setCouponMessage(msg);
-      if (!silent) toast.error(msg);
+      setCouponDiscount(0);
+      if (!silent) toast.error(err?.response?.data?.message || "Invalid coupon");
     } finally {
-      setValidatingCoupon(false);
+      setCouponLoading(false);
     }
   };
 
   const removeCoupon = () => {
+    setCouponInput("");
     setAppliedCoupon(null);
-    setCouponCode("");
-    setCouponMessage("");
+    setCouponDiscount(0);
+    toast("Coupon removed");
   };
 
   useEffect(() => {
     if (!appliedCoupon) return;
-
-    if (total <= 0) {
+    if (subtotal <= 0) {
       removeCoupon();
       return;
     }
-
     if (revalidateTimer.current) clearTimeout(revalidateTimer.current);
-    revalidateTimer.current = setTimeout(() => {
-      applyCoupon({ silent: true });
-    }, 400);
-
+    revalidateTimer.current = setTimeout(() => applyCoupon({ silent: true }), 400);
     return () => clearTimeout(revalidateTimer.current);
-  }, [total]);
-
-  if (!isOpen) return null;
+  }, [subtotal]);
 
   const handleCheckout = async () => {
     if (cart.length === 0) {
       toast.error("Cart is empty");
       return;
     }
-    setSubmitting(true);
     try {
+      setLoading(true);
       const payload = {
         cart: cart.map((i) => ({ _id: i._id, quantity: i.quantity })),
         paymentMethod,
         couponCode: appliedCoupon?.code || undefined,
-        customerInfo:
-          customerName || customerPhone
-            ? { fullName: customerName, phoneNumber: customerPhone }
-            : undefined,
+        customerInfo: customerName ? { fullName: customerName } : undefined,
       };
       const res = await api.post("/admin/checkout/supplement", payload);
-      toast.success("Sale completed!");
-      setCart([]);
-      setCustomerName("");
-      setCustomerPhone("");
-      setCouponCode("");
-      setAppliedCoupon(null);
-      setCouponMessage("");
+      toast.success("Sale completed successfully");
       onSaleComplete?.(res.data.data);
       onClose();
     } catch (err) {
       toast.error(err?.response?.data?.message || "Checkout failed");
     } finally {
-      setSubmitting(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-3 sm:px-4 py-4"
-      onClick={onClose}
-    >
-      <div
-        className="relative w-full max-w-4xl max-h-[95vh] sm:max-h-[90vh] bg-neutral-950 border border-red-600/30 rounded-2xl shadow-[0_0_60px_rgba(255,0,0,0.25)] flex flex-col overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="h-1 bg-gradient-to-r from-red-700 via-red-500 to-red-700 shrink-0" />
-
-        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-white/10 shrink-0">
-          <h2 className="text-base sm:text-lg font-black tracking-widest text-red-600">
-            SELL SUPPLEMENT
-          </h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-white transition">
-            <X size={20} />
-          </button>
+    <Modal title="SELL SUPPLEMENT" onClose={onClose}>
+      {initialLoading ? (
+        <div className="flex justify-center items-center py-12">
+          <div className="text-center">
+            <Loader className="w-12 h-12 text-red-500 animate-spin mx-auto mb-4" />
+            <p className="text-gray-400">LOADING SUPPLEMENTS...</p>
+          </div>
         </div>
+      ) : (
+        <div className="grid gap-6">
+          <div className="space-y-3">
+            <label className="text-xs tracking-widest text-gray-400">
+              SELECT SUPPLEMENTS
+            </label>
 
-        <div className="flex flex-1 overflow-hidden flex-col sm:flex-row">
-          <div className="flex-1 overflow-y-auto p-4 border-b sm:border-b-0 sm:border-r border-white/10">
             <input
+              type="text"
+              placeholder="Search supplements..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search supplements..."
-              className="w-full bg-black border border-white/10 rounded-lg px-3 py-2 text-sm text-white mb-4 focus:outline-none focus:border-red-500"
+              className="w-full bg-neutral-900 border border-white/10
+                         px-4 py-3 text-sm focus:border-red-600 outline-none rounded-lg"
             />
 
-            {loading ? (
-              <div className="flex justify-center py-12">
-                <Loader2 className="animate-spin text-red-600" size={28} />
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {filtered.map((product) => (
-                  <button
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-64 overflow-y-auto pr-1">
+              {filtered.map((product) => {
+                const inCart = cart.find((i) => i._id === product._id);
+                return (
+                  <div
                     key={product._id}
                     onClick={() => addToCart(product)}
-                    disabled={product.quantity <= 0}
-                    className="text-left bg-black border border-white/10 rounded-lg p-3 hover:border-red-600 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                      inCart
+                        ? "border-red-600 bg-red-600/10"
+                        : "border-white/10 bg-neutral-900 hover:border-red-600/30"
+                    } ${product.quantity <= 0 ? "opacity-40 pointer-events-none" : ""}`}
                   >
-                    <p className="text-sm font-bold text-white truncate">{product.productName}</p>
-                    <p className="text-xs text-gray-500">{product.category}</p>
-                    <div className="flex items-center justify-between mt-2">
-                      <span className="text-red-500 font-bold text-sm">₹{product.salePrice}</span>
-                      <span className="text-[10px] text-gray-500">Stock: {product.quantity}</span>
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="font-bold text-white text-sm">{product.productName}</h3>
+                      {inCart && (
+                        <span className="text-red-500 text-sm">✓ {inCart.quantity}</span>
+                      )}
                     </div>
-                  </button>
+                    <p className="text-xs text-gray-400 mb-2">{product.category}</p>
+                    <div className="flex justify-between items-center">
+                      <span className="text-lg font-black text-red-400">
+                        ₹{product.salePrice}
+                      </span>
+                      <span className="text-xs text-gray-500">Stock: {product.quantity}</span>
+                    </div>
+                  </div>
+                );
+              })}
+              {filtered.length === 0 && (
+                <p className="text-gray-500 text-sm col-span-2 text-center py-8">
+                  No supplements found
+                </p>
+              )}
+            </div>
+          </div>
+
+          {cart.length > 0 && (
+            <div className="border border-white/10 p-4 rounded-xl space-y-3">
+              <p className="text-xs tracking-widest text-gray-400 flex items-center gap-2">
+                <ShoppingCart size={14} /> CART ({cart.length})
+              </p>
+              <div className="space-y-2">
+                {cart.map((item) => (
+                  <div
+                    key={item._id}
+                    className="flex items-center justify-between bg-neutral-900/50 rounded-lg px-3 py-2"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-white truncate">{item.productName}</p>
+                      <p className="text-xs text-gray-500">₹{item.salePrice} x {item.quantity}</p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => decrementItem(item._id)}
+                        className="w-7 h-7 flex items-center justify-center bg-white/5 rounded hover:bg-white/10 text-white"
+                      >
+                        <Minus size={12} />
+                      </button>
+                      <span className="text-sm text-white w-5 text-center">{item.quantity}</span>
+                      <button
+                        type="button"
+                        onClick={() => addToCart(item)}
+                        className="w-7 h-7 flex items-center justify-center bg-white/5 rounded hover:bg-white/10 text-white"
+                      >
+                        <Plus size={12} />
+                      </button>
+                    </div>
+                  </div>
                 ))}
-                {filtered.length === 0 && (
-                  <p className="text-gray-500 text-sm col-span-2 text-center py-8">
-                    No supplements found
-                  </p>
-                )}
+              </div>
+            </div>
+          )}
+
+          <Input
+            label="CUSTOMER NAME (OPTIONAL)"
+            name="customerName"
+            value={customerName}
+            onChange={(e) => setCustomerName(e.target.value)}
+          />
+
+          <div className="border border-white/10 p-4 rounded-xl space-y-3">
+            <p className="text-xs tracking-widest text-green-500">APPLY COUPON</p>
+
+            {!appliedCoupon ? (
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  type="text"
+                  placeholder="Enter coupon code..."
+                  value={couponInput}
+                  onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                  className="flex-1 bg-neutral-900 border border-white/10 px-3 py-2 rounded-lg text-sm focus:border-green-600 outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => applyCoupon()}
+                  disabled={couponLoading || !couponInput.trim()}
+                  className="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold text-sm rounded-lg hover:brightness-110 disabled:opacity-50 whitespace-nowrap w-full sm:w-auto"
+                >
+                  {couponLoading ? <Loader className="w-4 h-4 animate-spin" /> : "APPLY"}
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between bg-green-600/10 border border-green-600/30 rounded-lg p-3 flex-wrap gap-2">
+                <div>
+                  <span className="text-green-400 font-bold">{appliedCoupon.code}</span>
+                  <span className="text-gray-400 text-sm ml-2">
+                    (₹{couponDiscount} off)
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={removeCoupon}
+                  className="text-gray-400 hover:text-red-400"
+                >
+                  ✕
+                </button>
               </div>
             )}
           </div>
 
-          <div className="w-full sm:w-80 flex flex-col shrink-0 overflow-hidden">
-            <div className="flex-1 overflow-y-auto p-4 space-y-2 max-h-52 sm:max-h-none">
-              <p className="text-xs text-gray-500 tracking-widest font-bold mb-2 flex items-center gap-2">
-                <ShoppingCart size={14} /> CART ({cart.length})
-              </p>
-              {cart.length === 0 && (
-                <p className="text-gray-600 text-xs">No items added</p>
-              )}
-              {cart.map((item) => (
-                <div
-                  key={item._id}
-                  className="flex items-center justify-between bg-black border border-white/10 rounded-lg px-3 py-2"
+          <div className="space-y-3">
+            <label className="text-xs tracking-widest text-gray-400">PAYMENT METHOD</label>
+            <div className="flex gap-2">
+              {["cash", "upi"].map((method) => (
+                <button
+                  key={method}
+                  type="button"
+                  onClick={() => setPaymentMethod(method)}
+                  className={`flex-1 py-3 rounded-lg text-xs font-bold tracking-widest uppercase transition ${
+                    paymentMethod === method
+                      ? "bg-red-600 text-white"
+                      : "bg-neutral-900 border border-white/10 text-gray-400 hover:border-red-600/30"
+                  }`}
                 >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-white truncate">{item.productName}</p>
-                    <p className="text-[10px] text-gray-500">₹{item.salePrice} x {item.quantity}</p>
-                  </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <button
-                      onClick={() => decrementItem(item._id)}
-                      className="w-6 h-6 flex items-center justify-center bg-white/5 rounded hover:bg-white/10 text-white"
-                    >
-                      <Minus size={12} />
-                    </button>
-                    <span className="text-xs text-white w-4 text-center">{item.quantity}</span>
-                    <button
-                      onClick={() => addToCart(item)}
-                      className="w-6 h-6 flex items-center justify-center bg-white/5 rounded hover:bg-white/10 text-white"
-                    >
-                      <Plus size={12} />
-                    </button>
-                  </div>
-                </div>
+                  {method}
+                </button>
               ))}
             </div>
-
-            <div className="border-t border-white/10 p-4 space-y-3 shrink-0 overflow-y-auto">
-              <input
-                value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-                placeholder="Customer name (optional)"
-                className="w-full bg-black border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500"
-              />
-              {/* <input
-                value={customerPhone}
-                onChange={(e) => setCustomerPhone(e.target.value)}
-                placeholder="Phone (optional)"
-                className="w-full bg-black border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500"
-              /> */}
-
-              <div className="flex gap-2">
-                {["cash", "upi"].map((method) => (
-                  <button
-                    key={method}
-                    onClick={() => setPaymentMethod(method)}
-                    className={`flex-1 py-2 rounded-lg text-xs font-bold tracking-wide uppercase transition ${
-                      paymentMethod === method
-                        ? "bg-red-600 text-white"
-                        : "bg-white/5 text-gray-400 hover:bg-white/10"
-                    }`}
-                  >
-                    {method}
-                  </button>
-                ))}
-              </div>
-
-              <div className="space-y-2">
-                {appliedCoupon ? (
-                  <div className="flex items-center justify-between bg-black border border-green-600/40 rounded-lg px-3 py-2">
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold text-green-500 truncate">
-                        {appliedCoupon.code}
-                      </p>
-                      <p className="text-[10px] text-gray-500">
-                        -₹{appliedCoupon.discountAmount} applied
-                      </p>
-                    </div>
-                    <button
-                      onClick={removeCoupon}
-                      className="text-[10px] font-bold text-gray-400 hover:text-red-500 transition shrink-0 flex items-center gap-1"
-                    >
-                      <X size={12} /> REMOVE
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex gap-2">
-                    <input
-                      value={couponCode}
-                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                      placeholder="Coupon code"
-                      className="flex-1 bg-black border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500"
-                    />
-                    <button
-                      onClick={() => applyCoupon()}
-                      disabled={validatingCoupon || !couponCode.trim()}
-                      className="px-3 py-2 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-lg transition disabled:opacity-40"
-                    >
-                      {validatingCoupon ? "..." : "Apply"}
-                    </button>
-                  </div>
-                )}
-                {couponMessage && !appliedCoupon && (
-                  <p className="text-[10px] text-red-500">{couponMessage}</p>
-                )}
-              </div>
-
-              <div className="space-y-1">
-                <div className="flex justify-between text-xs text-gray-400">
-                  <span>Subtotal</span>
-                  <span>₹{total}</span>
-                </div>
-                {discount > 0 && (
-                  <div className="flex justify-between text-xs text-green-500">
-                    <span>Discount</span>
-                    <span>-₹{discount}</span>
-                  </div>
-                )}
-                <div className="flex justify-between text-sm font-bold text-white pt-1 border-t border-white/10">
-                  <span>Total</span>
-                  <span className="text-red-500">₹{grandTotal}</span>
-                </div>
-              </div>
-
-              <button
-                onClick={handleCheckout}
-                disabled={submitting || cart.length === 0}
-                className="w-full py-3 font-bold tracking-widest text-sm bg-gradient-to-r from-red-700 via-red-600 to-red-700 text-black rounded-lg hover:brightness-110 transition disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                {submitting ? "PROCESSING..." : "COMPLETE SALE"}
-              </button>
-            </div>
           </div>
+
+          {cart.length > 0 && (
+            <div className="bg-gradient-to-br from-neutral-900 to-black border border-red-600/20 rounded-xl p-4 space-y-2">
+              <p className="text-xs uppercase font-black text-gray-400">💰 PRICE BREAKDOWN</p>
+
+              <div className="space-y-1 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Subtotal:</span>
+                  <span className="text-white">₹{subtotal}</span>
+                </div>
+
+                {couponDiscount > 0 && (
+                  <div className="flex justify-between text-green-400">
+                    <span>Coupon Discount:</span>
+                    <span>-₹{couponDiscount}</span>
+                  </div>
+                )}
+
+                <div className="h-px bg-gradient-to-r from-red-600/20 to-transparent my-2"></div>
+
+                <div className="flex justify-between items-center">
+                  <span className="font-bold text-white">TOTAL AMOUNT:</span>
+                  <span className="font-black text-lg bg-gradient-to-r from-red-400 to-red-500 bg-clip-text text-transparent">
+                    ₹{totalAmount}
+                  </span>
+                </div>
+              </div>
+
+              {couponDiscount > 0 && (
+                <div className="bg-green-600/10 border border-green-600/20 rounded-lg p-2 mt-2">
+                  <p className="text-xs text-green-400">
+                    🎉 You saved ₹{couponDiscount}!
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          <Actions loading={loading} onClose={onClose} onSubmit={handleCheckout} />
         </div>
-      </div>
+      )}
+    </Modal>
+  );
+}
+
+function Input({ label, ...props }) {
+  return (
+    <div>
+      <label className="text-xs tracking-widest text-gray-400">{label}</label>
+      <input
+        {...props}
+        className="mt-2 w-full bg-neutral-900 border border-white/10
+                   px-4 py-3 text-sm focus:border-red-600 outline-none rounded-lg"
+      />
+    </div>
+  );
+}
+
+function Actions({ loading, onClose, onSubmit }) {
+  return (
+    <div className="flex flex-col sm:flex-row justify-end gap-4 pt-4">
+      <button
+        type="button"
+        onClick={onClose}
+        disabled={loading}
+        className="w-full sm:w-auto border border-white/20 px-6 py-3 text-xs font-bold disabled:opacity-40 rounded-lg"
+      >
+        CANCEL
+      </button>
+      <button
+        type="button"
+        onClick={onSubmit}
+        disabled={loading}
+        className="w-full sm:w-auto bg-red-600 hover:bg-red-700 px-8 py-3
+                   text-xs font-extrabold tracking-widest rounded-lg disabled:opacity-40"
+      >
+        {loading ? "PROCESSING..." : "COMPLETE SALE"}
+      </button>
     </div>
   );
 }
