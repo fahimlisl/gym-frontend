@@ -185,6 +185,7 @@ const handleRemovePT = async () => {
             onChangeTrainer={() => setShowChangeTrainer(true)}
             subscription={user.subscription}
             onRemove={handleRemovePT}
+            userId={user._id} 
           />
 
 

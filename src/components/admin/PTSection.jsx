@@ -1,7 +1,10 @@
 import { useState } from "react";
+import ChangePtDateModal from "./ChangePtDateModal";
 
-export default function PTSection({ pt, onAssign, onRenew, onChangeTrainer, onRemove, subscription }) {
+export default function PTSection({ pt, onAssign, onRenew, onChangeTrainer, onRemove, subscription, userId }) {
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
+  const [showChangeDate, setShowChangeDate] = useState(false);
+  const [dateOverride, setDateOverride] = useState(null);
 
   if (!pt) {
     return (
@@ -33,31 +36,50 @@ export default function PTSection({ pt, onAssign, onRenew, onChangeTrainer, onRe
   const isSubActive = subscription.subscription[subscription.subscription.length - 1]?.status?.toLowerCase() === "active";
   const canRenew = !isPTActive && isSubActive;
 
+  // use overridden dates if we just changed them, otherwise fall back to server data
+  const displayStart = dateOverride?.startDate ?? current.startDate;
+  const displayEnd = dateOverride?.endDate ?? current.endDate;
+
   return (
     <div className="rounded-xl border border-white/10
                     bg-gradient-to-br from-black via-neutral-900 to-black
                     p-8 space-y-6">
-      <div className="flex items-center gap-5">
-        <img
-          src={current.trainer?.avatar?.url}
-          className="w-16 h-16 rounded-full border-2 border-red-600 object-cover"
-          alt="Trainer"
-        />
-        <div>
-          <p className="text-lg font-extrabold tracking-wide">
-            {current.trainer?.fullName?.toUpperCase()}
-          </p>
-          <p className="text-xs text-gray-400">
-            {current.trainer?.experience?.toUpperCase() || "TRAINER"} years
-          </p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-5">
+          <img
+            src={current.trainer?.avatar?.url}
+            className="w-16 h-16 rounded-full border-2 border-red-600 object-cover"
+            alt="Trainer"
+          />
+          <div>
+            <p className="text-lg font-extrabold tracking-wide">
+              {current.trainer?.fullName?.toUpperCase()}
+            </p>
+            <p className="text-xs text-gray-400">
+              {current.trainer?.experience?.toUpperCase() || "TRAINER"} years
+            </p>
+          </div>
         </div>
+
+        {isPTActive && (
+          <button
+            onClick={() => setShowChangeDate(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5
+                       text-[10px] font-bold tracking-widest
+                       border border-white/10 rounded-lg
+                       text-gray-400 hover:border-red-600/50 hover:text-red-400
+                       cursor-pointer transition"
+          >
+            <span>✎</span> EDIT DATES
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-4 text-sm">
         <Info label="PLAN" value={current.plan?.toUpperCase()} />
         <Info label="PRICE" value={`₹${current.finalPrice}`} />
-        <Info label="START DATE" value={formatDate(current.startDate)} />
-        <Info label="END DATE" value={formatDate(current.endDate)} />
+        <Info label="START DATE" value={formatDate(displayStart)} />
+        <Info label="END DATE" value={formatDate(displayEnd)} />
         <Info label="STATUS" value={current.status?.toUpperCase()} />
       </div>
 
@@ -133,6 +155,18 @@ export default function PTSection({ pt, onAssign, onRenew, onChangeTrainer, onRe
             </div>
           </div>
         </div>
+      )}
+
+      {showChangeDate && (
+        <ChangePtDateModal
+          userId={userId}
+          currentStart={displayStart}
+          currentEnd={displayEnd}
+          onClose={() => setShowChangeDate(false)}
+          onSuccess={(newStart, newEnd) => {
+            setDateOverride({ startDate: newStart, endDate: newEnd });
+          }}
+        />
       )}
     </div>
   );
