@@ -22,6 +22,7 @@ export default function RenewPTModal({
   const [couponLoading, setCouponLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
 
   const latest = currentPT.subscription[currentPT.subscription.length - 1];
 
@@ -155,6 +156,7 @@ export default function RenewPTModal({
         price: finalPrice,
         coupon: appliedCoupon?.code || "",
         paymentMethod,
+        startDate, // yyyy-mm-dd; defaults to today unless manually changed
       };
 
       await api.post(
@@ -499,6 +501,21 @@ export default function RenewPTModal({
                       🏦 Netbanking
                     </option>
                   </select>
+                </div>
+
+                <div className="space-y-2.5">
+                  <label className="block text-xs uppercase font-black text-white tracking-widest">
+                    Start Date
+                  </label>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="input-field w-full bg-neutral-800/50 border border-white/10 px-4 py-2.5 rounded-lg text-sm text-white outline-none hover:border-red-600/30 focus:border-red-600 [color-scheme:dark]"
+                  />
+                  <p className="text-[10px] text-gray-500">
+                    Defaults to today. Change only if backdating or scheduling ahead.
+                  </p>
                 </div>
 
                 {selectedPlan && (
