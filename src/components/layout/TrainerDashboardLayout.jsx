@@ -144,7 +144,7 @@ export default function TrainerDashboardLayout() {
                 </button>
               </div>
 
-              <nav className="flex-1 px-4 py-6 space-y-1">
+              <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
                 <NavItem to="/trainer/dashboard" label="DASHBOARD" icon={LayoutDashboard} />
                 <NavItem to="/trainer/attendence/today" label="TODAY'S ATTENDANCE" icon={CalendarCheck} />
                 <NavItem to="/trainer/attendence/my" label="MY ATTENDANCE" icon={UserCheck} />
@@ -178,7 +178,7 @@ export default function TrainerDashboardLayout() {
         )}
 
         <div className="hidden md:flex min-h-screen">
-          <aside className="w-64 bg-black border-r border-red-600/30 flex flex-col">
+          <aside className="w-64 bg-black border-r border-red-600/30 flex flex-col sticky top-0 h-screen overflow-y-auto">
             <div className="px-6 py-6 border-b border-red-600/30">
               <div className="flex items-center gap-4">
                 <img

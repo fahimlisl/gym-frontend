@@ -9,6 +9,29 @@ function getLatestSub(student) {
   return subs[subs.length - 1];
 }
 
+function getLatestPT(student) {
+  const ptSubs = student?.personalTraning?.subscription;
+  if (!Array.isArray(ptSubs) || ptSubs.length === 0) return null;
+  return ptSubs[ptSubs.length - 1];
+}
+
+// ---- NEW: days-until-expiry helpers ----
+function daysUntil(dateStr) {
+  if (!dateStr) return null;
+  const now = new Date();
+  const end = new Date(dateStr);
+  end.setHours(23, 59, 59, 999);
+  const diffMs = end.getTime() - now.getTime();
+  return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+}
+
+function isExpiringSoon(item, withinDays = 3) {
+  if (!item || !item.endDate) return false;
+  if (item.status?.toLowerCase() === "expired") return false;
+  const d = daysUntil(item.endDate);
+  return d !== null && d >= 0 && d <= withinDays;
+}
+
 function useCountUp(target, duration = 900) {
   const [val, setVal] = useState(0);
   useEffect(() => {
@@ -293,7 +316,146 @@ function StudentListRow({ student, index }) {
   );
 }
 
+// ---- Expired / Expiring-soon members (membership + PT), gym-wide ----
+
+const fmtShortDate = (d) =>
+  d ? new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "2-digit" }) : "—";
+
+// Small phone icon
+function PhoneIcon({ size = 13 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <path
+        d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.4 21 3 13.6 3 4.9c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.6.1.4 0 .8-.3 1L6.6 10.8z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function CallButton({ phoneNumber, accent = "#22c55e" }) {
+  if (!phoneNumber) return null;
+  return (
+    <a
+      href={`tel:${phoneNumber}`}
+      onClick={(e) => e.stopPropagation()}
+      className="inline-flex items-center gap-1.5 shrink-0 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all hover:brightness-125"
+      style={{
+        background: `${accent}14`,
+        color: accent,
+        border: `1px solid ${accent}35`,
+      }}
+      title={`Call ${phoneNumber}`}
+    >
+      <span
+        className="w-5 h-5 rounded-full flex items-center justify-center"
+        style={{ background: `${accent}20` }}
+      >
+        <PhoneIcon />
+      </span>
+      <span className="tabular-nums">{phoneNumber}</span>
+    </a>
+  );
+}
+
+// mode: "expired" | "soon" — controls badge coloring/labels
+function AttentionMemberRow({ user, mode }) {
+  const sub = getLatestSub(user);
+  const pt = getLatestPT(user);
+
+  const membershipFlag = mode === "expired"
+    ? sub?.status?.toLowerCase() === "expired"
+    : isExpiringSoon(sub);
+  const ptFlag = mode === "expired"
+    ? pt?.status?.toLowerCase() === "expired"
+    : isExpiringSoon(pt);
+
+  const membershipDays = sub ? daysUntil(sub.endDate) : null;
+  const ptDays = pt ? daysUntil(pt.endDate) : null;
+
+  const badgeColor = (flag) => (flag ? (mode === "expired" ? "#ef4444" : "#eab308") : "#22c55e");
+
+  return (
+    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 px-4 sm:px-5 py-4 border-b border-white/5 last:border-0">
+      <div className="flex-1 min-w-0">
+        <p className="text-white/85 text-sm font-semibold truncate">{user.username}</p>
+        <p className="text-white/30 text-xs truncate mb-1.5">{user.email}</p>
+        <CallButton phoneNumber={user.phoneNumber} accent={mode === "expired" ? "#ef4444" : "#eab308"} />
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <p className="text-[10px] tracking-widest uppercase text-white/25 mb-1">Membership</p>
+        {sub ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              className="text-[10px] font-bold px-2 py-0.5 rounded-md tracking-wider capitalize"
+              style={{
+                background: `${badgeColor(membershipFlag)}1f`,
+                color: badgeColor(membershipFlag),
+                border: `1px solid ${badgeColor(membershipFlag)}4d`,
+              }}
+            >
+              {sub.status}
+            </span>
+            <span className="text-xs text-white/40 capitalize">{sub.plan}</span>
+            <span className="text-xs text-white/25">
+              {fmtShortDate(sub.startDate)} → {fmtShortDate(sub.endDate)}
+            </span>
+            {mode === "soon" && membershipFlag && membershipDays !== null && (
+              <span
+                className="text-[10px] font-bold px-2 py-0.5 rounded-md"
+                style={{ background: "rgba(234,179,8,0.15)", color: "#eab308", border: "1px solid rgba(234,179,8,0.35)" }}
+              >
+                {membershipDays === 0 ? "Expires today" : `${membershipDays}d left`}
+              </span>
+            )}
+          </div>
+        ) : (
+          <span className="text-xs text-white/20">No membership</span>
+        )}
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <p className="text-[10px] tracking-widest uppercase text-white/25 mb-1">Personal Training</p>
+        {pt ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              className="text-[10px] font-bold px-2 py-0.5 rounded-md tracking-wider capitalize"
+              style={{
+                background: `${badgeColor(ptFlag)}1f`,
+                color: badgeColor(ptFlag),
+                border: `1px solid ${badgeColor(ptFlag)}4d`,
+              }}
+            >
+              {pt.status}
+            </span>
+            <span className="text-xs text-white/40 capitalize">{pt.plan}</span>
+            <span className="text-xs text-white/25">
+              {fmtShortDate(pt.startDate)} → {fmtShortDate(pt.endDate)}
+            </span>
+            {mode === "soon" && ptFlag && ptDays !== null && (
+              <span
+                className="text-[10px] font-bold px-2 py-0.5 rounded-md"
+                style={{ background: "rgba(234,179,8,0.15)", color: "#eab308", border: "1px solid rgba(234,179,8,0.35)" }}
+              >
+                {ptDays === 0 ? "Expires today" : `${ptDays}d left`}
+              </span>
+            )}
+          </div>
+        ) : (
+          <span className="text-xs text-white/20">No PT</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function TrainerDashboard() {
+  const [dashboardTab, setDashboardTab] = useState("students"); // students | expired
+
   const [assignedStudents, setAssignedStudents] = useState([]);
   const [coupon, setCoupon] = useState(null);
   const [bonus, setBonus] = useState(null);
@@ -301,6 +463,13 @@ export default function TrainerDashboard() {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [view, setView] = useState("grid");
+
+  // all-gym members + expired/expiring-soon section state
+  const [allUsers, setAllUsers] = useState([]);
+  const [expiredLoading, setExpiredLoading] = useState(true);
+  const [expiredSearch, setExpiredSearch] = useState("");
+  const [expiredFilter, setExpiredFilter] = useState("all"); // all | membership | pt
+  const [expiryView, setExpiryView] = useState("expired"); // expired | soon
 
   useEffect(() => {
     api.get("/trainer/fetchAssignedStudents")
@@ -318,6 +487,11 @@ export default function TrainerDashboard() {
     api.get("/trainer/fetchSelf")
       .then((res) => setBonus(res.data.data?.bonus ?? null))
       .catch(() => {});
+
+    api.get("/trainer/fetchAllUser")
+      .then((res) => setAllUsers(res.data.data || []))
+      .catch(() => toast.error("Failed to load gym members"))
+      .finally(() => setExpiredLoading(false));
   }, []);
 
   const activeCount = useMemo(
@@ -337,6 +511,73 @@ export default function TrainerDashboard() {
       return matchSearch && matchFilter;
     });
   }, [assignedStudents, search, filterStatus]);
+
+  // gym-wide expired members: membership expired OR PT expired
+  const expiredMembers = useMemo(() => {
+    return allUsers.filter((u) => {
+      const sub = getLatestSub(u);
+      const pt = getLatestPT(u);
+      const isMembershipExpired = sub?.status?.toLowerCase() === "expired";
+      const isPTExpired = pt?.status?.toLowerCase() === "expired";
+      return isMembershipExpired || isPTExpired;
+    });
+  }, [allUsers]);
+
+  const expiredMembershipCount = useMemo(
+    () => expiredMembers.filter((u) => getLatestSub(u)?.status?.toLowerCase() === "expired").length,
+    [expiredMembers]
+  );
+  const expiredPTCount = useMemo(
+    () => expiredMembers.filter((u) => getLatestPT(u)?.status?.toLowerCase() === "expired").length,
+    [expiredMembers]
+  );
+
+  // gym-wide members expiring within the next 3 days (membership OR PT), not already expired
+  const expiringSoonMembers = useMemo(() => {
+    return allUsers.filter((u) => {
+      const sub = getLatestSub(u);
+      const pt = getLatestPT(u);
+      return isExpiringSoon(sub) || isExpiringSoon(pt);
+    });
+  }, [allUsers]);
+
+  const expiringSoonMembershipCount = useMemo(
+    () => expiringSoonMembers.filter((u) => isExpiringSoon(getLatestSub(u))).length,
+    [expiringSoonMembers]
+  );
+  const expiringSoonPTCount = useMemo(
+    () => expiringSoonMembers.filter((u) => isExpiringSoon(getLatestPT(u))).length,
+    [expiringSoonMembers]
+  );
+
+  const baseAttentionList = expiryView === "expired" ? expiredMembers : expiringSoonMembers;
+
+  const filteredAttentionMembers = useMemo(() => {
+    const q = expiredSearch.toLowerCase();
+    return baseAttentionList.filter((u) => {
+      const matchSearch =
+        !q ||
+        u.username?.toLowerCase().includes(q) ||
+        u.email?.toLowerCase().includes(q) ||
+        String(u.phoneNumber || "").toLowerCase().includes(q);
+
+      const sub = getLatestSub(u);
+      const pt = getLatestPT(u);
+
+      const matchMembership = expiryView === "expired"
+        ? sub?.status?.toLowerCase() === "expired"
+        : isExpiringSoon(sub);
+      const matchPT = expiryView === "expired"
+        ? pt?.status?.toLowerCase() === "expired"
+        : isExpiringSoon(pt);
+
+      let matchFilter = true;
+      if (expiredFilter === "membership") matchFilter = matchMembership;
+      else if (expiredFilter === "pt") matchFilter = matchPT;
+
+      return matchSearch && matchFilter;
+    });
+  }, [baseAttentionList, expiredSearch, expiredFilter, expiryView]);
 
   return (
     <div className="min-h-screen text-white" style={{ background: "#080808" }}>
@@ -410,6 +651,31 @@ export default function TrainerDashboard() {
 
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
 
+        <div
+          className="flex items-center gap-1 p-1 rounded-lg w-fit"
+          style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}
+        >
+          {[
+            { key: "students", label: "Students" },
+            { key: "expired", label: "Expired / Expiring" },
+          ].map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => setDashboardTab(key)}
+              className="px-5 py-2.5 text-xs font-bold rounded-md transition-all duration-200 tracking-widest"
+              style={{
+                background: dashboardTab === key ? "rgba(239,68,68,0.2)" : "transparent",
+                color: dashboardTab === key ? "#ef4444" : "rgba(255,255,255,0.3)",
+                border: dashboardTab === key ? "1px solid rgba(239,68,68,0.35)" : "1px solid transparent",
+              }}
+            >
+              {label.toUpperCase()}
+            </button>
+          ))}
+        </div>
+
+        {dashboardTab === "students" && (
+        <>
         <div className="grid grid-cols-3 gap-3">
           <StatCard label="My Students" value={assignedStudents.length} icon="◈" accent="#f97316" delay={0} />
           <StatCard label="Active" value={activeCount} icon="◉" accent="#22c55e" delay={70} />
@@ -540,6 +806,147 @@ export default function TrainerDashboard() {
               <StudentListRow key={s._id} student={s} index={i} />
             ))}
           </div>
+        )}
+
+        </>
+        )}
+
+        {dashboardTab === "expired" && (
+        <>
+        {/* Expired vs Expiring Soon toggle */}
+        <div
+          className="flex items-center gap-1 p-1 rounded-lg w-fit"
+          style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}
+        >
+          {[
+            { key: "expired", label: "Expired" },
+            { key: "soon", label: "Expiring in 3 Days" },
+          ].map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => { setExpiryView(key); setExpiredSearch(""); setExpiredFilter("all"); }}
+              className="px-4 py-2 text-[11px] font-bold rounded-md transition-all duration-200 tracking-widest"
+              style={{
+                background: expiryView === key ? (key === "expired" ? "rgba(239,68,68,0.18)" : "rgba(234,179,8,0.18)") : "transparent",
+                color: expiryView === key ? (key === "expired" ? "#ef4444" : "#eab308") : "rgba(255,255,255,0.3)",
+                border: expiryView === key ? `1px solid ${key === "expired" ? "rgba(239,68,68,0.35)" : "rgba(234,179,8,0.35)"}` : "1px solid transparent",
+              }}
+            >
+              {label.toUpperCase()}
+            </button>
+          ))}
+        </div>
+
+        {expiryView === "expired" ? (
+          <div className="grid grid-cols-3 gap-3">
+            <StatCard label="Total Expired" value={expiredMembers.length} icon="⚠" accent="#ef4444" delay={0} />
+            <StatCard label="Membership Expired" value={expiredMembershipCount} icon="◈" accent="#f97316" delay={70} />
+            <StatCard label="PT Expired" value={expiredPTCount} icon="◉" accent="#eab308" delay={140} />
+          </div>
+        ) : (
+          <div className="grid grid-cols-3 gap-3">
+            <StatCard label="Total Expiring (3d)" value={expiringSoonMembers.length} icon="⏳" accent="#eab308" delay={0} />
+            <StatCard label="Membership Expiring" value={expiringSoonMembershipCount} icon="◈" accent="#f97316" delay={70} />
+            <StatCard label="PT Expiring" value={expiringSoonPTCount} icon="◉" accent="#eab308" delay={140} />
+          </div>
+        )}
+
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" width="15" height="15" viewBox="0 0 16 16" fill="none">
+              <circle cx="7" cy="7" r="4.5" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5"/>
+              <path d="M10.5 10.5L13 13" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+            <input
+              type="text"
+              placeholder="Search by name, email, or phone..."
+              value={expiredSearch}
+              onChange={(e) => setExpiredSearch(e.target.value)}
+              className="w-full pl-10 pr-10 py-2.5 text-sm text-white/80 placeholder-white/20 outline-none rounded-lg transition-all"
+              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+              onFocus={(e) => (e.target.style.borderColor = "rgba(239,68,68,0.45)")}
+              onBlur={(e) => (e.target.style.borderColor = "rgba(255,255,255,0.08)")}
+            />
+            {expiredSearch && (
+              <button
+                onClick={() => setExpiredSearch("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/25 hover:text-white/50 transition-colors text-xs"
+              >✕</button>
+            )}
+          </div>
+
+          <div
+            className="flex items-center gap-1 p-1 rounded-lg shrink-0"
+            style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}
+          >
+            {[
+              { key: "all",        label: "All",        c: expiryView === "expired" ? "#ef4444" : "#eab308" },
+              { key: "membership", label: "Membership", c: "#f97316" },
+              { key: "pt",         label: "PT",          c: "#eab308" },
+            ].map(({ key, label, c }) => (
+              <button
+                key={key}
+                onClick={() => { setExpiredFilter(key); setExpiredSearch(""); }}
+                className="px-4 py-2 text-[11px] font-bold rounded-md transition-all duration-200 tracking-widest"
+                style={{
+                  background: expiredFilter === key ? `${c}18` : "transparent",
+                  color: expiredFilter === key ? c : "rgba(255,255,255,0.25)",
+                  border: expiredFilter === key ? `1px solid ${c}35` : "1px solid transparent",
+                }}
+              >
+                {label.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {expiredLoading && (
+          <div className="space-y-2">
+            {[...Array(4)].map((_, i) => (
+              <div
+                key={i}
+                className="rounded-xl border border-white/5 animate-pulse"
+                style={{ background: "rgba(255,255,255,0.02)", height: "70px", animationDelay: `${i * 55}ms` }}
+              />
+            ))}
+          </div>
+        )}
+
+        {!expiredLoading && filteredAttentionMembers.length === 0 && (
+          <div
+            className="rounded-xl p-16 text-center border"
+            style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.06)" }}
+          >
+            <p className="text-3xl mb-3 opacity-20">◎</p>
+            <p className="text-white/25 text-sm tracking-widest uppercase mb-3">
+              {expiredSearch || expiredFilter !== "all"
+                ? "No members match"
+                : expiryView === "expired"
+                  ? "No expired members right now"
+                  : "No members expiring in the next 3 days"}
+            </p>
+            {(expiredSearch || expiredFilter !== "all") && (
+              <button
+                onClick={() => { setExpiredSearch(""); setExpiredFilter("all"); }}
+                className="text-xs font-semibold tracking-widest uppercase text-red-500/60 hover:text-red-400 transition-colors"
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
+        )}
+
+        {!expiredLoading && filteredAttentionMembers.length > 0 && (
+          <div
+            className="rounded-xl overflow-hidden border"
+            style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.07)" }}
+          >
+            {filteredAttentionMembers.map((u) => (
+              <AttentionMemberRow key={u._id} user={u} mode={expiryView} />
+            ))}
+          </div>
+        )}
+        </>
         )}
 
       </div>

@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { Phone } from "lucide-react";
 
 export default function MemberCard({ user, latestStatus, isInactiveTab, daysExpired, membershipExpiringSoon, ptExpiringSoon }) {
   const ptSubs = user?.personalTraning?.subscription;
@@ -68,108 +69,137 @@ export default function MemberCard({ user, latestStatus, isInactiveTab, daysExpi
       `}
     >
       <div
-        className={`flex items-center gap-3 sm:gap-6 
+        className={`flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 
                     p-3 sm:p-5
                     ${isExpired || isInactiveView ? "opacity-90" : ""}`}
       >
-        <img
-          src={user.avatar?.url}
-          className="w-12 h-12 sm:w-16 sm:h-16 
-                     rounded-full object-cover 
-                     border-2 border-red-600
-                     flex-shrink-0"
-          alt={user.username}
-        />
+        <div className="flex items-center gap-3 sm:gap-6 flex-1 min-w-0">
+          <img
+            src={user.avatar?.url}
+            className="w-12 h-12 sm:w-16 sm:h-16 
+                       rounded-full object-cover 
+                       border-2 border-red-600
+                       flex-shrink-0"
+            alt={user.username}
+          />
 
-        <div className="flex-1 min-w-0">
-          <p
-            className={`text-sm sm:text-lg font-extrabold tracking-wide truncate
-              ${isExpired || isInactiveView ? "text-gray-300" : ""}
-            `}
-          >
-            {user.username}
-          </p>
+          <div className="flex-1 min-w-0">
+            <p
+              className={`text-sm sm:text-lg font-extrabold tracking-wide truncate
+                ${isExpired || isInactiveView ? "text-gray-300" : ""}
+              `}
+            >
+              {user.username}
+            </p>
 
-          <p className="text-[11px] sm:text-xs text-gray-400 truncate">
-            {user.email || user.phoneNumber}
-          </p>
+            <p className="text-[11px] sm:text-xs text-gray-400 truncate">
+              {user.email || user.phoneNumber}
+            </p>
 
-          {startDate && expiryDate && (
-            <div className="flex gap-2 mt-1 text-[9px] sm:text-[10px] font-mono">
-              <span className="text-gray-500">
-                📅 {startDate} → {expiryDate}
-              </span>
+            {user.phoneNumber && (
+              <p className="text-[11px] sm:text-xs text-gray-500 truncate flex items-center gap-1 mt-0.5">
+                <Phone className="w-3 h-3 flex-shrink-0" />
+                {user.phoneNumber}
+              </p>
+            )}
+
+            {startDate && expiryDate && (
+              <div className="flex gap-2 mt-1 text-[9px] sm:text-[10px] font-mono">
+                <span className="text-gray-500">
+                  📅 {startDate} → {expiryDate}
+                </span>
+              </div>
+            )}
+
+            <div className="flex gap-2 mt-2 flex-wrap">
+              {hasPT === "active"
+                ? <Badge text="PT ACTIVE" active />
+                : hasPT === "expired"
+                ? <Badge text="PT EXPIRED" ptExpired />
+                : <Badge text="NO PT" />}
+              {user?.personalTraning && (
+                user?.diet
+                  ? <Badge text="Diet Provided" success />
+                  : <Badge text="Diet Not Provided" warning />
+              )}
+              {user?.personalTraning && (
+                <Badge
+                  text={workoutDisplay.text}
+                  type={workoutDisplay.type}
+                  successWorkout={workoutDisplay.type === "successWorkout"}
+                  warningWorkout={workoutDisplay.type === "warningWorkout"}
+                  paused={workoutDisplay.type === "paused"}
+                  completed={workoutDisplay.type === "completed"}
+                />
+              )}
+              {isExpired && !isInactiveView && (
+                <Badge
+                  text={`EXPIRED · ${daysExpired || 0}d ago`}
+                  danger
+                />
+              )}
+              {membershipExpiringSoon && !isExpired && !isInactiveView && (
+                <Badge
+                  text={`MEMBERSHIP EXPIRING · ${membershipDaysLeft ?? 0}d left`}
+                  expiringSoon
+                />
+              )}
+              {ptExpiringSoon && !isPTExpired && (
+                <Badge
+                  text={`PT EXPIRING · ${ptDaysLeft ?? 0}d left`}
+                  expiringSoon
+                />
+              )}
+              {isInactiveView && (
+                <Badge
+                  text={`INACTIVE · ${daysExpired || 0} DAYS EXPIRED`}
+                  danger
+                />
+              )}
             </div>
-          )}
-
-          <div className="flex gap-2 mt-2 flex-wrap">
-            {hasPT === "active"
-              ? <Badge text="PT ACTIVE" active />
-              : hasPT === "expired"
-              ? <Badge text="PT EXPIRED" ptExpired />
-              : <Badge text="NO PT" />}
-            {user?.personalTraning && (
-              user?.diet
-                ? <Badge text="Diet Provided" success />
-                : <Badge text="Diet Not Provided" warning />
-            )}
-            {user?.personalTraning && (
-              <Badge
-                text={workoutDisplay.text}
-                type={workoutDisplay.type}
-                successWorkout={workoutDisplay.type === "successWorkout"}
-                warningWorkout={workoutDisplay.type === "warningWorkout"}
-                paused={workoutDisplay.type === "paused"}
-                completed={workoutDisplay.type === "completed"}
-              />
-            )}
-            {isExpired && !isInactiveView && (
-              <Badge
-                text={`EXPIRED · ${daysExpired || 0}d ago`}
-                danger
-              />
-            )}
-            {membershipExpiringSoon && !isExpired && !isInactiveView && (
-              <Badge
-                text={`MEMBERSHIP EXPIRING · ${membershipDaysLeft ?? 0}d left`}
-                expiringSoon
-              />
-            )}
-            {ptExpiringSoon && !isPTExpired && (
-              <Badge
-                text={`PT EXPIRING · ${ptDaysLeft ?? 0}d left`}
-                expiringSoon
-              />
-            )}
-            {isInactiveView && (
-              <Badge
-                text={`INACTIVE · ${daysExpired || 0} DAYS EXPIRED`}
-                danger
-              />
-            )}
           </div>
         </div>
 
-        <Link
-          to={`/admin/members/${user._id}`}
-          className={`px-3 sm:px-6 py-2 sm:py-3 
-            text-[10px] sm:text-xs 
-            font-extrabold tracking-widest
-            whitespace-nowrap
-            transition
-            ${
-              isInactiveView
-                ? "border border-gray-600 text-gray-400 hover:bg-gray-700 hover:text-white"
-                : isExpired
-                ? "border border-red-600 text-red-500 hover:bg-red-600 hover:text-black"
-                : isPTExpired
-                ? "border border-orange-500/50 text-orange-400 hover:bg-orange-500/20 hover:text-white"
-                : "border border-red-600 hover:bg-red-600"
-            }
-          `}
-        >
-          MANAGE
-        </Link>
+        <div className="flex gap-2 sm:flex-shrink-0">
+          {user.phoneNumber && (
+            <a
+              href={`tel:${user.phoneNumber}`}
+              onClick={(e) => e.stopPropagation()}
+              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5
+                px-3 sm:px-5 py-2 sm:py-3 
+                text-[10px] sm:text-xs 
+                font-extrabold tracking-widest
+                whitespace-nowrap
+                border border-green-600 text-green-500
+                hover:bg-green-600 hover:text-black
+                transition"
+            >
+              <Phone className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+              CALL
+            </a>
+          )}
+
+          <Link
+            to={`/admin/members/${user._id}`}
+            className={`flex-1 sm:flex-none text-center px-3 sm:px-6 py-2 sm:py-3 
+              text-[10px] sm:text-xs 
+              font-extrabold tracking-widest
+              whitespace-nowrap
+              transition
+              ${
+                isInactiveView
+                  ? "border border-gray-600 text-gray-400 hover:bg-gray-700 hover:text-white"
+                  : isExpired
+                  ? "border border-red-600 text-red-500 hover:bg-red-600 hover:text-black"
+                  : isPTExpired
+                  ? "border border-orange-500/50 text-orange-400 hover:bg-orange-500/20 hover:text-white"
+                  : "border border-red-600 hover:bg-red-600"
+              }
+            `}
+          >
+            VIEW
+          </Link>
+        </div>
       </div>
 
       <div

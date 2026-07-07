@@ -143,15 +143,15 @@ export default function Members() {
       const ptB = getLatestPTStatus(b);
 
       // 1 = membership expired
-      // 2 = membership expiring in <= 3 days
-      // 3 = pt expired (active membership)
+      // 2 = pt expired (active membership)
+      // 3 = membership expiring in <= 3 days
       // 4 = pt expiring in <= 3 days
       // 5 = active
       // 6 = none
       const getPriority = (user, memberStatus, ptStatus) => {
         if (memberStatus === "expired") return 1;
-        if (isMembershipExpiringSoon(user)) return 2;
-        if (ptStatus === "expired") return 3;
+        if (ptStatus === "expired") return 2;
+        if (isMembershipExpiringSoon(user)) return 3;
         if (isPTExpiringSoon(user)) return 4;
         if (memberStatus === "active") return 5;
         return 6;
@@ -225,13 +225,23 @@ export default function Members() {
   const exportToCSV = () => {
     const isExpiredView = filter === "expired" || filter === "expiredWithPT" || filter === "expiredWithoutPT";
 
+    const fmtDate = (d) => (d ? new Date(d).toLocaleDateString() : "-");
+
     const headers = [
       "Name",
       "Phone Number",
       "Membership Status",
       isExpiredView ? "Days Expired" : "Expiring In (days)",
+      "Membership From",
+      "Membership To",
+      "Membership Expired Date",
+      "Membership Amount",
       "PT Status",
       "PT Days Info",
+      "PT From",
+      "PT To",
+      "PT Expired Date",
+      "PT Amount",
     ];
 
     const rows = getDisplayMembers().map((u) => {
@@ -253,6 +263,11 @@ export default function Members() {
         }
       }
 
+      const membershipFrom = fmtDate(latestSub?.startDate);
+      const membershipTo = fmtDate(latestSub?.endDate);
+      const membershipExpiredDate = status === "expired" ? fmtDate(latestSub?.endDate) : "-";
+      const membershipAmount = latestSub?.finalAmount != null ? latestSub.finalAmount : "-";
+
       const ptStatus = getLatestPTStatus(u);
       const latestPT = getLatestPTSubscription(u);
       const ptDaysLeft = latestPT?.endDate ? getDaysUntil(latestPT.endDate) : null;
@@ -267,13 +282,26 @@ export default function Members() {
         ptDaysInfo = "-";
       }
 
+      const ptFrom = fmtDate(latestPT?.startDate);
+      const ptTo = fmtDate(latestPT?.endDate);
+      const ptExpiredDate = ptStatus === "expired" ? fmtDate(latestPT?.endDate) : "-";
+      const ptAmount = latestPT?.finalPrice != null ? latestPT.finalPrice : "-";
+
       return [
         u.username || "-",
         u.phoneNumber || "-",
         status,
         dayColumnValue,
+        membershipFrom,
+        membershipTo,
+        membershipExpiredDate,
+        membershipAmount,
         ptStatus,
         ptDaysInfo,
+        ptFrom,
+        ptTo,
+        ptExpiredDate,
+        ptAmount,
       ];
     });
 
