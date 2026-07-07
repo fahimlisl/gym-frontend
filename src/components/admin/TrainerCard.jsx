@@ -1,10 +1,12 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
 import EditTrainerModal from "./EditTrainerModal";
+import StudentsModal from "./StudentsModal";
 import { deleteTrainer } from "../../api/admin.api";
 
 export default function TrainerCard({ trainer, onUpdate }) {
   const [editOpen, setEditOpen] = useState(false);
+  const [studentsModalOpen, setStudentsModalOpen] = useState(false);
 
   const destroy = async () => {
     if (!confirm("Delete this trainer?")) return;
@@ -19,6 +21,7 @@ export default function TrainerCard({ trainer, onUpdate }) {
 
   const totalBonus = Math.floor(trainer.bonus?.totalBonus) ?? 0;
   const monthBonus = Math.floor(trainer.bonus?.monthBonus) ?? 0;
+  const studentCount = trainer.students?.length ?? 0;
 
   return (
     <>
@@ -57,12 +60,26 @@ export default function TrainerCard({ trainer, onUpdate }) {
                 >
                   TRAINER
                 </span>
-                <span
-                  className="text-[10px] font-medium px-2 py-0.5 rounded-md"
-                  style={{ background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.3)", border: "1px solid rgba(255,255,255,0.07)" }}
+                {/* Enhanced student badge */}
+                <button
+                  onClick={() => studentCount > 0 && setStudentsModalOpen(true)}
+                  className={`text-[12px] font-medium px-2 py-0.5 rounded-md transition-all flex items-center gap-1 ${
+                    studentCount > 0
+                      ? "hover:bg-white/15 hover:border-red-600/50 cursor-pointer"
+                      : "cursor-not-allowed opacity-50"
+                  }`}
+                  style={{
+                    background: "rgba(255,255,255,0.04)",
+                    // color: "rgba(255,255,255,0.6)",
+                    color:"green",
+                    border: "1px solid rgba(255,255,255,0.07)",
+                  }}
+                  disabled={studentCount === 0}
+                  title={studentCount > 0 ? "Click to view students" : "No students assigned"}
                 >
-                  {trainer.students?.length ?? 0} students
-                </span>
+                  {studentCount} student{studentCount !== 1 ? "s" : ""}
+                  {studentCount > 0 && <span className="text-[8px]">›</span>}
+                </button>
               </div>
             </div>
           </div>
@@ -154,8 +171,8 @@ export default function TrainerCard({ trainer, onUpdate }) {
               DELETE
             </button>
           </div>
-
         </div>
+
         <div
           className="h-px w-0 group-hover:w-full transition-all duration-500"
           style={{ background: "linear-gradient(90deg, #ef4444, transparent)" }}
@@ -166,6 +183,13 @@ export default function TrainerCard({ trainer, onUpdate }) {
           trainer={trainer}
           onClose={() => setEditOpen(false)}
           onSuccess={onUpdate}
+        />
+      )}
+
+      {studentsModalOpen && (
+        <StudentsModal
+          trainer={trainer}
+          onClose={() => setStudentsModalOpen(false)}
         />
       )}
     </>

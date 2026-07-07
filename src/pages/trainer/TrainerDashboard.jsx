@@ -15,7 +15,6 @@ function getLatestPT(student) {
   return ptSubs[ptSubs.length - 1];
 }
 
-// ---- NEW: days-until-expiry helpers ----
 function daysUntil(dateStr) {
   if (!dateStr) return null;
   const now = new Date();
@@ -23,6 +22,15 @@ function daysUntil(dateStr) {
   end.setHours(23, 59, 59, 999);
   const diffMs = end.getTime() - now.getTime();
   return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+}
+
+function daysAgo(dateStr) {
+  if (!dateStr) return null;
+  const now = new Date();
+  const end = new Date(dateStr);
+  end.setHours(23, 59, 59, 999);
+  const diffMs = now.getTime() - end.getTime();
+  return Math.floor(diffMs / (1000 * 60 * 60 * 24));
 }
 
 function isExpiringSoon(item, withinDays = 3) {
@@ -336,11 +344,41 @@ function PhoneIcon({ size = 13 }) {
   );
 }
 
-function CallButton({ phoneNumber, accent = "#22c55e" }) {
+function HighlightMatch({ text, query }) {
+  const str = text === null || text === undefined ? "" : String(text);
+  if (!str) return null;
+  if (!query) return <>{str}</>;
+  const idx = str.toLowerCase().indexOf(String(query).toLowerCase());
+  if (idx === -1) return <>{str}</>;
+  const before = str.slice(0, idx);
+  const match = str.slice(idx, idx + query.length);
+  const after = str.slice(idx + query.length);
+  return (
+    <>
+      {before}
+      <span
+        style={{
+          color: "#39ff14",
+          background: "rgba(57,255,20,0.14)",
+          textShadow: "0 0 6px rgba(57,255,20,0.9), 0 0 12px rgba(57,255,20,0.5)",
+          borderRadius: "3px",
+          padding: "0 2px",
+          fontWeight: 700,
+        }}
+      >
+        {match}
+      </span>
+      {after}
+    </>
+  );
+}
+
+function CallButton({ phoneNumber, accent = "#22c55e", query }) {
   if (!phoneNumber) return null;
+  const phoneStr = String(phoneNumber);
   return (
     <a
-      href={`tel:${phoneNumber}`}
+      href={`tel:${phoneStr}`}
       onClick={(e) => e.stopPropagation()}
       className="inline-flex items-center gap-1.5 shrink-0 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all hover:brightness-125"
       style={{
@@ -348,7 +386,7 @@ function CallButton({ phoneNumber, accent = "#22c55e" }) {
         color: accent,
         border: `1px solid ${accent}35`,
       }}
-      title={`Call ${phoneNumber}`}
+      title={`Call ${phoneStr}`}
     >
       <span
         className="w-5 h-5 rounded-full flex items-center justify-center"
@@ -356,13 +394,14 @@ function CallButton({ phoneNumber, accent = "#22c55e" }) {
       >
         <PhoneIcon />
       </span>
-      <span className="tabular-nums">{phoneNumber}</span>
+      <span className="tabular-nums">
+        <HighlightMatch text={phoneStr} query={query} />
+      </span>
     </a>
   );
 }
 
-// mode: "expired" | "soon" — controls badge coloring/labels
-function AttentionMemberRow({ user, mode }) {
+function AttentionMemberRow({ user, mode, query }) {
   const sub = getLatestSub(user);
   const pt = getLatestPT(user);
 
@@ -375,15 +414,35 @@ function AttentionMemberRow({ user, mode }) {
 
   const membershipDays = sub ? daysUntil(sub.endDate) : null;
   const ptDays = pt ? daysUntil(pt.endDate) : null;
+  const membershipDaysAgo = sub?.endDate ? daysAgo(sub.endDate) : null;
+  const ptDaysAgo = pt?.endDate ? daysAgo(pt.endDate) : null;
 
   const badgeColor = (flag) => (flag ? (mode === "expired" ? "#ef4444" : "#eab308") : "#22c55e");
+  const rowAccent = mode === "expired" ? "#ef4444" : "#eab308";
+  const initials = user?.username?.slice(0, 2)?.toUpperCase() ?? "??";
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 px-4 sm:px-5 py-4 border-b border-white/5 last:border-0">
-      <div className="flex-1 min-w-0">
-        <p className="text-white/85 text-sm font-semibold truncate">{user.username}</p>
-        <p className="text-white/30 text-xs truncate mb-1.5">{user.email}</p>
-        <CallButton phoneNumber={user.phoneNumber} accent={mode === "expired" ? "#ef4444" : "#eab308"} />
+      <div className="flex-1 min-w-0 flex items-center gap-3">
+        <div
+          className="w-11 h-11 rounded-xl flex items-center justify-center text-sm font-black overflow-hidden shrink-0"
+          style={{ background: `${rowAccent}20`, border: `1.5px solid ${rowAccent}40`, color: rowAccent }}
+        >
+          {user?.avatar?.url ? (
+            <img src={user.avatar.url} alt="" className="w-full h-full object-cover rounded-xl" />
+          ) : (
+            initials
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-white/85 text-sm font-semibold truncate">
+            <HighlightMatch text={user?.username} query={query} />
+          </p>
+          <p className="text-white/30 text-xs truncate mb-1.5">
+            <HighlightMatch text={user?.email} query={query} />
+          </p>
+          <CallButton phoneNumber={user?.phoneNumber} accent={rowAccent} query={query} />
+        </div>
       </div>
 
       <div className="flex-1 min-w-0">
@@ -399,6 +458,9 @@ function AttentionMemberRow({ user, mode }) {
               }}
             >
               {sub.status}
+              {mode === "expired" && membershipDaysAgo !== null && membershipDaysAgo >= 0 && (
+                <> ({membershipDaysAgo}d ago)</>
+              )}
             </span>
             <span className="text-xs text-white/40 capitalize">{sub.plan}</span>
             <span className="text-xs text-white/25">
@@ -431,6 +493,9 @@ function AttentionMemberRow({ user, mode }) {
               }}
             >
               {pt.status}
+              {mode === "expired" && ptDaysAgo !== null && ptDaysAgo >= 0 && (
+                <> ({ptDaysAgo}d ago)</>
+              )}
             </span>
             <span className="text-xs text-white/40 capitalize">{pt.plan}</span>
             <span className="text-xs text-white/25">
@@ -838,14 +903,12 @@ export default function TrainerDashboard() {
         </div>
 
         {expiryView === "expired" ? (
-          <div className="grid grid-cols-3 gap-3">
-            <StatCard label="Total Expired" value={expiredMembers.length} icon="⚠" accent="#ef4444" delay={0} />
+          <div className="grid grid-cols-2 gap-3">
             <StatCard label="Membership Expired" value={expiredMembershipCount} icon="◈" accent="#f97316" delay={70} />
             <StatCard label="PT Expired" value={expiredPTCount} icon="◉" accent="#eab308" delay={140} />
           </div>
         ) : (
-          <div className="grid grid-cols-3 gap-3">
-            <StatCard label="Total Expiring (3d)" value={expiringSoonMembers.length} icon="⏳" accent="#eab308" delay={0} />
+          <div className="grid grid-cols-2 gap-3">
             <StatCard label="Membership Expiring" value={expiringSoonMembershipCount} icon="◈" accent="#f97316" delay={70} />
             <StatCard label="PT Expiring" value={expiringSoonPTCount} icon="◉" accent="#eab308" delay={140} />
           </div>
@@ -942,7 +1005,7 @@ export default function TrainerDashboard() {
             style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.07)" }}
           >
             {filteredAttentionMembers.map((u) => (
-              <AttentionMemberRow key={u._id} user={u} mode={expiryView} />
+              <AttentionMemberRow key={u._id} user={u} mode={expiryView} query={expiredSearch} />
             ))}
           </div>
         )}
