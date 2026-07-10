@@ -71,6 +71,7 @@ import MemberScanGymQR from "./pages/user/MemberScanGymQR.jsx";
 import TrainerScanGymQR from "./pages/trainer/TrainerScanGymQR.jsx";
 import TrainerCoupon from "./pages/admin/TrainerCoupon.jsx";
 import SellSupplementPage from "./pages/admin/SellSupplementPage.jsx";
+import WhatsAppStatus from "./components/admin/WhatsAppStatus.jsx";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -182,6 +183,9 @@ export default function App() {
           <Route path="trainers" element={<Trainers />} />
           <Route path="coupons" element={<Coupon />} />
           <Route path="coupons/trainer" element={<TrainerCoupon />} />
+          <Route path="wp/qr/code" element={
+            <SuperAdminRoute><WhatsAppStatus /></SuperAdminRoute>
+          } />
 
           {/* cafe */}
           <Route path="cafe/items" element={<CafeItems />} />

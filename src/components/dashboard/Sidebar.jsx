@@ -23,6 +23,7 @@ import {
   Hamburger,
   QrCode,
   PackageOpen,
+  ScanQrCode,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
@@ -38,6 +39,7 @@ const mainMenu = [
   { label: "Workout Template", to: "/admin/workout-templates", icon: ChartBar },
   { label: "Supplement Requests", to: "/admin/supplement/request", icon: GitPullRequestDraft },
   { label: "Check-In QR", to: "/admin/check-in/qr", icon: QrCode },
+  { label: "Wp Qr", to: "/admin/wp/qr/code", icon: ScanQrCode },
   
 ];
 
@@ -122,11 +124,15 @@ export default function Sidebar({ open, onClose }) {
 
   const visibleOtherMenu = isSuperAdmin
     ? otherMenu
-    : otherMenu.filter((item) => ![, "Assets"].includes(item.label));
+    : otherMenu.filter((item) => !["Assets"].includes(item.label));
 
   const visibleSettings = isSuperAdmin
     ? settings
     : settings.filter((item) => !["Offers"].includes(item.label));
+
+    const visibleMainMenu = isSuperAdmin
+    ? mainMenu
+    : mainMenu.filter(item => item.label !== "Wp Qr");
 
   useEffect(() => {
     if (open) {
@@ -195,7 +201,7 @@ export default function Sidebar({ open, onClose }) {
 
         <nav className="flex-1 px-4 py-6 space-y-6 overflow-y-auto">
           <Section title="CORE">
-            {mainMenu.map((item) => (
+            {visibleMainMenu.map((item) => (
               <SidebarLink key={item.to} item={item} onClose={onClose} />
             ))}
             <CollapsibleGroup config={attendanceMenu} onClose={onClose} />
@@ -203,10 +209,10 @@ export default function Sidebar({ open, onClose }) {
           </Section>
 
           <Section title="CAFE">
-  {cafeMenu.map((item) => (
-    <SidebarLink key={item.to} item={item} onClose={onClose} />
-  ))}
-</Section>
+            {cafeMenu.map((item) => (
+              <SidebarLink key={item.to} item={item} onClose={onClose} />
+            ))}
+          </Section>
 
           <Section title="INVENTORY">
             {visibleOtherMenu.map((item) => (   
