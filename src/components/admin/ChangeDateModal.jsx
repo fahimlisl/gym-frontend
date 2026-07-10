@@ -4,10 +4,14 @@ import api from "../../api/axios.api";
 
 export default function ChangeDateModal({ userId, currentStart, currentEnd, onClose, onSuccess }) {
   const toInputFormat = (dateStr) => {
-    if (!dateStr) return "";
-    const d = new Date(dateStr);
-    return d.toISOString().split("T")[0]; 
-  };
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return "";
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+};
 
   const [startDate, setStartDate] = useState(toInputFormat(currentStart));
   const [endDate, setEndDate] = useState(toInputFormat(currentEnd));
@@ -54,7 +58,7 @@ export default function ChangeDateModal({ userId, currentStart, currentEnd, onCl
         <div className="border-b border-red-600/20 px-6 py-4 flex items-center justify-between">
           <div>
             <h2 className="font-black tracking-widest text-sm">EDIT SUBSCRIPTION DATES</h2>
-            <p className="text-xs text-gray-500 mt-0.5">Modifies latest subscription &amp; transaction record</p>
+            <p className="text-xs text-gray-500 mt-0.5">Modifies only latest subscriptiond</p>
           </div>
           <button
             onClick={onClose}
@@ -68,7 +72,7 @@ export default function ChangeDateModal({ userId, currentStart, currentEnd, onCl
           <div className="flex items-start gap-3 bg-red-600/10 border border-red-600/30 rounded-lg px-4 py-3">
             <span className="text-red-500 text-sm mt-0.5">⚠</span>
             <p className="text-xs text-red-400 leading-relaxed">
-              This will update both the subscription validity and the linked transaction date. Use carefully.
+              This will only update subscription details
             </p>
           </div>
 
