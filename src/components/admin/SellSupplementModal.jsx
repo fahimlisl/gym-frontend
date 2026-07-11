@@ -49,12 +49,15 @@ export default function SellSupplementModal({ onClose, onSaleComplete }) {
 
   const [customerName, setCustomerName] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [discountMode, setDiscountMode] = useState("none");
 
   const [couponInput, setCouponInput] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponDiscount, setCouponDiscount] = useState(0);
   const [couponLoading, setCouponLoading] = useState(false);
   const revalidateTimer = useRef(null);
+  const [manualType, setManualType] = useState("percentage"); // percentage | flat
+  const [manualValue, setManualValue] = useState("");
 
   useEffect(() => {
     fetchSupplements();
@@ -114,7 +117,19 @@ export default function SellSupplementModal({ onClose, onSaleComplete }) {
   };
 
   const subtotal = cart.reduce((sum, i) => sum + i.salePrice * i.quantity, 0);
-  const totalAmount = Math.max(subtotal - couponDiscount, 0);
+
+
+  const manualDiscountAmount = (() => {
+    const v = Number(manualValue);
+    if (!v || v <= 0) return 0;
+    const amount = manualType === "percentage" ? (subtotal * v) / 100 : v;
+    return Math.min(amount, subtotal);
+  })();
+
+  const activeDiscount =
+    discountMode === "coupon" ? couponDiscount : discountMode === "manual" ? manualDiscountAmount : 0;
+
+  const totalAmount = Math.max(subtotal - activeDiscount, 0);
 
   const applyCoupon = async ({ silent = false } = {}) => {
     const code = couponInput.trim();
@@ -152,8 +167,20 @@ export default function SellSupplementModal({ onClose, onSaleComplete }) {
     toast("Coupon removed");
   };
 
+  const clearManualDiscount = () => {
+    setManualValue("");
+  };
+
+  const switchDiscountMode = (mode) => {
+    if (mode === discountMode) return;
+    // clear whichever method we're leaving so nothing stacks silently
+    if (discountMode === "coupon") removeCoupon();
+    if (discountMode === "manual") clearManualDiscount();
+    setDiscountMode(mode);
+  };
+
   useEffect(() => {
-    if (!appliedCoupon) return;
+    if (discountMode !== "coupon" || !appliedCoupon) return;
     if (subtotal <= 0) {
       removeCoupon();
       return;
@@ -168,12 +195,20 @@ export default function SellSupplementModal({ onClose, onSaleComplete }) {
       toast.error("Cart is empty");
       return;
     }
+    if (discountMode === "manual" && manualValue && Number(manualValue) < 0) {
+      toast.error("Discount value cannot be negative");
+      return;
+    }
     try {
       setLoading(true);
       const payload = {
         cart: cart.map((i) => ({ _id: i._id, quantity: i.quantity })),
         paymentMethod,
-        couponCode: appliedCoupon?.code || undefined,
+        couponCode: discountMode === "coupon" ? appliedCoupon?.code || undefined : undefined,
+        manualDiscount:
+          discountMode === "manual" && Number(manualValue) > 0
+            ? { type: manualType, value: Number(manualValue) }
+            : undefined,
         customerInfo: customerName ? { fullName: customerName } : undefined,
       };
       const res = await api.post("/admin/checkout/supplement", payload);
@@ -295,41 +330,107 @@ export default function SellSupplementModal({ onClose, onSaleComplete }) {
           />
 
           <div className="border border-white/10 p-4 rounded-xl space-y-3">
-            <p className="text-xs tracking-widest text-green-500">APPLY COUPON</p>
+            <p className="text-xs tracking-widest text-gray-400">DISCOUNT</p>
 
-            {!appliedCoupon ? (
-              <div className="flex flex-col sm:flex-row gap-2">
-                <input
-                  type="text"
-                  placeholder="Enter coupon code..."
-                  value={couponInput}
-                  onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
-                  className="flex-1 bg-neutral-900 border border-white/10 px-3 py-2 rounded-lg text-sm focus:border-green-600 outline-none"
-                />
+            <div className="flex gap-2">
+              {[
+                { key: "none", label: "NO DISCOUNT" },
+                { key: "coupon", label: "COUPON" },
+                { key: "manual", label: "MANUAL" },
+              ].map(({ key, label }) => (
                 <button
+                  key={key}
                   type="button"
-                  onClick={() => applyCoupon()}
-                  disabled={couponLoading || !couponInput.trim()}
-                  className="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold text-sm rounded-lg hover:brightness-110 disabled:opacity-50 whitespace-nowrap w-full sm:w-auto"
+                  onClick={() => switchDiscountMode(key)}
+                  className={`flex-1 py-2.5 rounded-lg text-[11px] font-bold tracking-widest transition ${
+                    discountMode === key
+                      ? "bg-red-600 text-white"
+                      : "bg-neutral-900 border border-white/10 text-gray-400 hover:border-red-600/30"
+                  }`}
                 >
-                  {couponLoading ? <Loader className="w-4 h-4 animate-spin" /> : "APPLY"}
+                  {label}
                 </button>
-              </div>
-            ) : (
-              <div className="flex items-center justify-between bg-green-600/10 border border-green-600/30 rounded-lg p-3 flex-wrap gap-2">
-                <div>
-                  <span className="text-green-400 font-bold">{appliedCoupon.code}</span>
-                  <span className="text-gray-400 text-sm ml-2">
-                    (₹{couponDiscount} off)
+              ))}
+            </div>
+
+            {discountMode === "coupon" && (
+              <>
+                {!appliedCoupon ? (
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <input
+                      type="text"
+                      placeholder="Enter coupon code..."
+                      value={couponInput}
+                      onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                      className="flex-1 bg-neutral-900 border border-white/10 px-3 py-2 rounded-lg text-sm focus:border-green-600 outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => applyCoupon()}
+                      disabled={couponLoading || !couponInput.trim()}
+                      className="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold text-sm rounded-lg hover:brightness-110 disabled:opacity-50 whitespace-nowrap w-full sm:w-auto"
+                    >
+                      {couponLoading ? <Loader className="w-4 h-4 animate-spin" /> : "APPLY"}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between bg-green-600/10 border border-green-600/30 rounded-lg p-3 flex-wrap gap-2">
+                    <div>
+                      <span className="text-green-400 font-bold">{appliedCoupon.code}</span>
+                      <span className="text-gray-400 text-sm ml-2">
+                        (₹{couponDiscount} off)
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={removeCoupon}
+                      className="text-gray-400 hover:text-red-400"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+
+            {discountMode === "manual" && (
+              <div className="space-y-3">
+                <div className="flex gap-2">
+                  {["percentage", "flat"].map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setManualType(t)}
+                      className={`flex-1 py-2 rounded-lg text-[11px] font-bold tracking-widest transition ${
+                        manualType === t
+                          ? "bg-white/10 border border-white/30 text-white"
+                          : "bg-neutral-900 border border-white/10 text-gray-400 hover:border-white/20"
+                      }`}
+                    >
+                      {t === "percentage" ? "PERCENTAGE (%)" : "FLAT (₹)"}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder={manualType === "percentage" ? "e.g. 10" : "e.g. 100"}
+                    value={manualValue}
+                    onChange={(e) => setManualValue(e.target.value)}
+                    className="flex-1 bg-neutral-900 border border-white/10 px-3 py-2 rounded-lg text-sm focus:border-red-600 outline-none"
+                  />
+                  <span className="text-sm text-gray-400 shrink-0">
+                    {manualType === "percentage" ? "%" : "₹"}
                   </span>
                 </div>
-                <button
-                  type="button"
-                  onClick={removeCoupon}
-                  className="text-gray-400 hover:text-red-400"
-                >
-                  ✕
-                </button>
+
+                {manualDiscountAmount > 0 && (
+                  <p className="text-xs text-green-400">
+                    Discount applied: ₹{manualDiscountAmount.toFixed(2)}
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -364,10 +465,12 @@ export default function SellSupplementModal({ onClose, onSaleComplete }) {
                   <span className="text-white">₹{subtotal}</span>
                 </div>
 
-                {couponDiscount > 0 && (
+                {activeDiscount > 0 && (
                   <div className="flex justify-between text-green-400">
-                    <span>Coupon Discount:</span>
-                    <span>-₹{couponDiscount}</span>
+                    <span>
+                      {discountMode === "coupon" ? "Coupon Discount:" : "Manual Discount:"}
+                    </span>
+                    <span>-₹{activeDiscount.toFixed(2)}</span>
                   </div>
                 )}
 
@@ -376,15 +479,15 @@ export default function SellSupplementModal({ onClose, onSaleComplete }) {
                 <div className="flex justify-between items-center">
                   <span className="font-bold text-white">TOTAL AMOUNT:</span>
                   <span className="font-black text-lg bg-gradient-to-r from-red-400 to-red-500 bg-clip-text text-transparent">
-                    ₹{totalAmount}
+                    ₹{totalAmount.toFixed(2)}
                   </span>
                 </div>
               </div>
 
-              {couponDiscount > 0 && (
+              {activeDiscount > 0 && (
                 <div className="bg-green-600/10 border border-green-600/20 rounded-lg p-2 mt-2">
                   <p className="text-xs text-green-400">
-                    🎉 You saved ₹{couponDiscount}!
+                    🎉 You saved ₹{activeDiscount.toFixed(2)}!
                   </p>
                 </div>
               )}

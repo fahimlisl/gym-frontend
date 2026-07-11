@@ -34,6 +34,8 @@ export default function SupplementBillsTable({ refreshKey }) {
               <th className="px-4 py-3 text-left">Customer</th>
               <th className="px-4 py-3 text-left">Items</th>
               <th className="px-4 py-3 text-left">Payment</th>
+              <th className="px-4 py-3 text-left">Original Amount</th>
+              <th className="px-4 py-3 text-left">discount</th>
               <th className="px-4 py-3 text-right">Total</th>
             </tr>
           </thead>
@@ -52,14 +54,20 @@ export default function SupplementBillsTable({ refreshKey }) {
                 <td className="px-4 py-3 uppercase text-xs text-gray-400">
                   {bill.paymentMethod}
                 </td>
-                <td className="px-4 py-3 text-right font-bold text-red-500">
+                <td className="px-4 py-3 uppercase text-xs text-gray-200">
+                  {bill?.subtotal}
+                </td>
+                <td className="px-4 py-3 uppercase text-s text-red-500">
+                  {bill?.discountAmount}
+                </td>
+                <td className="px-4 py-3 text-right font-bold text-green-500">
                   ₹{bill.total}
                 </td>
               </tr>
             ))}
             {bills.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-gray-600">
+                <td colSpan={7} className="px-4 py-8 text-center text-gray-600">
                   No bills yet
                 </td>
               </tr>
@@ -77,22 +85,35 @@ export default function SupplementBillsTable({ refreshKey }) {
         {bills.map((bill) => (
           <div
             key={bill._id}
-            className="border border-white/10 rounded-xl p-4 space-y-2 bg-black/40"
+            className="border border-white/10 rounded-xl p-4 space-y-3 bg-black/40"
           >
-            <div className="flex justify-between items-start">
-              <span className="text-white font-bold text-sm">
+            <div className="flex justify-between items-start gap-2">
+              <span className="text-white font-bold text-sm min-w-0 truncate">
                 {bill.userId?.name || bill.guestInfo?.fullName || "—"}
               </span>
-              <span className="font-bold text-red-500 text-sm shrink-0 ml-2">
+              <span className="font-black text-green-500 text-base shrink-0">
                 ₹{bill.total}
               </span>
             </div>
 
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-gray-400 leading-relaxed">
               {bill.items?.map((i) => i.productName).join(", ")}
             </p>
 
-            <div className="flex justify-between items-center pt-1 border-t border-white/5">
+            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/5">
+              <div>
+                <p className="text-[9px] uppercase tracking-widest text-gray-500 mb-0.5">Original Amount</p>
+                <p className="text-xs font-semibold text-gray-200">₹{bill?.subtotal ?? "—"}</p>
+              </div>
+              <div>
+                <p className="text-[9px] uppercase tracking-widest text-gray-500 mb-0.5">Discount</p>
+                <p className="text-xs font-semibold text-red-500">
+                  {bill?.discountAmount ? `₹${bill.discountAmount}` : "—"}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-between items-center pt-2 border-t border-white/5">
               <span className="text-[10px] text-gray-500">
                 {new Date(bill.createdAt).toLocaleString()}
               </span>
