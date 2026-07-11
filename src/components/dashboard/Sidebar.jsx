@@ -84,7 +84,7 @@ const cafeMenu = [
 ];
 
 const otherMenu = [
-  { label: "Supplements", to: "/admin/supplements", icon: Package },
+  { label: "Supplements", to: "/admin/supplements", icon: Package, end: true },
   { label: "Sell Supplements", to: "/admin/supplements/dashboard", icon: PackageOpen },
   { label: "Coupons", to: "/admin/coupons", icon: TicketPercent },
   { label: "Trainer Coupons", to: "/admin/coupons/trainer", icon: BadgePercent },
@@ -366,6 +366,7 @@ function SidebarLink({ item, onClose }) {
   return (
     <NavLink
       to={item.to}
+      end={item.end}
       onClick={onClose}
       className={({ isActive }) =>
         `flex items-center gap-3 px-4 py-3
