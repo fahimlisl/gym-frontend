@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Plus, Minus, ShoppingCart, Loader } from "lucide-react";
+import { Plus, Minus, ShoppingCart, Loader, Gift } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../../api/axios.api.js";
 
@@ -51,17 +51,34 @@ export default function SellSupplementModal({ onClose, onSaleComplete }) {
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [discountMode, setDiscountMode] = useState("none");
 
+  // Sponsor states
+  const [isSponsor, setIsSponsor] = useState(false);
+  const [trainers, setTrainers] = useState([]);
+  const [selectedTrainer, setSelectedTrainer] = useState("");
+  const [trainerLoading, setTrainerLoading] = useState(false);
+
   const [couponInput, setCouponInput] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponDiscount, setCouponDiscount] = useState(0);
   const [couponLoading, setCouponLoading] = useState(false);
   const revalidateTimer = useRef(null);
-  const [manualType, setManualType] = useState("percentage"); // percentage | flat
+  const [manualType, setManualType] = useState("percentage");
   const [manualValue, setManualValue] = useState("");
 
   useEffect(() => {
     fetchSupplements();
   }, []);
+
+  useEffect(() => {
+    if (isSponsor) {
+      fetchTrainers();
+      setDiscountMode("none");
+      setPaymentMethod("cash");
+    } else {
+      setSelectedTrainer("");
+      setTrainers([]);
+    }
+  }, [isSponsor]);
 
   const fetchSupplements = async () => {
     try {
@@ -82,6 +99,19 @@ export default function SellSupplementModal({ onClose, onSaleComplete }) {
       setInitialLoading(false);
     }
   };
+
+  const fetchTrainers = async () => {
+    try {
+      setTrainerLoading(true);
+      const res = await api.get("/admin/fetchAllTrainer");
+      setTrainers(res.data.data || []);
+    } catch (err) {
+      toast.error("Failed to load trainers");
+    } finally {
+      setTrainerLoading(false);
+    }
+  };
+  console.log("list of all trainers ",trainers)
 
   const filtered = supplements.filter((s) =>
     s.productName.toLowerCase().includes(search.toLowerCase())
@@ -118,7 +148,6 @@ export default function SellSupplementModal({ onClose, onSaleComplete }) {
 
   const subtotal = cart.reduce((sum, i) => sum + i.salePrice * i.quantity, 0);
 
-
   const manualDiscountAmount = (() => {
     const v = Number(manualValue);
     if (!v || v <= 0) return 0;
@@ -126,8 +155,14 @@ export default function SellSupplementModal({ onClose, onSaleComplete }) {
     return Math.min(amount, subtotal);
   })();
 
-  const activeDiscount =
-    discountMode === "coupon" ? couponDiscount : discountMode === "manual" ? manualDiscountAmount : 0;
+  // For sponsor, discount is 100%
+  const activeDiscount = isSponsor 
+    ? subtotal 
+    : discountMode === "coupon" 
+      ? couponDiscount 
+      : discountMode === "manual" 
+        ? manualDiscountAmount 
+        : 0;
 
   const totalAmount = Math.max(subtotal - activeDiscount, 0);
 
@@ -172,15 +207,18 @@ export default function SellSupplementModal({ onClose, onSaleComplete }) {
   };
 
   const switchDiscountMode = (mode) => {
+    if (isSponsor) {
+      toast.error("Discounts not available for sponsor bills");
+      return;
+    }
     if (mode === discountMode) return;
-    // clear whichever method we're leaving so nothing stacks silently
     if (discountMode === "coupon") removeCoupon();
     if (discountMode === "manual") clearManualDiscount();
     setDiscountMode(mode);
   };
 
   useEffect(() => {
-    if (discountMode !== "coupon" || !appliedCoupon) return;
+    if (discountMode !== "coupon" || !appliedCoupon || isSponsor) return;
     if (subtotal <= 0) {
       removeCoupon();
       return;
@@ -188,31 +226,41 @@ export default function SellSupplementModal({ onClose, onSaleComplete }) {
     if (revalidateTimer.current) clearTimeout(revalidateTimer.current);
     revalidateTimer.current = setTimeout(() => applyCoupon({ silent: true }), 400);
     return () => clearTimeout(revalidateTimer.current);
-  }, [subtotal]);
+  }, [subtotal, isSponsor]);
 
   const handleCheckout = async () => {
     if (cart.length === 0) {
       toast.error("Cart is empty");
       return;
     }
+
+    if (isSponsor && !selectedTrainer) {
+      toast.error("Please select a trainer for sponsor bill");
+      return;
+    }
+
     if (discountMode === "manual" && manualValue && Number(manualValue) < 0) {
       toast.error("Discount value cannot be negative");
       return;
     }
+
     try {
       setLoading(true);
       const payload = {
         cart: cart.map((i) => ({ _id: i._id, quantity: i.quantity })),
-        paymentMethod,
-        couponCode: discountMode === "coupon" ? appliedCoupon?.code || undefined : undefined,
+        paymentMethod: isSponsor ? "cash" : paymentMethod,
+        couponCode: discountMode === "coupon" && !isSponsor ? appliedCoupon?.code || undefined : undefined,
         manualDiscount:
-          discountMode === "manual" && Number(manualValue) > 0
+          discountMode === "manual" && !isSponsor && Number(manualValue) > 0
             ? { type: manualType, value: Number(manualValue) }
             : undefined,
         customerInfo: customerName ? { fullName: customerName } : undefined,
+        isSponsor,
+        ...(isSponsor && { trainerId: selectedTrainer }),
       };
+      
       const res = await api.post("/admin/checkout/supplement", payload);
-      toast.success("Sale completed successfully");
+      toast.success(res.data.message || "Sale completed successfully");
       onSaleComplete?.(res.data.data);
       onClose();
     } catch (err) {
@@ -233,6 +281,61 @@ export default function SellSupplementModal({ onClose, onSaleComplete }) {
         </div>
       ) : (
         <div className="grid gap-6">
+          {/* Sponsor Toggle */}
+          <div className="border border-white/10 p-4 rounded-xl">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setIsSponsor(!isSponsor)}
+                className={`relative w-12 h-6 rounded-full transition-colors ${
+                  isSponsor ? "bg-green-600" : "bg-neutral-700"
+                }`}
+              >
+                <div
+                  className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${
+                    isSponsor ? "translate-x-6" : "translate-x-0"
+                  }`}
+                />
+              </button>
+              <div>
+                <p className="text-sm font-bold text-white flex items-center gap-2">
+                  <Gift size={16} className="text-green-400" />
+                  SPONSOR BILL
+                </p>
+                <p className="text-xs text-gray-400">
+                  Free supplements for trainers (100% discount)
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {isSponsor && (
+            <div className="space-y-3">
+              <label className="text-xs tracking-widest text-gray-400">
+                SELECT TRAINER *
+              </label>
+              {trainerLoading ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader className="w-5 h-5 text-red-500 animate-spin" />
+                </div>
+              ) : (
+                <select
+                  value={selectedTrainer}
+                  onChange={(e) => setSelectedTrainer(e.target.value)}
+                  className="w-full bg-neutral-900 border border-white/10
+                           px-4 py-3 text-sm focus:border-green-600 outline-none rounded-lg text-white"
+                >
+                  <option value="">Select a trainer...</option>
+                  {trainers.map((trainer) => (
+                    <option className="text-white" key={trainer._id} value={trainer._id}>
+                      {trainer.fullName} {trainer.phoneNumber ? `(${trainer.phoneNumber})` : ""}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+          )}
+
           <div className="space-y-3">
             <label className="text-xs tracking-widest text-gray-400">
               SELECT SUPPLEMENTS
@@ -329,111 +432,123 @@ export default function SellSupplementModal({ onClose, onSaleComplete }) {
             onChange={(e) => setCustomerName(e.target.value)}
           />
 
-          <div className="border border-white/10 p-4 rounded-xl space-y-3">
-            <p className="text-xs tracking-widest text-gray-400">DISCOUNT</p>
+          {/* Discount Section - Disabled for Sponsor */}
+          {!isSponsor ? (
+            <div className="border border-white/10 p-4 rounded-xl space-y-3">
+              <p className="text-xs tracking-widest text-gray-400">DISCOUNT</p>
 
-            <div className="flex gap-2">
-              {[
-                { key: "none", label: "NO DISCOUNT" },
-                { key: "coupon", label: "COUPON" },
-                { key: "manual", label: "MANUAL" },
-              ].map(({ key, label }) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => switchDiscountMode(key)}
-                  className={`flex-1 py-2.5 rounded-lg text-[11px] font-bold tracking-widest transition ${
-                    discountMode === key
-                      ? "bg-red-600 text-white"
-                      : "bg-neutral-900 border border-white/10 text-gray-400 hover:border-red-600/30"
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            {discountMode === "coupon" && (
-              <>
-                {!appliedCoupon ? (
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <input
-                      type="text"
-                      placeholder="Enter coupon code..."
-                      value={couponInput}
-                      onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
-                      className="flex-1 bg-neutral-900 border border-white/10 px-3 py-2 rounded-lg text-sm focus:border-green-600 outline-none"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => applyCoupon()}
-                      disabled={couponLoading || !couponInput.trim()}
-                      className="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold text-sm rounded-lg hover:brightness-110 disabled:opacity-50 whitespace-nowrap w-full sm:w-auto"
-                    >
-                      {couponLoading ? <Loader className="w-4 h-4 animate-spin" /> : "APPLY"}
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between bg-green-600/10 border border-green-600/30 rounded-lg p-3 flex-wrap gap-2">
-                    <div>
-                      <span className="text-green-400 font-bold">{appliedCoupon.code}</span>
-                      <span className="text-gray-400 text-sm ml-2">
-                        (₹{couponDiscount} off)
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={removeCoupon}
-                      className="text-gray-400 hover:text-red-400"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
-
-            {discountMode === "manual" && (
-              <div className="space-y-3">
-                <div className="flex gap-2">
-                  {["percentage", "flat"].map((t) => (
-                    <button
-                      key={t}
-                      type="button"
-                      onClick={() => setManualType(t)}
-                      className={`flex-1 py-2 rounded-lg text-[11px] font-bold tracking-widest transition ${
-                        manualType === t
-                          ? "bg-white/10 border border-white/30 text-white"
-                          : "bg-neutral-900 border border-white/10 text-gray-400 hover:border-white/20"
-                      }`}
-                    >
-                      {t === "percentage" ? "PERCENTAGE (%)" : "FLAT (₹)"}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    min="0"
-                    placeholder={manualType === "percentage" ? "e.g. 10" : "e.g. 100"}
-                    value={manualValue}
-                    onChange={(e) => setManualValue(e.target.value)}
-                    className="flex-1 bg-neutral-900 border border-white/10 px-3 py-2 rounded-lg text-sm focus:border-red-600 outline-none"
-                  />
-                  <span className="text-sm text-gray-400 shrink-0">
-                    {manualType === "percentage" ? "%" : "₹"}
-                  </span>
-                </div>
-
-                {manualDiscountAmount > 0 && (
-                  <p className="text-xs text-green-400">
-                    Discount applied: ₹{manualDiscountAmount.toFixed(2)}
-                  </p>
-                )}
+              <div className="flex gap-2">
+                {[
+                  { key: "none", label: "NO DISCOUNT" },
+                  { key: "coupon", label: "COUPON" },
+                  { key: "manual", label: "MANUAL" },
+                ].map(({ key, label }) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => switchDiscountMode(key)}
+                    className={`flex-1 py-2.5 rounded-lg text-[11px] font-bold tracking-widest transition ${
+                      discountMode === key
+                        ? "bg-red-600 text-white"
+                        : "bg-neutral-900 border border-white/10 text-gray-400 hover:border-red-600/30"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
               </div>
-            )}
-          </div>
+
+              {discountMode === "coupon" && (
+                <>
+                  {!appliedCoupon ? (
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <input
+                        type="text"
+                        placeholder="Enter coupon code..."
+                        value={couponInput}
+                        onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                        className="flex-1 bg-neutral-900 border border-white/10 px-3 py-2 rounded-lg text-sm focus:border-green-600 outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => applyCoupon()}
+                        disabled={couponLoading || !couponInput.trim()}
+                        className="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold text-sm rounded-lg hover:brightness-110 disabled:opacity-50 whitespace-nowrap w-full sm:w-auto"
+                      >
+                        {couponLoading ? <Loader className="w-4 h-4 animate-spin" /> : "APPLY"}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between bg-green-600/10 border border-green-600/30 rounded-lg p-3 flex-wrap gap-2">
+                      <div>
+                        <span className="text-green-400 font-bold">{appliedCoupon.code}</span>
+                        <span className="text-gray-400 text-sm ml-2">
+                          (₹{couponDiscount} off)
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={removeCoupon}
+                        className="text-gray-400 hover:text-red-400"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {discountMode === "manual" && (
+                <div className="space-y-3">
+                  <div className="flex gap-2">
+                    {["percentage", "flat"].map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => setManualType(t)}
+                        className={`flex-1 py-2 rounded-lg text-[11px] font-bold tracking-widest transition ${
+                          manualType === t
+                            ? "bg-white/10 border border-white/30 text-white"
+                            : "bg-neutral-900 border border-white/10 text-gray-400 hover:border-white/20"
+                        }`}
+                      >
+                        {t === "percentage" ? "PERCENTAGE (%)" : "FLAT (₹)"}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder={manualType === "percentage" ? "e.g. 10" : "e.g. 100"}
+                      value={manualValue}
+                      onChange={(e) => setManualValue(e.target.value)}
+                      className="flex-1 bg-neutral-900 border border-white/10 px-3 py-2 rounded-lg text-sm focus:border-red-600 outline-none"
+                    />
+                    <span className="text-sm text-gray-400 shrink-0">
+                      {manualType === "percentage" ? "%" : "₹"}
+                    </span>
+                  </div>
+
+                  {manualDiscountAmount > 0 && (
+                    <p className="text-xs text-green-400">
+                      Discount applied: ₹{manualDiscountAmount.toFixed(2)}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="border border-green-600/30 bg-green-600/10 p-4 rounded-xl">
+              <p className="text-center text-green-400 font-bold">
+                🎁 SPONSOR BILL - 100% DISCOUNT APPLIED
+              </p>
+              <p className="text-center text-xs text-gray-400 mt-1">
+                Free supplements for trainer
+              </p>
+            </div>
+          )}
 
           <div className="space-y-3">
             <label className="text-xs tracking-widest text-gray-400">PAYMENT METHOD</label>
@@ -442,21 +557,32 @@ export default function SellSupplementModal({ onClose, onSaleComplete }) {
                 <button
                   key={method}
                   type="button"
-                  onClick={() => setPaymentMethod(method)}
+                  onClick={() => {
+                    if (isSponsor && method !== "cash") {
+                      toast.error("Sponsor bills must use cash payment");
+                      return;
+                    }
+                    setPaymentMethod(method);
+                  }}
                   className={`flex-1 py-3 rounded-lg text-xs font-bold tracking-widest uppercase transition ${
                     paymentMethod === method
                       ? "bg-red-600 text-white"
                       : "bg-neutral-900 border border-white/10 text-gray-400 hover:border-red-600/30"
-                  }`}
+                  } ${isSponsor && method !== "cash" ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
                   {method}
                 </button>
               ))}
             </div>
+            {isSponsor && (
+              <p className="text-xs text-gray-500 text-center">Sponsor bills use cash payment by default</p>
+            )}
           </div>
 
           {cart.length > 0 && (
-            <div className="bg-gradient-to-br from-neutral-900 to-black border border-red-600/20 rounded-xl p-4 space-y-2">
+            <div className={`bg-gradient-to-br from-neutral-900 to-black border rounded-xl p-4 space-y-2 ${
+              isSponsor ? "border-green-600/20" : "border-red-600/20"
+            }`}>
               <p className="text-xs uppercase font-black text-gray-400">💰 PRICE BREAKDOWN</p>
 
               <div className="space-y-1 text-sm">
@@ -466,25 +592,32 @@ export default function SellSupplementModal({ onClose, onSaleComplete }) {
                 </div>
 
                 {activeDiscount > 0 && (
-                  <div className="flex justify-between text-green-400">
+                  <div className={`flex justify-between ${
+                    isSponsor ? "text-green-400" : "text-green-400"
+                  }`}>
                     <span>
-                      {discountMode === "coupon" ? "Coupon Discount:" : "Manual Discount:"}
+                      {isSponsor ? "Sponsor Discount (100%):" : 
+                        discountMode === "coupon" ? "Coupon Discount:" : "Manual Discount:"}
                     </span>
                     <span>-₹{activeDiscount.toFixed(2)}</span>
                   </div>
                 )}
 
-                <div className="h-px bg-gradient-to-r from-red-600/20 to-transparent my-2"></div>
+                <div className={`h-px bg-gradient-to-r ${
+                  isSponsor ? "from-green-600/20" : "from-red-600/20"
+                } to-transparent my-2`}></div>
 
                 <div className="flex justify-between items-center">
                   <span className="font-bold text-white">TOTAL AMOUNT:</span>
-                  <span className="font-black text-lg bg-gradient-to-r from-red-400 to-red-500 bg-clip-text text-transparent">
+                  <span className={`font-black text-lg bg-gradient-to-r ${
+                    isSponsor ? "from-green-400 to-green-500" : "from-red-400 to-red-500"
+                  } bg-clip-text text-transparent`}>
                     ₹{totalAmount.toFixed(2)}
                   </span>
                 </div>
               </div>
 
-              {activeDiscount > 0 && (
+              {activeDiscount > 0 && !isSponsor && (
                 <div className="bg-green-600/10 border border-green-600/20 rounded-lg p-2 mt-2">
                   <p className="text-xs text-green-400">
                     🎉 You saved ₹{activeDiscount.toFixed(2)}!
@@ -494,7 +627,12 @@ export default function SellSupplementModal({ onClose, onSaleComplete }) {
             </div>
           )}
 
-          <Actions loading={loading} onClose={onClose} onSubmit={handleCheckout} />
+          <Actions 
+            loading={loading} 
+            onClose={onClose} 
+            onSubmit={handleCheckout}
+            isSponsor={isSponsor}
+          />
         </div>
       )}
     </Modal>
@@ -514,7 +652,7 @@ function Input({ label, ...props }) {
   );
 }
 
-function Actions({ loading, onClose, onSubmit }) {
+function Actions({ loading, onClose, onSubmit, isSponsor }) {
   return (
     <div className="flex flex-col sm:flex-row justify-end gap-4 pt-4">
       <button
@@ -529,10 +667,13 @@ function Actions({ loading, onClose, onSubmit }) {
         type="button"
         onClick={onSubmit}
         disabled={loading}
-        className="w-full sm:w-auto bg-red-600 hover:bg-red-700 px-8 py-3
-                   text-xs font-extrabold tracking-widest rounded-lg disabled:opacity-40"
+        className={`w-full sm:w-auto px-8 py-3 text-xs font-extrabold tracking-widest rounded-lg disabled:opacity-40 ${
+          isSponsor 
+            ? "bg-green-600 hover:bg-green-700" 
+            : "bg-red-600 hover:bg-red-700"
+        }`}
       >
-        {loading ? "PROCESSING..." : "COMPLETE SALE"}
+        {loading ? "PROCESSING..." : (isSponsor ? "CREATE SPONSOR BILL" : "COMPLETE SALE")}
       </button>
     </div>
   );

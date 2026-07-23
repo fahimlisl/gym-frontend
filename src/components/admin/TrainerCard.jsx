@@ -2,11 +2,13 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import EditTrainerModal from "./EditTrainerModal";
 import StudentsModal from "./StudentsModal";
+import TrainerSponsorsModal from "./TrainerSponsorsModal";
 import { deleteTrainer } from "../../api/admin.api";
 
 export default function TrainerCard({ trainer, onUpdate }) {
   const [editOpen, setEditOpen] = useState(false);
   const [studentsModalOpen, setStudentsModalOpen] = useState(false);
+  const [sponsorsModalOpen, setSponsorsModalOpen] = useState(false);
 
   const destroy = async () => {
     if (!confirm("Delete this trainer?")) return;
@@ -42,6 +44,7 @@ export default function TrainerCard({ trainer, onUpdate }) {
                 src={trainer.avatar.url}
                 className="w-14 h-14 rounded-xl object-cover"
                 style={{ border: "1.5px solid rgba(239,68,68,0.4)" }}
+                alt={trainer.fullName}
               />
               <span
                 className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center text-[7px] font-black"
@@ -60,7 +63,6 @@ export default function TrainerCard({ trainer, onUpdate }) {
                 >
                   TRAINER
                 </span>
-                {/* Enhanced student badge */}
                 <button
                   onClick={() => studentCount > 0 && setStudentsModalOpen(true)}
                   className={`text-[12px] font-medium px-2 py-0.5 rounded-md transition-all flex items-center gap-1 ${
@@ -70,8 +72,7 @@ export default function TrainerCard({ trainer, onUpdate }) {
                   }`}
                   style={{
                     background: "rgba(255,255,255,0.04)",
-                    // color: "rgba(255,255,255,0.6)",
-                    color:"green",
+                    color: "green",
                     border: "1px solid rgba(255,255,255,0.07)",
                   }}
                   disabled={studentCount === 0}
@@ -108,9 +109,15 @@ export default function TrainerCard({ trainer, onUpdate }) {
           </div>
 
           <div className="h-px" style={{ background: "rgba(255,255,255,0.05)" }} />
-          <div
-            className="rounded-lg p-3.5 flex items-center justify-between gap-3"
-            style={{ background: "rgba(168,85,247,0.06)", border: "1px solid rgba(168,85,247,0.15)" }}
+          
+          {/* Sponsor Bonus Section - Clickable */}
+          <button
+            onClick={() => setSponsorsModalOpen(true)}
+            className="w-full rounded-lg p-3.5 flex items-center justify-between gap-3 transition-all duration-200 hover:opacity-80 hover:scale-[1.02] group/sponsor"
+            style={{ 
+              background: "rgba(168,85,247,0.06)", 
+              border: "1px solid rgba(168,85,247,0.15)",
+            }}
           >
             <div className="text-center flex-1">
               <p className="text-[9px] font-bold tracking-[0.2em] uppercase mb-1" style={{ color: "rgba(168,85,247,0.6)" }}>
@@ -129,7 +136,11 @@ export default function TrainerCard({ trainer, onUpdate }) {
                 ₹{totalBonus.toLocaleString("en-IN")}
               </p>
             </div>
-          </div>
+            <div className="flex items-center gap-1 text-purple-400/50 group-hover/sponsor:text-purple-400 transition-colors">
+              <span className="text-[10px] font-bold tracking-wider">VIEW</span>
+              <span className="text-xs transform group-hover/sponsor:translate-x-0.5 transition-transform">›</span>
+            </div>
+          </button>
 
           <div className="flex gap-2 pt-1">
             <button
@@ -178,6 +189,8 @@ export default function TrainerCard({ trainer, onUpdate }) {
           style={{ background: "linear-gradient(90deg, #ef4444, transparent)" }}
         />
       </div>
+
+      {/* Modals */}
       {editOpen && (
         <EditTrainerModal
           trainer={trainer}
@@ -190,6 +203,13 @@ export default function TrainerCard({ trainer, onUpdate }) {
         <StudentsModal
           trainer={trainer}
           onClose={() => setStudentsModalOpen(false)}
+        />
+      )}
+
+      {sponsorsModalOpen && (
+        <TrainerSponsorsModal
+          trainer={trainer}
+          onClose={() => setSponsorsModalOpen(false)}
         />
       )}
     </>
