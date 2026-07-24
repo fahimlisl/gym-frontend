@@ -67,14 +67,23 @@ export default function SubscriptionCard({ isSuperAdmin, subscription, userId, o
           </div>
           <div className="flex gap-2">
             {/* Always show Renew/Advance button */}
-            <button
+            {/* <button
               onClick={onRenew}
               className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold tracking-widest 
                          border border-green-600/50 text-green-400 rounded-lg 
                          hover:bg-green-600/20 transition cursor-pointer"
             >
               {hasActiveSubscription ? "+ ADVANCE" : "+ RENEW"}
-            </button>
+            </button> */}
+
+            <button
+  onClick={onRenew}
+  className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold tracking-widest 
+             border border-green-600/50 text-green-400 rounded-lg 
+             hover:bg-green-600/20 transition cursor-pointer"
+>
+  {hasActiveSubscription ? "+ ADVANCE" : "+ RENEW"}
+</button>
             <button
               onClick={() => isSuperAdmin && currentActive && setChangeDateOpen(true)}
               disabled={!isSuperAdmin || !currentActive}

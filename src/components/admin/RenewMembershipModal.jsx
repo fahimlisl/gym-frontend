@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { X, Loader, ChevronRight, AlertCircle } from "lucide-react";
+import { X, Loader, ChevronRight, AlertCircle, Calendar } from "lucide-react";
 import api from "../../api/axios.api";
 
-export default function RenewMembershipModal({ userId, onClose, onSuccess }) {
+export default function RenewMembershipModal({ userId, onClose, onSuccess, subscription }) {
   const [plans, setPlans] = useState([]);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [couponInput, setCouponInput] = useState("");
@@ -15,6 +15,7 @@ export default function RenewMembershipModal({ userId, onClose, onSuccess }) {
   const [initialLoading, setInitialLoading] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [startDate, setStartDate] = useState("");
+  const [isAdvance, setIsAdvance] = useState(false);
 
   useEffect(() => {
     loadInitialData();
@@ -47,6 +48,32 @@ export default function RenewMembershipModal({ userId, onClose, onSuccess }) {
       if (subscriptionPlans.length > 0) {
         setSelectedPlan(subscriptionPlans[0]);
         setFinalPrice(subscriptionPlans[0].finalPrice);
+      }
+
+      // Check if this is an advance renewal
+      if (subscription?.subscription?.length > 0) {
+        const subs = subscription.subscription;
+        const now = new Date();
+        
+        // Find the active subscription
+        const activeSub = subs.find(sub => {
+          const startDate = new Date(sub.startDate);
+          const endDate = new Date(sub.endDate);
+          return startDate <= now && endDate >= now;
+        });
+
+        if (activeSub) {
+          // Set start date to the day after active subscription ends
+          const nextDay = new Date(activeSub.endDate);
+          nextDay.setDate(nextDay.getDate() + 1);
+          
+          const day = String(nextDay.getDate()).padStart(2, '0');
+          const month = String(nextDay.getMonth() + 1).padStart(2, '0');
+          const year = nextDay.getFullYear();
+          
+          setStartDate(`${day}/${month}/${year}`);
+          setIsAdvance(true);
+        }
       }
     } catch (err) {
       console.error("Error loading plans:", err);
@@ -165,7 +192,7 @@ export default function RenewMembershipModal({ userId, onClose, onSuccess }) {
         `/admin/renewalSubscription/${userId}/${selectedPlan._id}`,
         payload
       );
-      toast.success("Membership renewed successfully!");
+      toast.success(isAdvance ? "Advance membership booked successfully!" : "Membership renewed successfully!");
       onSuccess();
       onClose();
     } catch (err) {
@@ -294,11 +321,11 @@ export default function RenewMembershipModal({ userId, onClose, onSuccess }) {
             <div className="flex justify-between items-start gap-6">
               <div>
                 <h2 className="text-title text-2xl lg:text-3xl font-black tracking-tighter text-white mb-1">
-                  RENEW MEMBERSHIP
+                  {isAdvance ? "ADVANCE BOOKING" : "RENEW MEMBERSHIP"}
                 </h2>
                 <div className="flex items-center gap-2 text-xs text-gray-400 tracking-widest uppercase font-semibold">
-                  <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-                  Renew subscription for member
+                  <span className={`w-2 h-2 rounded-full ${isAdvance ? 'bg-yellow-500' : 'bg-red-500'}`}></span>
+                  {isAdvance ? 'Schedule future membership' : 'Renew subscription for member'}
                 </div>
               </div>
               <button
@@ -327,6 +354,21 @@ export default function RenewMembershipModal({ userId, onClose, onSuccess }) {
               </div>
             ) : (
               <form onSubmit={submit} className="px-6 lg:px-8 py-8 space-y-6">
+                {/* Advance Notice Banner */}
+                {isAdvance && (
+                  <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 flex items-start gap-3">
+                    <Calendar className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-bold text-yellow-400 mb-1">
+                        Advance Booking Mode
+                      </p>
+                      <p className="text-xs text-yellow-300/80">
+                        This membership will start after your current plan ends. Start date is automatically set.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 <div className="space-y-4">
                   <div className="flex items-center gap-2">
                     <div className="w-1 h-6 bg-gradient-to-b from-red-600 to-red-800 rounded-full"></div>
@@ -462,16 +504,23 @@ export default function RenewMembershipModal({ userId, onClose, onSuccess }) {
 
                 <div className="space-y-2.5">
                   <label className="block text-xs uppercase font-black text-white tracking-widest">
-                    Start Date (Optional)
+                    Start Date {isAdvance ? '(Auto-set)' : '(Optional)'}
                   </label>
                   <input
                     type="text"
                     placeholder="DD/MM/YYYY (e.g., 15/03/2024)"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="input-field w-full bg-neutral-800/50 border border-white/10 px-4 py-2.5 rounded-lg text-sm placeholder-gray-600 text-white outline-none hover:border-red-600/30 focus:border-red-600"
+                    disabled={isAdvance}
+                    className={`input-field w-full bg-neutral-800/50 border border-white/10 px-4 py-2.5 rounded-lg text-sm placeholder-gray-600 text-white outline-none hover:border-red-600/30 focus:border-red-600 ${
+                      isAdvance ? 'opacity-75 cursor-not-allowed border-yellow-500/30' : ''
+                    }`}
                   />
-                  <p className="text-xs text-gray-500">Leave empty to start today</p>
+                  <p className="text-xs text-gray-500">
+                    {isAdvance 
+                      ? '📅 Start date is set to the day after your current plan expires' 
+                      : 'Leave empty to start today'}
+                  </p>
                 </div>
 
                 <div className="space-y-2.5">
@@ -565,11 +614,11 @@ export default function RenewMembershipModal({ userId, onClose, onSuccess }) {
             >
               {loading ? (
                 <>
-                  <Loader className="w-4 h-4 animate-spin" /> RENEWING...
+                  <Loader className="w-4 h-4 animate-spin" /> {isAdvance ? 'BOOKING...' : 'RENEWING...'}
                 </>
               ) : (
                 <>
-                  RENEW MEMBERSHIP <span>→</span>
+                  {isAdvance ? 'CONFIRM ADVANCE BOOKING' : 'RENEW MEMBERSHIP'} <span>→</span>
                 </>
               )}
             </button>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { X, Loader, ChevronRight, AlertCircle } from "lucide-react";
+import { X, Loader, ChevronRight, AlertCircle, Calendar } from "lucide-react";
 import { fetchAllTrainers } from "../../api/admin.api";
 import api from "../../api/axios.api";
 
@@ -23,6 +23,7 @@ export default function RenewPTModal({
   const [initialLoading, setInitialLoading] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
+  const [isAdvance, setIsAdvance] = useState(false);
 
   const latest = currentPT.subscription[currentPT.subscription.length - 1];
 
@@ -60,6 +61,27 @@ export default function RenewPTModal({
       if (plansRes.data.data?.length > 0) {
         setSelectedPlan(plansRes.data.data[0]);
         setFinalPrice(plansRes.data.data[0].finalPrice);
+      }
+
+      // Check if this is an advance renewal (active PT exists)
+      if (currentPT?.subscription?.length > 0) {
+        const subs = currentPT.subscription;
+        const now = new Date();
+        
+        // Find active PT subscription
+        const activePT = subs.find(sub => {
+          const startDate = new Date(sub.startDate);
+          const endDate = new Date(sub.endDate);
+          return startDate <= now && endDate >= now && sub.status === "active";
+        });
+
+        if (activePT) {
+          // Set start date to the day after active PT ends
+          const nextDay = new Date(activePT.endDate);
+          nextDay.setDate(nextDay.getDate() + 1);
+          setStartDate(nextDay.toISOString().split("T")[0]);
+          setIsAdvance(true);
+        }
       }
     } catch (err) {
       toast.error("Failed to load data");
@@ -156,7 +178,7 @@ export default function RenewPTModal({
         price: finalPrice,
         coupon: appliedCoupon?.code || "",
         paymentMethod,
-        startDate, // yyyy-mm-dd; defaults to today unless manually changed
+        startDate, // yyyy-mm-dd; will be future date if advance booking
       };
 
       await api.post(
@@ -164,7 +186,7 @@ export default function RenewPTModal({
         formData
       );
 
-      toast.success("PT renewed successfully!");
+      toast.success(isAdvance ? "Advance PT booking confirmed!" : "PT renewed successfully!");
       onSuccess();
       onClose();
     } catch (err) {
@@ -287,11 +309,11 @@ export default function RenewPTModal({
             <div className="flex justify-between items-start gap-6">
               <div>
                 <h2 className="text-title text-2xl lg:text-3xl font-black tracking-tighter text-white mb-1">
-                  RENEW PERSONAL TRAINING
+                  {isAdvance ? "ADVANCE PT BOOKING" : "RENEW PERSONAL TRAINING"}
                 </h2>
                 <div className="flex items-center gap-2 text-xs text-gray-400 tracking-widest uppercase font-semibold">
-                  <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-                  Renew PT subscription for member
+                  <span className={`w-2 h-2 rounded-full ${isAdvance ? 'bg-yellow-500' : 'bg-red-500'}`}></span>
+                  {isAdvance ? 'Schedule future PT sessions' : 'Renew PT subscription for member'}
                 </div>
               </div>
               <button
@@ -314,6 +336,21 @@ export default function RenewPTModal({
             ) : (
               <form onSubmit={submit} className="px-6 lg:px-8 py-8 space-y-6">
                 
+                {/* Advance Notice Banner */}
+                {isAdvance && (
+                  <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 flex items-start gap-3">
+                    <Calendar className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-bold text-yellow-400 mb-1">
+                        Advance Booking Mode
+                      </p>
+                      <p className="text-xs text-yellow-300/80">
+                        This PT subscription will start after your current PT sessions end. Start date is automatically set to the day after.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 <div className="bg-gradient-to-br from-neutral-800/50 to-neutral-900/50 border border-red-600/20 rounded-2xl p-4">
                   <p className="text-xs uppercase font-black text-gray-500 tracking-widest mb-2">
                     Current Trainer
@@ -505,16 +542,23 @@ export default function RenewPTModal({
 
                 <div className="space-y-2.5">
                   <label className="block text-xs uppercase font-black text-white tracking-widest">
-                    Start Date
+                    Start Date {isAdvance ? '(Auto-set)' : ''}
                   </label>
                   <input
                     type="date"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="input-field w-full bg-neutral-800/50 border border-white/10 px-4 py-2.5 rounded-lg text-sm text-white outline-none hover:border-red-600/30 focus:border-red-600 [color-scheme:dark]"
+                    disabled={isAdvance}
+                    className={`input-field w-full bg-neutral-800/50 border px-4 py-2.5 rounded-lg text-sm text-white outline-none [color-scheme:dark] ${
+                      isAdvance 
+                        ? 'border-yellow-500/30 opacity-75 cursor-not-allowed' 
+                        : 'border-white/10 hover:border-red-600/30 focus:border-red-600'
+                    }`}
                   />
                   <p className="text-[10px] text-gray-500">
-                    Defaults to today. Change only if backdating or scheduling ahead.
+                    {isAdvance 
+                      ? '📅 Auto-set to day after current PT ends' 
+                      : 'Defaults to today. Change only if backdating or scheduling ahead.'}
                   </p>
                 </div>
 
@@ -583,11 +627,11 @@ export default function RenewPTModal({
             >
               {loading ? (
                 <>
-                  <Loader className="w-4 h-4 animate-spin" /> RENEWING...
+                  <Loader className="w-4 h-4 animate-spin" /> {isAdvance ? 'BOOKING...' : 'RENEWING...'}
                 </>
               ) : (
                 <>
-                  RENEW TRAINING <span>→</span>
+                  {isAdvance ? 'CONFIRM ADVANCE PT' : 'RENEW TRAINING'} <span>→</span>
                 </>
               )}
             </button>

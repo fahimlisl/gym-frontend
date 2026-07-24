@@ -322,6 +322,7 @@ const handleRemovePT = async () => {
           userId={user._id}
           onClose={() => setRenewMembershipOpen(false)}
           onSuccess={loadUser}
+          subscription={user?.subscription}
         />
       )}
 
