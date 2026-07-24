@@ -58,9 +58,9 @@ export default function PTSection({ pt, onAssign, onRenew, onChangeTrainer, onRe
 
   const current = activeSubscription || upcomingSubscriptions[0] || pt.subscription[pt.subscription.length - 1];
   const isPTActive = activeSubscription !== null;
-  const isPTExpired = !isPTActive && pastSubscriptions.length > 0;
+  const isPTExpired = pt.subscription[pt.subscription.length - 1]?.status === "expired"
   const isSubActive = subscription?.subscription[subscription?.subscription.length - 1]?.status?.toLowerCase() === "active";
-  const canRenew = isPTExpired && isSubActive;
+  const canRenew = isPTExpired ;
   const canAdvance = isPTActive && isSubActive;
 
   // use overridden dates if we just changed them, otherwise fall back to server data
