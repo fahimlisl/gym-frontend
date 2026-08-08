@@ -4,6 +4,36 @@ import { X, Loader, ChevronRight, AlertCircle, Calendar } from "lucide-react";
 import { fetchAllTrainers } from "../../api/admin.api";
 import api from "../../api/axios.api";
 
+// Keep all date-only values as calendar dates in IST.
+// This avoids the UTC/IST shift caused by:
+// new Date("YYYY-MM-DD").toISOString().split("T")[0]
+const getISTDateString = (dateInput = new Date()) => {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date(dateInput));
+
+  const values = Object.fromEntries(
+    parts
+      .filter(({ type }) => type !== "literal")
+      .map(({ type, value }) => [type, value])
+  );
+
+  return `${values.year}-${values.month}-${values.day}`;
+};
+
+const addCalendarDays = (dateString, days) => {
+  const [year, month, day] = dateString.split("-").map(Number);
+
+  // Use UTC only as a timezone-neutral calendar-date calculator.
+  const date = new Date(Date.UTC(year, month - 1, day));
+  date.setUTCDate(date.getUTCDate() + days);
+
+  return date.toISOString().slice(0, 10);
+};
+
 export default function RenewPTModal({
   userId,
   currentPT,
@@ -22,10 +52,11 @@ export default function RenewPTModal({
   const [couponLoading, setCouponLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState("cash");
-  const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
+  const [startDate, setStartDate] = useState(() => getISTDateString());
   const [isAdvance, setIsAdvance] = useState(false);
 
-  const latest = currentPT.subscription[currentPT.subscription.length - 1];
+  const latest =
+    currentPT?.subscription?.[currentPT.subscription.length - 1] || null;
 
   useEffect(() => {
     loadInitialData();
@@ -63,25 +94,31 @@ export default function RenewPTModal({
         setFinalPrice(plansRes.data.data[0].finalPrice);
       }
 
-      // Check if this is an advance renewal (active PT exists)
-      if (currentPT?.subscription?.length > 0) {
-        const subs = currentPT.subscription;
-        const now = new Date();
-        
-        // Find active PT subscription
-        const activePT = subs.find(sub => {
-          const startDate = new Date(sub.startDate);
-          const endDate = new Date(sub.endDate);
-          return startDate <= now && endDate >= now && sub.status === "active";
+      const activePT =
+        currentPT?.subscription?.[currentPT.subscription.length - 1] || null;
+
+      const canAdvanceBook =
+        activePT &&
+        ["active", "upcoming"].includes(activePT.status) &&
+        activePT.endDate;
+
+      if (canAdvanceBook) {
+        const endDateIST = getISTDateString(activePT.endDate);
+        const nextStartDateIST = addCalendarDays(endDateIST, 1);
+
+        console.log("PT date calculation:", {
+          status: activePT.status,
+          storedEndDate: activePT.endDate,
+          endDateIST,
+          nextStartDateIST,
         });
 
-        if (activePT) {
-          // Set start date to the day after active PT ends
-          const nextDay = new Date(activePT.endDate);
-          nextDay.setDate(nextDay.getDate() + 1);
-          setStartDate(nextDay.toISOString().split("T")[0]);
-          setIsAdvance(true);
-        }
+        setStartDate(nextStartDateIST);
+        setIsAdvance(true);
+      } else {
+        // Expired/no PT -> normal renewal starts today in IST.
+        setStartDate(getISTDateString());
+        setIsAdvance(false);
       }
     } catch (err) {
       toast.error("Failed to load data");
@@ -178,7 +215,9 @@ export default function RenewPTModal({
         price: finalPrice,
         coupon: appliedCoupon?.code || "",
         paymentMethod,
-        startDate, // yyyy-mm-dd; will be future date if advance booking
+        // Always send a date-only value.
+        // Backend parseDDMMYYYY() converts YYYY-MM-DD to local midnight.
+        startDate,
       };
 
       await api.post(

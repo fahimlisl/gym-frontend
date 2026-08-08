@@ -21,7 +21,7 @@ export default function MemberCard({
 }) {
   const [whatsappStatus, setWhatsappStatus] = useState("idle");
   const [alreadySentMsg, setAlreadySentMsg] = useState("");
-  console.log(user)
+  console.log("this is brooker: ",user)
   const ptSubs = user?.personalTraning?.subscription;
   const latestPT = ptSubs?.[ptSubs?.length - 1];
   const hasPT = latestPT?.status;
@@ -261,7 +261,7 @@ const handleWhatsAppSend = async () => {
               {hasPT === "active" ? (
                 <Badge text="PT ACTIVE" active />
               ) : hasPT === "expired" ? (
-                <Badge text="PT EXPIRED" ptExpired />
+                <Badge   text={`PT EXPIRED · ${ptDaysLeft != null ? Math.abs(ptDaysLeft) : 0}d ago`} ptExpired />
               ) : (
                 <Badge text="NO PT" />
               )}

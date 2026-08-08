@@ -55,14 +55,10 @@ export default function RenewMembershipModal({ userId, onClose, onSuccess, subsc
         const subs = subscription.subscription;
         const now = new Date();
         
-        // Find the active subscription
-        const activeSub = subs.find(sub => {
-          const startDate = new Date(sub.startDate);
-          const endDate = new Date(sub.endDate);
-          return startDate <= now && endDate >= now;
-        });
+        // here activeSub , meant the latest sub if its active or upcoming
+        const activeSub = subs[subs.length - 1]
 
-        if (activeSub) {
+        if (activeSub.status !== "expired") {
           // Set start date to the day after active subscription ends
           const nextDay = new Date(activeSub.endDate);
           nextDay.setDate(nextDay.getDate() + 1);

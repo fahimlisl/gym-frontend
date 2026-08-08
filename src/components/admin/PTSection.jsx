@@ -57,7 +57,7 @@ export default function PTSection({ pt, onAssign, onRenew, onChangeTrainer, onRe
   }, [subs]);
 
   const current = activeSubscription || upcomingSubscriptions[0] || pt.subscription[pt.subscription.length - 1];
-  const isPTActive = pt.subscription[pt.subscription.length - 1]?.status === "active"
+  const isPTActive = pt.subscription[pt.subscription.length - 1]?.status === "active" || pt.subscription[pt.subscription.length - 1]?.status === "upcoming"
   const isPTExpired = pt.subscription[pt.subscription.length - 1]?.status === "expired"
   const isSubActive = subscription?.subscription[subscription?.subscription.length - 1]?.status?.toLowerCase() === "active" || subscription?.subscription[subscription?.subscription.length - 1]?.status?.toLowerCase() === "upcoming";
   const canRenew = isPTExpired && isSubActive ;
