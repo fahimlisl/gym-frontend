@@ -219,8 +219,11 @@ export default function App() {
           } />
 
           <Route path="assets" element={
-            <SuperAdminRoute><AdminInventory /></SuperAdminRoute>
+            <AdminInventory />
           } />
+          {/* <Route path="assets" element={
+            <SuperAdminRoute><AdminInventory /></SuperAdminRoute>
+          } /> */}
 
           <Route path="payments/all" element={
             <Payments />

@@ -122,9 +122,11 @@ export default function Sidebar({ open, onClose }) {
     fetchAdmin();
   }, []);
 
+
+  // was assets earlier changed to empty cuz we don't need hide anything form visibleothermenu
   const visibleOtherMenu = isSuperAdmin
     ? otherMenu
-    : otherMenu.filter((item) => !["Assets"].includes(item.label));
+    : otherMenu.filter((item) => ![""].includes(item.label));
 
   const visibleSettings = isSuperAdmin
     ? settings
