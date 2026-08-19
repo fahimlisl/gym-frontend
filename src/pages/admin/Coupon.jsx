@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { Lock } from "lucide-react";
 import axios from "../../api/axios.api.js";
 
 export default function Coupon() {
@@ -18,22 +19,31 @@ export default function Coupon() {
     isActive: true,
     category: "CAFE",
     value: 0,
-    usageLimit: "", 
+    usageLimit: "",
   });
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
-useEffect(() => {
-  const fetchAdmin = async () => {
-    try {
-      const { data } = await axios.get("/admin/get/me");
-      // setIsSuperAdmin(data?.admin?.isSuperAdmin ?? false);
-      setIsSuperAdmin(true)
-    } catch {
-      setIsSuperAdmin(false);
-    }
-  };
-  fetchAdmin();
-}, []);
+  const [admin, setAdmin] = useState(null);
+  const [adminLoading, setAdminLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAdmin = async () => {
+      try {
+        const { data } = await axios.get("/admin/get/me");
+        setAdmin(data?.admin ?? null);
+      } catch {
+        setAdmin(null);
+      } finally {
+        setAdminLoading(false);
+      }
+    };
+    fetchAdmin();
+  }, []);
+
+  const isSuperAdmin = admin?.isSuperAdmin ?? false;
+  const isAllowed = isSuperAdmin || !!admin?.coupons?.allow;
+  const isReadOnly = !isSuperAdmin && !!admin?.coupons?.isReadOnly;
+  const canEdit = isAllowed && !isReadOnly;
+  const lockTitle = isReadOnly ? "Read-only access" : "";
 
   const fetchCoupons = async () => {
     try {
@@ -45,8 +55,8 @@ useEffect(() => {
   };
 
   useEffect(() => {
-    fetchCoupons();
-  }, []);
+    if (isAllowed) fetchCoupons();
+  }, [isAllowed]);
 
   const handleSubmit = async () => {
     if (!form.code || !form.expiryDate) {
@@ -85,7 +95,7 @@ useEffect(() => {
       isActive: true,
       category: "CAFE",
       value: "",
-      usageLimit: "", 
+      usageLimit: "",
     });
   };
 
@@ -107,16 +117,40 @@ useEffect(() => {
     setShowModal(true);
   };
 
+  if (adminLoading) {
+    return <div className="p-6 text-gray-500">Loading...</div>;
+  }
+
+  if (!isAllowed) {
+    return (
+      <div className="p-6 flex flex-col items-center justify-center h-[60vh] text-center">
+        <Lock size={40} className="text-gray-400 mb-4" />
+        <h2 className="text-lg font-bold mb-1">Access restricted</h2>
+        <p className="text-gray-500 text-sm">
+          You don't have permission to view coupon management.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="p-4 md:p-6 bg-white rounded-xl shadow text-black">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
-          <h2 className="text-xl md:text-2xl font-bold">Coupon Management</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-xl md:text-2xl font-bold">Coupon Management</h2>
+            {isReadOnly && (
+              <span className="flex items-center gap-1 text-xs font-bold tracking-wide text-yellow-700 bg-yellow-100 px-3 py-1 rounded-full">
+                <Lock size={12} />
+                READ ONLY
+              </span>
+            )}
+          </div>
 
           <button
             onClick={() => { resetForm(); setEditId(null); setShowModal(true); }}
-            disabled={!isSuperAdmin}
-            title={!isSuperAdmin ? "Super admin only" : ""}
+            disabled={!canEdit}
+            title={lockTitle}
             className="bg-black text-white px-5 py-2 rounded-lg w-full sm:w-auto disabled:opacity-40 disabled:cursor-not-allowed"
           >
             + Add Coupon
@@ -134,8 +168,8 @@ useEffect(() => {
                 <th className="p-3">Max Discount</th>
                 <th className="p-3">Expiry</th>
                 <th className="p-3">Category</th>
-                <th className="p-3">Usage Limit</th> 
-                <th className="p-3">Used</th> 
+                <th className="p-3">Usage Limit</th>
+                <th className="p-3">Used</th>
                 <th className="p-3">Status</th>
                 <th className="p-3">Action</th>
               </tr>
@@ -168,11 +202,11 @@ useEffect(() => {
 
                   <td className="p-3">{c.category || "-"}</td>
 
-                  <td className="p-3"> 
+                  <td className="p-3">
                     {c.usageLimit || "∞"}
                   </td>
 
-                  <td className="p-3"> 
+                  <td className="p-3">
                     <span className={`px-2 py-1 rounded-full text-xs ${
                       c.usageLimit && c.usedCount >= c.usageLimit
                         ? "bg-red-100 text-red-700"
@@ -198,8 +232,8 @@ useEffect(() => {
                   <td className="p-3">
                     <button
                       onClick={() => handleEdit(c)}
-                      disabled={!isSuperAdmin}
-                      title={!isSuperAdmin ? "Super admin only" : ""}
+                      disabled={!canEdit}
+                      title={lockTitle}
                       className="text-blue-600 font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       Edit
@@ -254,14 +288,14 @@ useEffect(() => {
 
               <div className="text-sm">Category: {c.category || "-"}</div>
 
-              <div className="text-sm"> 
+              <div className="text-sm">
                 Usage: {c.usedCount || 0}{c.usageLimit ? `/${c.usageLimit}` : ""}
               </div>
 
               <button
                 onClick={() => handleEdit(c)}
-                disabled={!isSuperAdmin}
-                title={!isSuperAdmin ? "Super admin only" : ""}
+                disabled={!canEdit}
+                title={lockTitle}
                 className="text-blue-600 font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Edit
@@ -411,7 +445,7 @@ useEffect(() => {
 
               <button
                 onClick={handleSubmit}
-                disabled={loading || !isSuperAdmin}
+                disabled={loading || !canEdit}
                 className="px-6 py-2 bg-black text-white rounded w-full sm:w-auto disabled:opacity-50"
               >
                 {editId ? "Update" : "Create"}

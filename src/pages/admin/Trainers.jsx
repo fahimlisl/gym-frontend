@@ -1,15 +1,40 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { Lock } from "lucide-react";
 
 import TrainerCard from "../../components/admin/TrainerCard";
 import AddTrainerModal from "../../components/admin/AddTrainerModal";
 
 import { fetchAllTrainers } from "../../api/admin.api";
+import api from "../../api/axios.api";
 
 export default function Trainers() {
   const [trainers, setTrainers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
+
+  const [admin, setAdmin] = useState(null);
+  const [adminLoading, setAdminLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAdmin = async () => {
+      try {
+        const { data } = await api.get("/admin/get/me");
+        setAdmin(data?.admin ?? null);
+      } catch {
+        setAdmin(null);
+      } finally {
+        setAdminLoading(false);
+      }
+    };
+    fetchAdmin();
+  }, []);
+
+  const isSuperAdmin = admin?.isSuperAdmin ?? false;
+  const isAllowed = isSuperAdmin || !!admin?.trainer?.allow;
+  const isReadOnly = !isSuperAdmin && !!admin?.trainer?.isReadOnly;
+  const canEdit = isAllowed && !isReadOnly;
+  const lockTitle = isReadOnly ? "Read-only access" : "";
 
   const loadTrainers = async () => {
     try {
@@ -24,8 +49,24 @@ export default function Trainers() {
   };
 
   useEffect(() => {
-    loadTrainers();
-  }, []);
+    if (isAllowed) loadTrainers();
+  }, [isAllowed]);
+
+  if (adminLoading) {
+    return <p className="text-gray-500 tracking-widest p-6">LOADING...</p>;
+  }
+
+  if (!isAllowed) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[60vh] text-center">
+        <Lock size={40} className="text-red-600 mb-4" />
+        <h2 className="text-lg font-bold mb-1">Access restricted</h2>
+        <p className="text-gray-500 text-sm">
+          You don't have permission to view trainers.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -35,9 +76,17 @@ export default function Trainers() {
                         bg-gradient-to-br from-black via-neutral-900 to-black
                         p-6 md:p-8 rounded-xl flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-black tracking-widest">
-              TRAINERS
-            </h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-black tracking-widest">
+                TRAINERS
+              </h1>
+              {isReadOnly && (
+                <span className="flex items-center gap-1 text-xs font-bold tracking-wide text-yellow-500 bg-yellow-500/10 px-3 py-1.5 rounded-full">
+                  <Lock size={12} />
+                  READ ONLY
+                </span>
+              )}
+            </div>
             <p className="text-sm text-gray-400 mt-2">
               Manage gym trainers & assignments
             </p>
@@ -45,8 +94,11 @@ export default function Trainers() {
 
           <button
             onClick={() => setAddOpen(true)}
+            disabled={!canEdit}
+            title={lockTitle}
             className="bg-red-600 hover:bg-red-700
-                       px-8 py-4 text-xs font-extrabold tracking-widest"
+                       px-8 py-4 text-xs font-extrabold tracking-widest
+                       disabled:opacity-40 disabled:cursor-not-allowed"
           >
             ADD TRAINER
           </button>
@@ -84,13 +136,14 @@ export default function Trainers() {
                 key={t._id}
                 trainer={t}
                 onUpdate={loadTrainers}
+                canEdit={canEdit}
               />
             ))}
           </div>
         )}
       </div>
 
-      {addOpen && (
+      {addOpen && canEdit && (
         <AddTrainerModal
           onClose={() => setAddOpen(false)}
           onSuccess={loadTrainers}

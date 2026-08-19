@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import axios from "../../api/axios.api.js";
 import * as XLSX from "xlsx";
+import { Lock } from "lucide-react";
 
 const categories = [
   "RENT", "SALARY", "ELECTRICITY", "WATER", "EQUIPMENT",
@@ -82,7 +83,9 @@ const SectionLabel = ({ children }) => (
 export default function Expenses() {
   const [expenses, setExpenses]     = useState([]);
   const [loading, setLoading]       = useState(true);
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+
+  const [admin, setAdmin] = useState(null);
+  const [adminLoading, setAdminLoading] = useState(true);
 
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
   const [fromDate, setFromDate]           = useState(today);
@@ -96,7 +99,7 @@ export default function Expenses() {
   const [editForm, setEditForm]             = useState(emptyForm);
   const [editingId, setEditingId]           = useState(null);
 
-  const [deleteTarget, setDeleteTarget] = useState(null); 
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   const [submitting, setSubmitting] = useState(false);
 
@@ -104,14 +107,21 @@ export default function Expenses() {
     const fetchAdmin = async () => {
       try {
         const { data } = await axios.get("/admin/get/me");
-        // setIsSuperAdmin(data?.admin?.isSuperAdmin ?? false);
-        setIsSuperAdmin(true)
+        setAdmin(data?.admin ?? null);
       } catch {
-        setIsSuperAdmin(false);
+        setAdmin(null);
+      } finally {
+        setAdminLoading(false);
       }
     };
     fetchAdmin();
   }, []);
+
+  const isSuperAdmin = admin?.isSuperAdmin ?? false;
+  const isAllowed = isSuperAdmin || !!admin?.expense?.allow;
+  const isReadOnly = !isSuperAdmin && !!admin?.expense?.isReadOnly;
+  const canEdit = isAllowed && !isReadOnly;
+  const lockTitle = isReadOnly ? "Read-only access" : "";
 
   const fetchExpenses = async () => {
     try {
@@ -124,7 +134,7 @@ export default function Expenses() {
     }
   };
 
-  useEffect(() => { fetchExpenses(); }, []);
+  useEffect(() => { if (isAllowed) fetchExpenses(); }, [isAllowed]);
 
   const calculateStats = (expenseList) => {
     const total = expenseList.reduce((sum, e) => sum + e.amount, 0);
@@ -132,7 +142,7 @@ export default function Expenses() {
     const upi = expenseList.filter(e => e.paymentMethod === "upi").reduce((sum, e) => sum + e.amount, 0);
     const online = expenseList.filter(e => e.paymentMethod === "card" || e.paymentMethod === "netbanking").reduce((sum, e) => sum + e.amount, 0);
     const count = expenseList.length;
-    
+
     const categoryBreakdown = {};
     expenseList.forEach(e => {
       if (!categoryBreakdown[e.category]) {
@@ -147,9 +157,9 @@ export default function Expenses() {
   const filteredExpenses = useMemo(() => {
     return expenses.filter((e) => {
       const expenseDate = new Date(e.createdAt).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
-      
+
       return (
-        expenseDate >= fromDate && 
+        expenseDate >= fromDate &&
         expenseDate <= toDate &&
         (categoryFilter === "all" || e.category === categoryFilter)
       );
@@ -235,7 +245,6 @@ export default function Expenses() {
 
   const fmt = (n) => Math.round(n).toLocaleString("en-IN");
 
-  // Get top category
   const getTopCategory = (breakdown) => {
     if (!breakdown || Object.keys(breakdown).length === 0) return null;
     const entries = Object.entries(breakdown);
@@ -245,16 +254,40 @@ export default function Expenses() {
 
   const topCategory = getTopCategory(filteredStats.categoryBreakdown);
 
+  if (adminLoading) {
+    return <div className="text-gray-500 tracking-widest p-6">LOADING...</div>;
+  }
+
+  if (!isAllowed) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[60vh] text-center">
+        <Lock size={40} className="text-red-600 mb-4" />
+        <h2 className="text-lg font-bold mb-1">Access restricted</h2>
+        <p className="text-gray-500 text-sm">
+          You don't have permission to view expenses.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="space-y-8">
 
         <div className="border border-red-600/30 bg-black p-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-widest">EXPENSES</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl sm:text-3xl font-black tracking-widest">EXPENSES</h1>
+              {isReadOnly && (
+                <span className="flex items-center gap-1 text-xs font-bold tracking-wide text-yellow-500 bg-yellow-500/10 px-3 py-1.5 rounded-full">
+                  <Lock size={12} />
+                  READ ONLY
+                </span>
+              )}
+            </div>
             <p className="text-sm text-gray-400 mt-2">Track & manage outgoing payments</p>
-            {!isSuperAdmin && (
-              <p className="text-xs text-yellow-500 mt-1">🔒 View-only mode - You can view & export but cannot modify</p>
+            {isReadOnly && (
+              <p className="text-xs text-yellow-500 mt-1">🔒 View-only mode - you can view & export but cannot modify</p>
             )}
           </div>
           <div className="flex gap-3 w-full sm:w-auto">
@@ -262,36 +295,36 @@ export default function Expenses() {
               className="bg-green-600 hover:bg-green-700 px-6 py-3 font-bold tracking-widest flex-1 sm:flex-none">
               EXPORT
             </button>
-            {isSuperAdmin && (
-              <button
-                onClick={() => setShowModal(true)}
-                className="bg-red-600 hover:bg-red-700 px-6 py-3 font-bold tracking-widest flex-1 sm:flex-none"
-              >
-                + ADD
-              </button>
-            )}
+            <button
+              onClick={() => setShowModal(true)}
+              disabled={!canEdit}
+              title={lockTitle}
+              className="bg-red-600 hover:bg-red-700 px-6 py-3 font-bold tracking-widest flex-1 sm:flex-none disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              + ADD
+            </button>
           </div>
         </div>
         <div className="space-y-2">
           <SectionLabel>Lifetime Statistics (All Time)</SectionLabel>
           <div className="grid grid-cols-3 gap-1.5 md:gap-3">
-            <StatCard 
-              label="Total" 
-              value={fmt(allTimeStats.total)} 
-              color="text-red-500" 
+            <StatCard
+              label="Total"
+              value={fmt(allTimeStats.total)}
+              color="text-red-500"
               icon="💰"
               sub={`${allTimeStats.count} txns`}
             />
-            <StatCard 
-              label="Cash" 
-              value={fmt(allTimeStats.cash)} 
-              color="text-green-400" 
+            <StatCard
+              label="Cash"
+              value={fmt(allTimeStats.cash)}
+              color="text-green-400"
               icon="💵"
             />
-            <StatCard 
-              label="UPI" 
-              value={fmt(allTimeStats.upi)} 
-              color="text-blue-400" 
+            <StatCard
+              label="UPI"
+              value={fmt(allTimeStats.upi)}
+              color="text-blue-400"
               icon="📱"
             />
           </div>
@@ -308,23 +341,23 @@ export default function Expenses() {
               : `Stats: ${new Date(fromDate).toLocaleDateString("en-IN")} – ${new Date(toDate).toLocaleDateString("en-IN")}`}
           </SectionLabel>
           <div className="grid grid-cols-3 gap-1.5 md:gap-3">
-            <StatCard 
-              label="Total" 
-              value={fmt(filteredStats.total)} 
-              color="text-red-500" 
+            <StatCard
+              label="Total"
+              value={fmt(filteredStats.total)}
+              color="text-red-500"
               icon="💰"
               sub={`${filteredStats.count} txns`}
             />
-            <StatCard 
-              label="Cash" 
-              value={fmt(filteredStats.cash)} 
-              color="text-green-400" 
+            <StatCard
+              label="Cash"
+              value={fmt(filteredStats.cash)}
+              color="text-green-400"
               icon="💵"
             />
-            <StatCard 
-              label="UPI" 
-              value={fmt(filteredStats.upi)} 
-              color="text-blue-400" 
+            <StatCard
+              label="UPI"
+              value={fmt(filteredStats.upi)}
+              color="text-blue-400"
               icon="📱"
             />
           </div>
@@ -387,7 +420,7 @@ export default function Expenses() {
                       <td className="p-3 uppercase text-sm">{e.paymentMethod}</td>
                       <td className="p-3 text-gray-400 text-sm">{e.remarks || "—"}</td>
                       <td className="p-3">
-                        {isSuperAdmin ? (
+                        {canEdit ? (
                           <div className="flex items-center justify-center gap-2">
                             <button
                               onClick={() => openEdit(e)}
@@ -451,7 +484,7 @@ export default function Expenses() {
                   {e.remarks && (
                     <div className="text-sm text-gray-400 pt-1">{e.remarks}</div>
                   )}
-                  {isSuperAdmin ? (
+                  {canEdit ? (
                     <div className="flex gap-2 pt-2 border-t border-white/10">
                       <button
                         onClick={() => openEdit(e)}
@@ -478,7 +511,7 @@ export default function Expenses() {
             {!filteredExpenses.length && (
               <div className="border border-white/10 bg-gradient-to-br from-black via-neutral-900 to-black rounded-xl p-12 text-center">
                 <p className="text-gray-500 font-semibold text-sm">NO EXPENSES FOUND</p>
-                {isSuperAdmin && (
+                {canEdit && (
                   <button onClick={() => setShowModal(true)}
                     className="mt-4 flex items-center gap-2 mx-auto bg-red-600 hover:bg-red-700 transition px-4 py-2 text-[11px] font-extrabold rounded-lg text-white">
                     + ADD YOUR FIRST EXPENSE
@@ -490,7 +523,7 @@ export default function Expenses() {
         )}
       </div>
 
-      {showModal && isSuperAdmin && (
+      {showModal && canEdit && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <div className="bg-black border border-white/10 w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-black tracking-widest mb-6">ADD EXPENSE</h2>
@@ -511,7 +544,7 @@ export default function Expenses() {
         </div>
       )}
 
-      {showEditModal && isSuperAdmin && (
+      {showEditModal && canEdit && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <div className="bg-black border border-white/10 w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-black tracking-widest mb-6">EDIT EXPENSE</h2>
@@ -533,7 +566,7 @@ export default function Expenses() {
         </div>
       )}
 
-      {deleteTarget && isSuperAdmin && (
+      {deleteTarget && canEdit && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <div className="bg-black border border-red-600/40 w-full max-w-sm p-6 space-y-6">
 

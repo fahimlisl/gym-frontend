@@ -1,6 +1,7 @@
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { Lock } from "lucide-react"; 
 import api from "../../api/axios.api";
 
 import UserHeader from "../../components/admin/UserHeader";
@@ -13,7 +14,7 @@ import RenewMembershipModal from "../../components/admin/RenewMembershipModal";
 import AssignWorkoutModal from "./AssignWorkoutModal";
 import DietManagementModal from "../../components/admin/DietManagementModal";
 import EditMemberModal from "../../components/admin/EditMemberModal";
-import ChangeTrainerModal from "../../components/admin/ChangeTrainerModal"
+import ChangeTrainerModal from "../../components/admin/ChangeTrainerModal";
 
 import { fetchParticularUser } from "../../api/admin.api";
 
@@ -22,7 +23,7 @@ export default function UserDetail() {
   const navigate = useNavigate();
 
   const [user, setUser] = useState(null);
-  const [checkTempBill,setCheckTempBill] = useState(null);
+  const [checkTempBill, setCheckTempBill] = useState(null);
   const [loading, setLoading] = useState(true);
   const [userWorkout, setUserWorkout] = useState(null);
   const [userDiet, setUserDiet] = useState(null);
@@ -34,15 +35,39 @@ export default function UserDetail() {
   const [dietModalOpen, setDietModalOpen] = useState(false);
   const [editMemberOpen, setEditMemberOpen] = useState(false);
   const [showChangeTrainer, setShowChangeTrainer] = useState(false);
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
+  // ---- admin permission state ----
+  const [admin, setAdmin] = useState(null);
+  const [adminLoading, setAdminLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAdmin = async () => {
+      try {
+        const { data } = await api.get("/admin/get/me");
+        setAdmin(data?.admin ?? null);
+      } catch {
+        setAdmin(null);
+      } finally {
+        setAdminLoading(false);
+      }
+    };
+    fetchAdmin();
+  }, []);
+
+  const isSuperAdmin = admin?.isSuperAdmin ?? false;
+  const isAllowed = isSuperAdmin || !!admin?.members?.allow;
+  const isReadOnly = !isSuperAdmin && !!admin?.members?.isReadOnly;
+  const canEdit = isAllowed && !isReadOnly;
+  const lockTitle = isReadOnly ? "Read-only access" : "";
+
+  // ---- load user data ----
   const loadUser = async () => {
     try {
       setLoading(true);
       const res = await fetchParticularUser(id);
       setUser(res.data.data);
       const checkptbill = await api.get(`/admin/personal-training/check/self/pt/${id}`);
-      setCheckTempBill(checkptbill.data.data)
+      setCheckTempBill(checkptbill.data.data);
       await Promise.all([fetchUserWorkout(), fetchUserDiet()]);
     } catch {
       toast.error("Failed to load member");
@@ -50,17 +75,6 @@ export default function UserDetail() {
       setLoading(false);
     }
   };
-  useEffect(() => {
-  const fetchAdmin = async () => {
-    try {
-      const { data } = await api.get("/admin/get/me");
-      setIsSuperAdmin(data?.admin?.isSuperAdmin ?? false);
-    } catch {
-      setIsSuperAdmin(false);
-    }
-  };
-  fetchAdmin();
-}, []);
 
   const fetchUserWorkout = async () => {
     try {
@@ -85,23 +99,36 @@ export default function UserDetail() {
     }
   };
 
-const handleRemovePT = async () => {
-  try {
-    await api.patch(`/admin/personal-training/remove/${id}`);
-    toast.success("Personal training removed successfully");
-    // refresh the member/pt data here, e.g. refetch or mutate via SWR
-  } catch (err) {
-    toast.error(err?.response?.data?.message || "Failed to remove PT");
-  }
-};
+  const handleRemovePT = async () => {
+    try {
+      await api.patch(`/admin/personal-training/remove/${id}`);
+      toast.success("Personal training removed successfully");
+      loadUser(); // refresh
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to remove PT");
+    }
+  };
 
   useEffect(() => {
-    loadUser();
-  }, [id]);
+    if (isAllowed) loadUser();
+  }, [id, isAllowed]);
 
-  if (loading) {
+  // ---- loading / blocked states ----
+  if (adminLoading || loading) {
     return (
       <div className="p-8 text-gray-400 tracking-widest">LOADING MEMBER...</div>
+    );
+  }
+
+  if (!isAllowed) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[60vh] text-center">
+        <Lock size={40} className="text-red-600 mb-4" />
+        <h2 className="text-lg font-bold mb-1">Access restricted</h2>
+        <p className="text-gray-500 text-sm">
+          You don't have permission to view member details.
+        </p>
+      </div>
     );
   }
 
@@ -111,9 +138,11 @@ const handleRemovePT = async () => {
     );
   }
 
+  // ---- main render ----
   return (
     <>
       <div className="space-y-10">
+        {/* Back button – always active */}
         <button
           onClick={() => navigate("/admin/members")}
           className="
@@ -137,13 +166,22 @@ const handleRemovePT = async () => {
 
         <div className="border border-red-600/30 bg-gradient-to-br from-black via-neutral-900 to-black p-6 md:p-8 rounded-xl flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-black tracking-widest">MEMBER DETAILS</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-black tracking-widest">MEMBER DETAILS</h1>
+              {isReadOnly && (
+                <span className="flex items-center gap-1 text-xs font-bold tracking-wide text-yellow-500">
+                  <Lock size={12} /> READ ONLY
+                </span>
+              )}
+            </div>
             <p className="text-sm text-gray-400 mt-2">
               Manage subscription, personal training & workout plans
             </p>
           </div>
           <button
             onClick={() => setEditMemberOpen(true)}
+            disabled={!canEdit}
+            title={lockTitle}
             className="
               group relative overflow-hidden
               flex items-center gap-2
@@ -152,6 +190,7 @@ const handleRemovePT = async () => {
               rounded-lg
               transition-all duration-300
               hover:shadow-[0_0_25px_rgba(239,68,68,0.4)]
+              disabled:opacity-40 disabled:cursor-not-allowed
             "
             style={{
               background: "linear-gradient(135deg, #dc2626, #b91c1c)",
@@ -169,25 +208,25 @@ const handleRemovePT = async () => {
           <div className="space-y-6">
             <UserHeader user={user} />
             <SubscriptionCard
-            userId={user._id}  
+              userId={user._id}
               subscription={user.subscription}
               onRenew={() => setRenewMembershipOpen(true)}
-              onRefresh={loadUser} 
-               isSuperAdmin={isSuperAdmin}
+              onRefresh={loadUser}
+              canEdit={canEdit} // pass down
             />
           </div>
 
           <div className="space-y-6">
             <PTSection
-            pt={user.personalTraning}
-            onAssign={() => setAssignPTOpen(true)}
-            onRenew={() => setRenewPTOpen(true)}
-            onChangeTrainer={() => setShowChangeTrainer(true)}
-            subscription={user.subscription}
-            onRemove={handleRemovePT}
-            userId={user._id} 
-          />
-
+              pt={user.personalTraning}
+              onAssign={() => setAssignPTOpen(true)}
+              onRenew={() => setRenewPTOpen(true)}
+              onChangeTrainer={() => setShowChangeTrainer(true)}
+              subscription={user.subscription}
+              onRemove={handleRemovePT}
+              userId={user._id}
+              canEdit={canEdit} // pass down
+            />
 
             <div className="border border-red-600/30 bg-gradient-to-br from-black via-neutral-900 to-black p-6 rounded-xl">
               <h2 className="text-2xl font-black tracking-widest mb-4">WORKOUT PLAN</h2>
@@ -207,13 +246,17 @@ const handleRemovePT = async () => {
                   <div className="flex gap-3">
                     <button
                       onClick={() => navigate(`/admin/workout/${userWorkout._id}`)}
-                      className="flex-1 py-2 px-4 border border-white/10 text-white text-xs font-light hover:border-red-500 hover:text-red-500 transition-all"
+                      disabled={!canEdit}
+                      title={lockTitle}
+                      className="flex-1 py-2 px-4 border border-white/10 text-white text-xs font-light hover:border-red-500 hover:text-red-500 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-white/10 disabled:hover:text-white"
                     >
                       EDIT PLAN
                     </button>
                     <button
                       onClick={() => { if (window.confirm("Replace current workout plan?")) setAssignWorkoutOpen(true); }}
-                      className="flex-1 py-2 px-4 border border-white/10 text-white text-xs font-light hover:border-red-500 hover:text-red-500 transition-all"
+                      disabled={!canEdit}
+                      title={lockTitle}
+                      className="flex-1 py-2 px-4 border border-white/10 text-white text-xs font-light hover:border-red-500 hover:text-red-500 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-white/10 disabled:hover:text-white"
                     >
                       CHANGE PLAN
                     </button>
@@ -224,7 +267,9 @@ const handleRemovePT = async () => {
                   <p className="text-neutral-400 text-sm">No workout plan assigned</p>
                   <button
                     onClick={() => setAssignWorkoutOpen(true)}
-                    className="w-full py-3 px-4 bg-red-500 text-white text-xs font-light tracking-wider hover:bg-red-600 transition-all"
+                    disabled={!canEdit}
+                    title={lockTitle}
+                    className="w-full py-3 px-4 bg-red-500 text-white text-xs font-light tracking-wider hover:bg-red-600 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     PROVIDE WORKOUT PLAN
                   </button>
@@ -273,7 +318,9 @@ const handleRemovePT = async () => {
 
                   <button
                     onClick={() => setDietModalOpen(true)}
-                    className="w-full py-2.5 px-4 border border-white/10 text-white text-xs font-light tracking-wider hover:border-red-500 hover:text-red-500 hover:bg-red-500/5 transition-all duration-300 flex items-center justify-center gap-2"
+                    disabled={!canEdit}
+                    title={lockTitle}
+                    className="w-full py-2.5 px-4 border border-white/10 text-white text-xs font-light tracking-wider hover:border-red-500 hover:text-red-500 hover:bg-red-500/5 transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-white/10 disabled:hover:text-white"
                   >
                     <span>📋</span>
                     MANAGE DIET CHART
@@ -287,7 +334,9 @@ const handleRemovePT = async () => {
                   </div>
                   <button
                     onClick={() => setDietModalOpen(true)}
-                    className="w-full py-3 px-4 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white text-xs font-light tracking-wider transition-all flex items-center justify-center gap-2"
+                    disabled={!canEdit}
+                    title={lockTitle}
+                    className="w-full py-3 px-4 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white text-xs font-light tracking-wider transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     <span>+</span>
                     CREATE DIET CHART
@@ -299,7 +348,7 @@ const handleRemovePT = async () => {
         </div>
       </div>
 
-      {/* MODALS */}
+      {/* MODALS – only open if canEdit, but the button already disabled, so safe */}
       {assignPTOpen && (
         <AssignPTModal
           userId={user._id}

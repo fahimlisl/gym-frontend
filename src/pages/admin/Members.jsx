@@ -1,10 +1,12 @@
 import { useEffect, useState, useMemo } from "react";
 import toast from "react-hot-toast";
 import { Link, useSearchParams } from "react-router-dom";
+import { Lock } from "lucide-react";
 
 import MemberCard from "../../components/admin/MemberCard";
 import AddMemberModal from "../../components/admin/AddMemberModal";
 import { fetchAllMembers } from "../../api/admin.api.js";
+import api from "../../api/axios.api.js";
 
 const STORAGE_KEY = "members_filters";
 
@@ -15,6 +17,29 @@ export default function Members() {
   const [activeTab, setActiveTab] = useState("members");
 
   const [searchParams, setSearchParams] = useSearchParams();
+
+  const [admin, setAdmin] = useState(null);
+  const [adminLoading, setAdminLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAdmin = async () => {
+      try {
+        const { data } = await api.get("/admin/get/me");
+        setAdmin(data?.admin ?? null);
+      } catch {
+        setAdmin(null);
+      } finally {
+        setAdminLoading(false);
+      }
+    };
+    fetchAdmin();
+  }, []);
+
+  const isSuperAdmin = admin?.isSuperAdmin ?? false;
+  const isAllowed = isSuperAdmin || !!admin?.members?.allow;
+  const isReadOnly = !isSuperAdmin && !!admin?.members?.isReadOnly;
+  const canEdit = isAllowed && !isReadOnly;
+  const lockTitle = isReadOnly ? "Read-only access" : "";
 
   useEffect(() => {
     const hasParams = searchParams.get("search") || searchParams.get("filter");
@@ -68,7 +93,6 @@ export default function Members() {
     return getLatestPTSubscription(user)?.status || "none";
   };
 
-  // Days remaining until endDate (negative if already passed). Returns null if no endDate.
   const getDaysUntil = (endDate) => {
     if (!endDate) return null;
     const diff = new Date(endDate).getTime() - Date.now();
@@ -127,8 +151,8 @@ export default function Members() {
   }, [users]);
 
   useEffect(() => {
-    loadMembers();
-  }, []);
+    if (isAllowed) loadMembers();
+  }, [isAllowed]);
 
   const sortMembers = (members) => {
     return [...members].sort((a, b) => {
@@ -142,12 +166,6 @@ export default function Members() {
       const ptA = getLatestPTStatus(a);
       const ptB = getLatestPTStatus(b);
 
-      // 1 = membership expired
-      // 2 = pt expired (active membership)
-      // 3 = membership expiring in <= 3 days
-      // 4 = pt expiring in <= 3 days
-      // 5 = active
-      // 6 = none
       const getPriority = (user, memberStatus, ptStatus) => {
         if (memberStatus === "expired") return 1;
         if (ptStatus === "expired") return 2;
@@ -321,20 +339,46 @@ export default function Members() {
     URL.revokeObjectURL(url);
   };
 
+  if (adminLoading) {
+    return <div className="text-gray-500 tracking-widest p-6">LOADING...</div>;
+  }
+
+  if (!isAllowed) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[60vh] text-center">
+        <Lock size={40} className="text-red-600 mb-4" />
+        <h2 className="text-lg font-bold mb-1">Access restricted</h2>
+        <p className="text-gray-500 text-sm">
+          You don't have permission to view member management.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="space-y-10">
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-black via-neutral-900 to-black border border-red-600/25 p-6 sm:p-8">
           <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div>
-              <h1 className="text-2xl sm:text-4xl font-black tracking-widest">MEMBERS</h1>
+              <div className="flex items-center gap-3">
+                <h1 className="text-2xl sm:text-4xl font-black tracking-widest">MEMBERS</h1>
+                {isReadOnly && (
+                  <span className="flex items-center gap-1 text-xs font-bold tracking-wide text-yellow-500 bg-yellow-500/10 px-3 py-1.5 rounded-full">
+                    <Lock size={12} />
+                    READ ONLY
+                  </span>
+                )}
+              </div>
               <p className="text-xs sm:text-sm text-gray-400 mt-3 max-w-xl">
                 Manage gym members, memberships and personal training from a single control panel.
               </p>
             </div>
             <button
               onClick={() => setOpenAdd(true)}
-              className="bg-red-600 hover:bg-red-700 px-6 sm:px-10 py-3 sm:py-4 text-[10px] sm:text-xs font-extrabold tracking-widest shadow-[0_0_40px_rgba(239,68,68,0.35)]"
+              disabled={!canEdit}
+              title={lockTitle}
+              className="bg-red-600 hover:bg-red-700 px-6 sm:px-10 py-3 sm:py-4 text-[10px] sm:text-xs font-extrabold tracking-widest shadow-[0_0_40px_rgba(239,68,68,0.35)] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
             >
               ADD MEMBER
             </button>
@@ -482,13 +526,16 @@ export default function Members() {
                 daysExpired={getDaysExpired(u)}
                 membershipExpiringSoon={isMembershipExpiringSoon(u)}
                 ptExpiringSoon={isPTExpiringSoon(u)}
+                canEdit={canEdit}
               />
             ))}
           </div>
         )}
       </div>
 
-      {openAdd && <AddMemberModal onClose={() => setOpenAdd(false)} onSuccess={loadMembers} />}
+      {openAdd && (
+        <AddMemberModal onClose={() => setOpenAdd(false)} onSuccess={loadMembers} />
+      )}
     </>
   );
 }

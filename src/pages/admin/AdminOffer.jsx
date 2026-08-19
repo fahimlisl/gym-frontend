@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import api from "../../api/axios.api";
 import toast from "react-hot-toast";
-import { Trash2, Edit, Power } from "lucide-react";
+import { Trash2, Edit, Power, Lock } from "lucide-react";
 
 export default function AdminOffer() {
   const [offers, setOffers] = useState([]);
   const [coupons, setCoupons] = useState([]);
+
+  const [admin, setAdmin] = useState(null);
+  const [adminLoading, setAdminLoading] = useState(true);
 
   const [form, setForm] = useState({
     title: "",
@@ -23,6 +26,26 @@ export default function AdminOffer() {
   });
 
   const [editingId, setEditingId] = useState(null);
+
+  useEffect(() => {
+    const fetchAdmin = async () => {
+      try {
+        const { data } = await api.get("/admin/get/me");
+        setAdmin(data?.admin ?? null);
+      } catch {
+        setAdmin(null);
+      } finally {
+        setAdminLoading(false);
+      }
+    };
+    fetchAdmin();
+  }, []);
+
+  const isSuperAdmin = admin?.isSuperAdmin ?? false;
+  const isAllowed = isSuperAdmin || !!admin?.offers?.allow;
+  const isReadOnly = !isSuperAdmin && !!admin?.offers?.isReadOnly;
+  const canEdit = isAllowed && !isReadOnly;
+  const lockTitle = isReadOnly ? "Read-only access" : "";
 
   const fetchOffers = async () => {
     try {
@@ -45,9 +68,11 @@ export default function AdminOffer() {
   };
 
   useEffect(() => {
-    fetchOffers();
-    fetchCoupons();
-  }, []);
+    if (isAllowed) {
+      fetchOffers();
+      fetchCoupons();
+    }
+  }, [isAllowed]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -97,7 +122,7 @@ export default function AdminOffer() {
 
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this offer?")) return;
-    
+
     try {
       await api.delete(`/admin/offer/delete/${id}`);
       toast.success("Deleted");
@@ -136,27 +161,55 @@ export default function AdminOffer() {
     });
   };
 
+  if (adminLoading) {
+    return <div className="p-6 text-gray-400">Loading...</div>;
+  }
+
+  if (!isAllowed) {
+    return (
+      <div className="p-6 flex flex-col items-center justify-center h-[60vh] text-center text-white">
+        <Lock size={40} className="text-red-600 mb-4" />
+        <h2 className="text-lg font-bold mb-1">Access restricted</h2>
+        <p className="text-gray-400 text-sm">
+          You don't have permission to view offer management.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 text-white">
-      <h1 className="text-2xl font-black mb-6">🔥 Offer Management</h1>
+      <div className="flex items-center gap-3 mb-6">
+        <h1 className="text-2xl font-black">🔥 Offer Management</h1>
+        {isReadOnly && (
+          <span className="flex items-center gap-1 text-xs font-bold tracking-wide text-yellow-400 bg-yellow-500/10 px-3 py-1 rounded-full">
+            <Lock size={12} />
+            READ ONLY
+          </span>
+        )}
+      </div>
 
+      <fieldset
+        disabled={!canEdit}
+        className={!canEdit ? "opacity-50 pointer-events-none" : ""}
+      >
       <form
         onSubmit={handleSubmit}
         className="grid grid-cols-2 gap-4 mb-10 bg-white/5 p-6 rounded-2xl border border-white/10"
       >
-        <input 
-          name="title" 
-          placeholder="Title *" 
-          value={form.title} 
-          onChange={handleChange} 
-          className="input col-span-2 md:col-span-1" 
+        <input
+          name="title"
+          placeholder="Title *"
+          value={form.title}
+          onChange={handleChange}
+          className="input col-span-2 md:col-span-1"
           required
         />
 
-        <select 
-          name="coupon" 
-          value={form.coupon} 
-          onChange={handleChange} 
+        <select
+          name="coupon"
+          value={form.coupon}
+          onChange={handleChange}
           className="input col-span-2 md:col-span-1"
           required
         >
@@ -168,30 +221,30 @@ export default function AdminOffer() {
           ))}
         </select>
 
-        <input 
-          name="discountValue" 
-          placeholder="Discount Value *" 
+        <input
+          name="discountValue"
+          placeholder="Discount Value *"
           type="number"
-          value={form.discountValue} 
-          onChange={handleChange} 
-          className="input" 
-          required
-        />
-        
-        <input 
-          name="totalSlots" 
-          placeholder="Total Slots *" 
-          type="number"
-          value={form.totalSlots} 
-          onChange={handleChange} 
-          className="input" 
+          value={form.discountValue}
+          onChange={handleChange}
+          className="input"
           required
         />
 
-        <select 
-          name="discountType" 
-          value={form.discountType} 
-          onChange={handleChange} 
+        <input
+          name="totalSlots"
+          placeholder="Total Slots *"
+          type="number"
+          value={form.totalSlots}
+          onChange={handleChange}
+          className="input"
+          required
+        />
+
+        <select
+          name="discountType"
+          value={form.discountType}
+          onChange={handleChange}
           className="input"
           required
         >
@@ -199,10 +252,10 @@ export default function AdminOffer() {
           <option value="flat">Flat</option>
         </select>
 
-        <select 
-          name="category" 
-          value={form.category} 
-          onChange={handleChange} 
+        <select
+          name="category"
+          value={form.category}
+          onChange={handleChange}
           className="input"
           required
         >
@@ -212,63 +265,65 @@ export default function AdminOffer() {
           <option value="CAFE">Cafe</option>
         </select>
 
-        <input 
-          name="startDate" 
-          type="date" 
-          value={form.startDate} 
-          onChange={handleChange} 
-          className="input" 
-        />
-        
-        <input 
-          name="expiryDate" 
-          type="date" 
-          value={form.expiryDate} 
-          onChange={handleChange} 
-          className="input" 
+        <input
+          name="startDate"
+          type="date"
+          value={form.startDate}
+          onChange={handleChange}
+          className="input"
         />
 
-        <input 
-          name="maxDiscount" 
-          placeholder="Max Discount (Optional)" 
+        <input
+          name="expiryDate"
+          type="date"
+          value={form.expiryDate}
+          onChange={handleChange}
+          className="input"
+        />
+
+        <input
+          name="maxDiscount"
+          placeholder="Max Discount (Optional)"
           type="number"
-          value={form.maxDiscount} 
-          onChange={handleChange} 
-          className="input" 
+          value={form.maxDiscount}
+          onChange={handleChange}
+          className="input"
         />
-        
-        <input 
-          name="minAmount" 
-          placeholder="Min Amount (Optional)" 
+
+        <input
+          name="minAmount"
+          placeholder="Min Amount (Optional)"
           type="number"
-          value={form.minAmount} 
-          onChange={handleChange} 
-          className="input" 
+          value={form.minAmount}
+          onChange={handleChange}
+          className="input"
         />
 
-        <input 
-          name="badgeText" 
-          placeholder="Badge Text (Optional)" 
-          value={form.badgeText} 
-          onChange={handleChange} 
-          className="input col-span-2" 
+        <input
+          name="badgeText"
+          placeholder="Badge Text (Optional)"
+          value={form.badgeText}
+          onChange={handleChange}
+          className="input col-span-2"
         />
 
-        <textarea 
-          name="description" 
-          placeholder="Description (Optional)" 
-          value={form.description} 
-          onChange={handleChange} 
-          className="input col-span-2 h-20" 
+        <textarea
+          name="description"
+          placeholder="Description (Optional)"
+          value={form.description}
+          onChange={handleChange}
+          className="input col-span-2 h-20"
         />
 
-        <button 
+        <button
           type="submit"
+          title={lockTitle}
           className="col-span-2 bg-red-600 hover:bg-red-700 p-3 rounded-xl font-bold transition"
         >
           {editingId ? "Update Offer" : "Create Offer"}
         </button>
       </form>
+      </fieldset>
 
       <div className="grid md:grid-cols-2 gap-6">
         {offers.length === 0 ? (
@@ -331,26 +386,29 @@ export default function AdminOffer() {
               <div className="flex gap-2 mt-4">
                 <button
                   onClick={() => handleEdit(offer)}
-                  className="p-2 bg-blue-600 rounded-lg hover:bg-blue-700 transition"
-                  title="Edit"
+                  disabled={!canEdit}
+                  title={lockTitle}
+                  className="p-2 bg-blue-600 rounded-lg hover:bg-blue-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <Edit size={16} />
                 </button>
 
                 <button
                   onClick={() => handleDelete(offer._id)}
-                  className="p-2 bg-red-600 rounded-lg hover:bg-red-700 transition"
-                  title="Delete"
+                  disabled={!canEdit}
+                  title={lockTitle}
+                  className="p-2 bg-red-600 rounded-lg hover:bg-red-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <Trash2 size={16} />
                 </button>
 
                 <button
                   onClick={() => handleToggle(offer._id)}
-                  className={`p-2 rounded-lg transition ${
+                  disabled={!canEdit}
+                  title={lockTitle}
+                  className={`p-2 rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed ${
                     offer.isActive ? "bg-yellow-600 hover:bg-yellow-700" : "bg-green-600 hover:bg-green-700"
                   }`}
-                  title={offer.isActive ? "Deactivate" : "Activate"}
                 >
                   <Power size={16} />
                 </button>

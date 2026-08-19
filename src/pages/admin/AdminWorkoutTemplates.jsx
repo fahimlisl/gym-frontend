@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios.api';
 import toast from 'react-hot-toast';
+import { Lock } from 'lucide-react';
 
 const AdminWorkoutTemplates = () => {
   const navigate = useNavigate();
@@ -10,6 +11,9 @@ const AdminWorkoutTemplates = () => {
   const [activeTab, setActiveTab] = useState('list'); // list | create | edit
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [selectedDay, setSelectedDay] = useState(null);
+
+  const [admin, setAdmin] = useState(null);
+  const [adminLoading, setAdminLoading] = useState(true);
 
   // Form states
   const [formData, setFormData] = useState({
@@ -37,7 +41,26 @@ const AdminWorkoutTemplates = () => {
     muscleGroup: '',
   });
 
-  // Fetch all templates
+  useEffect(() => {
+    const fetchAdmin = async () => {
+      try {
+        const { data } = await api.get('/admin/get/me');
+        setAdmin(data?.admin ?? null);
+      } catch {
+        setAdmin(null);
+      } finally {
+        setAdminLoading(false);
+      }
+    };
+    fetchAdmin();
+  }, []);
+
+  const isSuperAdmin = admin?.isSuperAdmin ?? false;
+  const isAllowed = isSuperAdmin || !!admin?.workout_templates?.allow;
+  const isReadOnly = !isSuperAdmin && !!admin?.workout_templates?.isReadOnly;
+  const canEdit = isAllowed && !isReadOnly;
+  const lockTitle = isReadOnly ? 'Read-only access' : '';
+
   const fetchTemplates = async () => {
     try {
       setLoading(true);
@@ -51,10 +74,10 @@ const AdminWorkoutTemplates = () => {
   };
 
   useEffect(() => {
-    fetchTemplates();
-  }, []);
+    if (isAllowed) fetchTemplates();
+  }, [isAllowed]);
 
-  // Create template
+
   const handleCreateTemplate = async (e) => {
     e.preventDefault();
     try {
@@ -74,7 +97,6 @@ const AdminWorkoutTemplates = () => {
     }
   };
 
-  // Add day to template
   const handleAddDay = async (e) => {
     e.preventDefault();
     if (!selectedTemplate) return;
@@ -101,7 +123,6 @@ const AdminWorkoutTemplates = () => {
     if (!selectedTemplate || !selectedDay) return;
 
     try {
-      // Auto-calculate orderIndex based on existing exercises
       const nextOrderIndex = selectedDay.exercises.length;
 
       const res = await api.post(
@@ -177,17 +198,41 @@ const AdminWorkoutTemplates = () => {
     }
   };
 
+  if (adminLoading) {
+    return <div className="min-h-screen bg-black text-gray-400 p-8">Loading...</div>;
+  }
+
+  if (!isAllowed) {
+    return (
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center text-center px-4">
+        <Lock size={40} className="text-red-500 mb-4" />
+        <h2 className="text-lg font-light text-white mb-1">Access restricted</h2>
+        <p className="text-neutral-400 text-sm">
+          You don't have permission to view workout templates.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-neutral-900 to-black px-4 py-8 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl sm:text-5xl font-light text-white mb-2 tracking-tight">
-            Workout Templates
-          </h1>
-          <p className="text-neutral-400 text-sm font-light">
-            Create and manage workout plans for your members
-          </p>
+        <div className="mb-8 flex items-center gap-3">
+          <div>
+            <h1 className="text-4xl sm:text-5xl font-light text-white mb-2 tracking-tight">
+              Workout Templates
+            </h1>
+            <p className="text-neutral-400 text-sm font-light">
+              Create and manage workout plans for your members
+            </p>
+          </div>
+          {isReadOnly && (
+            <span className="flex items-center gap-1 text-xs font-bold tracking-wide text-yellow-500 bg-yellow-500/10 px-3 py-1.5 rounded-full h-fit">
+              <Lock size={12} />
+              READ ONLY
+            </span>
+          )}
         </div>
 
         {/* Tabs */}
@@ -204,6 +249,7 @@ const AdminWorkoutTemplates = () => {
           </button>
           <button
             onClick={() => {
+              if (!canEdit) return;
               setActiveTab('create');
               setFormData({
                 name: '',
@@ -213,7 +259,9 @@ const AdminWorkoutTemplates = () => {
                 duration: 1,
               });
             }}
-            className={`px-4 py-2 text-xs font-light tracking-wider transition-all ${
+            disabled={!canEdit}
+            title={lockTitle}
+            className={`px-4 py-2 text-xs font-light tracking-wider transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
               activeTab === 'create'
                 ? 'text-red-500 border-b-2 border-red-500'
                 : 'text-neutral-400 hover:text-white'
@@ -246,12 +294,14 @@ const AdminWorkoutTemplates = () => {
             ) : templates.length === 0 ? (
               <div className="text-center py-12 bg-neutral-900/50 border border-white/10 rounded-lg">
                 <p className="text-neutral-400 mb-4">No templates yet</p>
-                <button
-                  onClick={() => setActiveTab('create')}
-                  className="px-6 py-2 bg-red-500 text-white text-xs font-light tracking-wider hover:bg-red-600 transition-all"
-                >
-                  CREATE FIRST TEMPLATE
-                </button>
+                {canEdit && (
+                  <button
+                    onClick={() => setActiveTab('create')}
+                    className="px-6 py-2 bg-red-500 text-white text-xs font-light tracking-wider hover:bg-red-600 transition-all"
+                  >
+                    CREATE FIRST TEMPLATE
+                  </button>
+                )}
               </div>
             ) : (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -293,14 +343,16 @@ const AdminWorkoutTemplates = () => {
                         }}
                         className="flex-1 py-2 px-3 border border-white/10 text-white text-xs font-light hover:border-red-500 hover:text-red-500 transition-all"
                       >
-                        EDIT
+                        {canEdit ? 'EDIT' : 'VIEW'}
                       </button>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           handleDeleteTemplate(template._id);
                         }}
-                        className="py-2 px-3 border border-red-500/30 text-red-500 text-xs font-light hover:bg-red-500/10 transition-all"
+                        disabled={!canEdit}
+                        title={lockTitle}
+                        className="py-2 px-3 border border-red-500/30 text-red-500 text-xs font-light hover:bg-red-500/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         DELETE
                       </button>
@@ -312,7 +364,7 @@ const AdminWorkoutTemplates = () => {
           </div>
         )}
 
-        {activeTab === 'create' && (
+        {activeTab === 'create' && canEdit && (
           <div className="max-w-2xl">
             <form onSubmit={handleCreateTemplate} className="bg-neutral-900/50 border border-white/10 rounded-lg p-8 space-y-6">
               <div>
@@ -445,15 +497,17 @@ const AdminWorkoutTemplates = () => {
                               {day.isRestDay ? 'Rest Day' : day.workoutName || `${day.day} Workout`}
                             </p>
                           </div>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteDay(day._id);
-                            }}
-                            className="text-xs text-red-500 hover:text-red-400"
-                          >
-                            DELETE
-                          </button>
+                          {canEdit && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteDay(day._id);
+                              }}
+                              className="text-xs text-red-500 hover:text-red-400"
+                            >
+                              DELETE
+                            </button>
+                          )}
                         </div>
                         {!day.isRestDay && day.exercises.length > 0 && (
                           <p className="text-xs text-neutral-400">
@@ -466,43 +520,45 @@ const AdminWorkoutTemplates = () => {
                 )}
 
                 {/* Add Day Form */}
-                <form onSubmit={handleAddDay} className="space-y-3 pt-4 border-t border-white/10">
-                  <p className="text-xs font-light text-neutral-400 tracking-wider">ADD NEW DAY</p>
-                  <select
-                    value={dayForm.day}
-                    onChange={(e) => setDayForm({ ...dayForm, day: e.target.value })}
-                    className="w-full bg-neutral-800/50 border border-white/10 px-3 py-2 text-white text-xs outline-none focus:border-red-500 transition-colors"
-                  >
-                    {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(d => (
-                      <option key={d}>{d}</option>
-                    ))}
-                  </select>
+                {canEdit && (
+                  <form onSubmit={handleAddDay} className="space-y-3 pt-4 border-t border-white/10">
+                    <p className="text-xs font-light text-neutral-400 tracking-wider">ADD NEW DAY</p>
+                    <select
+                      value={dayForm.day}
+                      onChange={(e) => setDayForm({ ...dayForm, day: e.target.value })}
+                      className="w-full bg-neutral-800/50 border border-white/10 px-3 py-2 text-white text-xs outline-none focus:border-red-500 transition-colors"
+                    >
+                      {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(d => (
+                        <option key={d}>{d}</option>
+                      ))}
+                    </select>
 
-                  <input
-                    type="text"
-                    placeholder="Workout name (optional)"
-                    value={dayForm.workoutName}
-                    onChange={(e) => setDayForm({ ...dayForm, workoutName: e.target.value })}
-                    className="w-full bg-neutral-800/50 border border-white/10 px-3 py-2 text-white text-xs outline-none focus:border-red-500 transition-colors"
-                  />
-
-                  <label className="flex items-center gap-2 cursor-pointer">
                     <input
-                      type="checkbox"
-                      checked={dayForm.isRestDay}
-                      onChange={(e) => setDayForm({ ...dayForm, isRestDay: e.target.checked })}
-                      className="w-4 h-4"
+                      type="text"
+                      placeholder="Workout name (optional)"
+                      value={dayForm.workoutName}
+                      onChange={(e) => setDayForm({ ...dayForm, workoutName: e.target.value })}
+                      className="w-full bg-neutral-800/50 border border-white/10 px-3 py-2 text-white text-xs outline-none focus:border-red-500 transition-colors"
                     />
-                    <span className="text-xs text-neutral-400">Rest Day</span>
-                  </label>
 
-                  <button
-                    type="submit"
-                    className="w-full py-2 px-3 bg-red-500/20 border border-red-500/50 text-red-500 text-xs font-light hover:bg-red-500/30 transition-all"
-                  >
-                    ADD DAY
-                  </button>
-                </form>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={dayForm.isRestDay}
+                        onChange={(e) => setDayForm({ ...dayForm, isRestDay: e.target.checked })}
+                        className="w-4 h-4"
+                      />
+                      <span className="text-xs text-neutral-400">Rest Day</span>
+                    </label>
+
+                    <button
+                      type="submit"
+                      className="w-full py-2 px-3 bg-red-500/20 border border-red-500/50 text-red-500 text-xs font-light hover:bg-red-500/30 transition-all"
+                    >
+                      ADD DAY
+                    </button>
+                  </form>
+                )}
               </div>
             </div>
 
@@ -521,12 +577,14 @@ const AdminWorkoutTemplates = () => {
                           <div key={exercise._id} className="bg-neutral-800/50 border border-white/10 p-3 rounded">
                             <div className="flex justify-between items-start mb-2">
                               <h4 className="text-sm font-light text-white">{exercise.exerciseName}</h4>
-                              <button
-                                onClick={() => handleDeleteExercise(exercise._id)}
-                                className="text-xs text-red-500 hover:text-red-400"
-                              >
-                                ✕
-                              </button>
+                              {canEdit && (
+                                <button
+                                  onClick={() => handleDeleteExercise(exercise._id)}
+                                  className="text-xs text-red-500 hover:text-red-400"
+                                >
+                                  ✕
+                                </button>
+                              )}
                             </div>
                             <p className="text-xs text-neutral-400">
                               {exercise.sets} sets × {exercise.reps} reps
@@ -540,77 +598,79 @@ const AdminWorkoutTemplates = () => {
                     )}
 
                     {/* Add Exercise Form */}
-                    <form onSubmit={handleAddExercise} className="space-y-3 pt-4 border-t border-white/10">
-                      <p className="text-xs font-light text-neutral-400 tracking-wider">ADD EXERCISE</p>
+                    {canEdit && (
+                      <form onSubmit={handleAddExercise} className="space-y-3 pt-4 border-t border-white/10">
+                        <p className="text-xs font-light text-neutral-400 tracking-wider">ADD EXERCISE</p>
 
-                      <input
-                        type="text"
-                        placeholder="Exercise name"
-                        value={exerciseForm.exerciseName}
-                        onChange={(e) => setExerciseForm({ ...exerciseForm, exerciseName: e.target.value })}
-                        className="w-full bg-neutral-800/50 border border-white/10 px-3 py-2 text-white text-xs outline-none focus:border-red-500 transition-colors"
-                        required
-                      />
-
-                      <div className="grid grid-cols-2 gap-2">
-                        <input
-                          type="number"
-                          placeholder="Sets"
-                          min="1"
-                          value={exerciseForm.sets}
-                          onChange={(e) => setExerciseForm({ ...exerciseForm, sets: parseInt(e.target.value) })}
-                          className="bg-neutral-800/50 border border-white/10 px-3 py-2 text-white text-xs outline-none focus:border-red-500 transition-colors"
-                          required
-                        />
                         <input
                           type="text"
-                          placeholder="Reps (e.g., 10-12)"
-                          value={exerciseForm.reps}
-                          onChange={(e) => setExerciseForm({ ...exerciseForm, reps: e.target.value })}
-                          className="bg-neutral-800/50 border border-white/10 px-3 py-2 text-white text-xs outline-none focus:border-red-500 transition-colors"
+                          placeholder="Exercise name"
+                          value={exerciseForm.exerciseName}
+                          onChange={(e) => setExerciseForm({ ...exerciseForm, exerciseName: e.target.value })}
+                          className="w-full bg-neutral-800/50 border border-white/10 px-3 py-2 text-white text-xs outline-none focus:border-red-500 transition-colors"
                           required
                         />
-                      </div>
 
-                      <input
-                        type="number"
-                        placeholder="Rest time (seconds)"
-                        min="0"
-                        value={exerciseForm.restTime}
-                        onChange={(e) => setExerciseForm({ ...exerciseForm, restTime: parseInt(e.target.value) })}
-                        className="w-full bg-neutral-800/50 border border-white/10 px-3 py-2 text-white text-xs outline-none focus:border-red-500 transition-colors"
-                      />
+                        <div className="grid grid-cols-2 gap-2">
+                          <input
+                            type="number"
+                            placeholder="Sets"
+                            min="1"
+                            value={exerciseForm.sets}
+                            onChange={(e) => setExerciseForm({ ...exerciseForm, sets: parseInt(e.target.value) })}
+                            className="bg-neutral-800/50 border border-white/10 px-3 py-2 text-white text-xs outline-none focus:border-red-500 transition-colors"
+                            required
+                          />
+                          <input
+                            type="text"
+                            placeholder="Reps (e.g., 10-12)"
+                            value={exerciseForm.reps}
+                            onChange={(e) => setExerciseForm({ ...exerciseForm, reps: e.target.value })}
+                            className="bg-neutral-800/50 border border-white/10 px-3 py-2 text-white text-xs outline-none focus:border-red-500 transition-colors"
+                            required
+                          />
+                        </div>
 
-                      <input
-                        type="text"
-                        placeholder="Muscle group"
-                        value={exerciseForm.muscleGroup}
-                        onChange={(e) => setExerciseForm({ ...exerciseForm, muscleGroup: e.target.value })}
-                        className="w-full bg-neutral-800/50 border border-white/10 px-3 py-2 text-white text-xs outline-none focus:border-red-500 transition-colors"
-                      />
+                        <input
+                          type="number"
+                          placeholder="Rest time (seconds)"
+                          min="0"
+                          value={exerciseForm.restTime}
+                          onChange={(e) => setExerciseForm({ ...exerciseForm, restTime: parseInt(e.target.value) })}
+                          className="w-full bg-neutral-800/50 border border-white/10 px-3 py-2 text-white text-xs outline-none focus:border-red-500 transition-colors"
+                        />
 
-                      <input
-                        type="text"
-                        placeholder="Video URL (optional)"
-                        value={exerciseForm.videoUrl}
-                        onChange={(e) => setExerciseForm({ ...exerciseForm, videoUrl: e.target.value })}
-                        className="w-full bg-neutral-800/50 border border-white/10 px-3 py-2 text-white text-xs outline-none focus:border-red-500 transition-colors"
-                      />
+                        <input
+                          type="text"
+                          placeholder="Muscle group"
+                          value={exerciseForm.muscleGroup}
+                          onChange={(e) => setExerciseForm({ ...exerciseForm, muscleGroup: e.target.value })}
+                          className="w-full bg-neutral-800/50 border border-white/10 px-3 py-2 text-white text-xs outline-none focus:border-red-500 transition-colors"
+                        />
 
-                      <textarea
-                        placeholder="Notes (optional)"
-                        value={exerciseForm.notes}
-                        onChange={(e) => setExerciseForm({ ...exerciseForm, notes: e.target.value })}
-                        className="w-full bg-neutral-800/50 border border-white/10 px-3 py-2 text-white text-xs outline-none focus:border-red-500 transition-colors resize-none h-16"
-                      />
+                        <input
+                          type="text"
+                          placeholder="Video URL (optional)"
+                          value={exerciseForm.videoUrl}
+                          onChange={(e) => setExerciseForm({ ...exerciseForm, videoUrl: e.target.value })}
+                          className="w-full bg-neutral-800/50 border border-white/10 px-3 py-2 text-white text-xs outline-none focus:border-red-500 transition-colors"
+                        />
 
-                      <button
-                        type="submit"
-                        className="w-full py-2 px-3 bg-red-500/20 border border-red-500/50 text-red-500 text-xs font-light hover:bg-red-500/30 transition-all"
-                      >
-                        ADD EXERCISE
-                      </button>
-                    </form>
+                        <textarea
+                          placeholder="Notes (optional)"
+                          value={exerciseForm.notes}
+                          onChange={(e) => setExerciseForm({ ...exerciseForm, notes: e.target.value })}
+                          className="w-full bg-neutral-800/50 border border-white/10 px-3 py-2 text-white text-xs outline-none focus:border-red-500 transition-colors resize-none h-16"
+                        />
+
+                        <button
+                          type="submit"
+                          className="w-full py-2 px-3 bg-red-500/20 border border-red-500/50 text-red-500 text-xs font-light hover:bg-red-500/30 transition-all"
+                        >
+                          ADD EXERCISE
+                        </button>
+                      </form>
+                    )}
                   </>
                 )}
               </div>

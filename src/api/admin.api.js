@@ -95,6 +95,13 @@ export const addCafeCategory = async (name) => {
   return data.data;
 };
 
+export const fetchAllAdmins = () => api.get("/admin/fetch/admins");
+
+export const togglePermission = (permission, adminId, field) =>
+  api.patch(`/admin/toggle/permission/${permission}/${adminId}`, null, {
+    params: { field },
+  });
+
 // plans
 export const fetchAllPlans = () => api.get("/admin/plan/fetch/all");
 export const addPlan = (data) => api.post("/admin/plan/add", data);
@@ -130,3 +137,5 @@ export const showParticularDiet = (userId) =>
 
 export const unlockDiet = (dietId) =>
   api.patch(`/admin/diet/approve/${dietId}`, { status: "draft" });
+
+export const registerAdmin = (payload) => api.post("/admin/register", payload);

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
-import { X, Plus, Download, Pencil, Trash2 } from "lucide-react";
+import { X, Plus, Download, Pencil, Trash2, Lock } from "lucide-react";
 import * as XLSX from "xlsx";
 import { fetchAllTransactions, createPaymentIn } from "../../api/admin.api.js";
 import api from "../../api/axios.api.js";
@@ -334,7 +334,10 @@ export default function PaymentInPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editTarget, setEditTarget]     = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  
+  // ---- admin permission state ----
+  const [admin, setAdmin] = useState(null);
+  const [adminLoading, setAdminLoading] = useState(true);
 
   const [view, setView]     = useState("paymentin");
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
@@ -343,18 +346,26 @@ export default function PaymentInPage() {
   const [method, setMethod]     = useState("all");
   const [source, setSource]     = useState("all");
 
-  // Check admin permissions
+  // Fetch admin permissions
   useEffect(() => {
     const fetchAdmin = async () => {
       try {
         const { data } = await api.get("/admin/get/me");
-        setIsSuperAdmin(data?.admin?.isSuperAdmin ?? false);
+        setAdmin(data?.admin ?? null);
       } catch {
-        setIsSuperAdmin(false);
+        setAdmin(null);
+      } finally {
+        setAdminLoading(false);
       }
     };
     fetchAdmin();
   }, []);
+
+  const isSuperAdmin = admin?.isSuperAdmin ?? false;
+  const isAllowed = isSuperAdmin || !!admin?.payments?.allow;
+  const isReadOnly = !isSuperAdmin && !!admin?.payments?.isReadOnly;
+  const canEdit = isAllowed && !isReadOnly;
+  const lockTitle = isReadOnly ? "Read-only access" : "";
 
   const load = async () => {
     try {
@@ -367,7 +378,10 @@ export default function PaymentInPage() {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  // Only load if allowed
+  useEffect(() => {
+    if (isAllowed) load();
+  }, [isAllowed]);
 
   const baseFiltered = useMemo(() => {
     return transactions.filter((t) => {
@@ -416,32 +430,58 @@ export default function PaymentInPage() {
   const filterInputCls =
     "w-full bg-neutral-900 border border-white/10 px-3 py-2.5 rounded-lg text-sm text-white focus:outline-none focus:border-red-600/40 transition-colors";
 
-  let si = 1;
+  // ---- loading / block states ----
+  if (adminLoading) {
+    return <div className="min-h-screen bg-black text-gray-400 p-8">Loading...</div>;
+  }
 
+  if (!isAllowed) {
+    return (
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center text-center">
+        <Lock size={40} className="text-red-600 mb-4" />
+        <h2 className="text-lg font-bold text-white mb-1">Access restricted</h2>
+        <p className="text-gray-500 text-sm">
+          You don't have permission to view payments.
+        </p>
+      </div>
+    );
+  }
+
+  // ---- main render ----
+  let si = 1;
   return (
     <div className="min-h-screen bg-black py-4 md:py-8 space-y-6">
       <div className="px-4 md:px-6 lg:px-8 max-w-7xl mx-auto space-y-6">
 
         <div className="flex flex-col lg:flex-row gap-4 justify-between border border-white/10 bg-gradient-to-br from-black via-neutral-900 to-black p-5 md:p-8 rounded-xl">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-widest">
-              PAYMENT <span className="text-red-600">IN</span>
-            </h1>
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-2xl sm:text-3xl font-black tracking-widest">
+                PAYMENT <span className="text-red-600">IN</span>
+              </h1>
+              {isReadOnly && (
+                <span className="flex items-center gap-1 text-xs font-bold tracking-wide text-yellow-500">
+                  <Lock size={12} /> READ ONLY
+                </span>
+              )}
+            </div>
             <p className="text-xs sm:text-sm text-gray-400 mt-2">Track incoming payments & credits</p>
-            {!isSuperAdmin && (
-              <p className="text-xs text-yellow-500 mt-1">🔒 View-only mode - You cannot modify any data</p>
-            )}
           </div>
           <div className="flex gap-3 h-fit">
             <button onClick={exportExcel}
               className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 transition px-4 py-2 text-[11px] font-extrabold rounded-lg text-gray-300">
               <Download size={14} /> EXPORT
             </button>
-            {isSuperAdmin && (
+            {canEdit && (
               <button onClick={() => setShowAddModal(true)}
                 className="flex items-center gap-2 bg-red-600 hover:bg-red-700 transition px-4 py-2 text-[11px] font-extrabold rounded-lg text-white">
                 <Plus size={14} /> ADD PAYMENT
               </button>
+            )}
+            {!canEdit && isAllowed && (
+              <div className="flex items-center px-4 py-2 border border-yellow-500/30 rounded-lg text-yellow-500 text-[10px] font-bold tracking-widest">
+                VIEW ONLY
+              </div>
             )}
           </div>
         </div>
@@ -517,7 +557,7 @@ export default function PaymentInPage() {
         ) : baseFiltered.length === 0 ? (
           <div className="border border-white/10 bg-gradient-to-br from-black via-neutral-900 to-black rounded-xl p-12 text-center">
             <p className="text-gray-500 font-semibold text-sm">NO RECORDS FOUND</p>
-            {view === "paymentin" && isSuperAdmin && (
+            {canEdit && view === "paymentin" && (
               <button onClick={() => setShowAddModal(true)}
                 className="mt-4 flex items-center gap-2 mx-auto bg-red-600 hover:bg-red-700 transition px-4 py-2 text-[11px] font-extrabold rounded-lg text-white">
                 <Plus size={13} /> ADD YOUR FIRST PAYMENT
@@ -556,7 +596,7 @@ export default function PaymentInPage() {
                     </div>
                     {isPaymentIn && (
                       <div className="flex gap-2 pt-2 border-t border-white/10">
-                        {isSuperAdmin ? (
+                        {canEdit ? (
                           <>
                             <button
                               onClick={() => setEditTarget(tx)}
@@ -573,7 +613,7 @@ export default function PaymentInPage() {
                           </>
                         ) : (
                           <div className="w-full text-center py-1.5 text-[10px] text-gray-500 font-semibold uppercase">
-                            View Only
+                            VIEW ONLY
                           </div>
                         )}
                       </div>
@@ -628,7 +668,7 @@ export default function PaymentInPage() {
                         </td>
                         <td className="p-4">
                           {isPaymentIn ? (
-                            isSuperAdmin ? (
+                            canEdit ? (
                               <div className="flex items-center justify-center gap-2">
                                 <button
                                   onClick={() => setEditTarget(tx)}

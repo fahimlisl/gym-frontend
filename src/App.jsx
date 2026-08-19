@@ -72,6 +72,8 @@ import TrainerScanGymQR from "./pages/trainer/TrainerScanGymQR.jsx";
 import TrainerCoupon from "./pages/admin/TrainerCoupon.jsx";
 import SellSupplementPage from "./pages/admin/SellSupplementPage.jsx";
 import WhatsAppStatus from "./components/admin/WhatsAppStatus.jsx";
+import AdminsListPage from "./pages/admin/AdminsListPage.jsx";
+import AdminPermissionsPage from "./pages/admin/AdminPermissionsPage.jsx";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -231,6 +233,13 @@ export default function App() {
 
           <Route path="payments/cafe" element={
             <SuperAdminRoute><CafePaymentsOfAdmin /></SuperAdminRoute>
+          } />
+
+          <Route path="admins" element={
+            <SuperAdminRoute><AdminsListPage /></SuperAdminRoute>
+          } />
+          <Route path="admins/:adminId" element={
+            <SuperAdminRoute><AdminPermissionsPage /></SuperAdminRoute>
           } />
 
           <Route path="payments/payments-in" element={

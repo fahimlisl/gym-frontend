@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { Lock } from "lucide-react";
 import axios from "../../api/axios.api.js";
 
 export default function TrainerCoupon() {
@@ -22,19 +23,29 @@ export default function TrainerCoupon() {
   };
 
   const [form, setForm] = useState(defaultForm);
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
-useEffect(() => {
-  const fetchAdmin = async () => {
-    try {
-      const { data } = await axios.get("/admin/get/me");
-      setIsSuperAdmin(data?.admin?.isSuperAdmin ?? false);
-    } catch {
-      setIsSuperAdmin(false);
-    }
-  };
-  fetchAdmin();
-}, []);
+  const [admin, setAdmin] = useState(null);
+  const [adminLoading, setAdminLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAdmin = async () => {
+      try {
+        const { data } = await axios.get("/admin/get/me");
+        setAdmin(data?.admin ?? null);
+      } catch {
+        setAdmin(null);
+      } finally {
+        setAdminLoading(false);
+      }
+    };
+    fetchAdmin();
+  }, []);
+
+  const isSuperAdmin = admin?.isSuperAdmin ?? false;
+  const isAllowed = isSuperAdmin || !!admin?.trainer_coupon?.allow;
+  const isReadOnly = !isSuperAdmin && !!admin?.trainer_coupon?.isReadOnly;
+  const canEdit = isAllowed && !isReadOnly;
+  const lockTitle = isReadOnly ? "Read-only access" : "";
 
   const fetchCoupons = async () => {
     try {
@@ -55,9 +66,11 @@ useEffect(() => {
   };
 
   useEffect(() => {
-    fetchCoupons();
-    fetchTrainers();
-  }, []);
+    if (isAllowed) {
+      fetchCoupons();
+      fetchTrainers();
+    }
+  }, [isAllowed]);
 
   const resetForm = () => setForm(defaultForm);
 
@@ -99,7 +112,6 @@ useEffect(() => {
       maxDiscount: coupon.maxDiscount || "",
       expiryDate: coupon.expiryDate?.slice(0, 10) || "",
       isActive: coupon.isActive,
-      // category: coupon.category,
       value: coupon.value,
     });
     setShowModal(true);
@@ -135,22 +147,45 @@ useEffect(() => {
     return t ? t.fullName : "—";
   };
 
+  if (adminLoading) {
+    return <div className="p-6 text-gray-500">Loading...</div>;
+  }
+
+  if (!isAllowed) {
+    return (
+      <div className="p-6 flex flex-col items-center justify-center h-[60vh] text-center">
+        <Lock size={40} className="text-gray-400 mb-4" />
+        <h2 className="text-lg font-bold mb-1">Access restricted</h2>
+        <p className="text-gray-500 text-sm">
+          You don't have permission to view trainer coupon management.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="p-4 md:p-6 bg-white rounded-xl shadow text-black">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
-          <h2 className="text-xl md:text-2xl font-bold">Trainer Coupon Management</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-xl md:text-2xl font-bold">Trainer Coupon Management</h2>
+            {isReadOnly && (
+              <span className="flex items-center gap-1 text-xs font-bold tracking-wide text-yellow-700 bg-yellow-100 px-3 py-1 rounded-full">
+                <Lock size={12} />
+                READ ONLY
+              </span>
+            )}
+          </div>
           <button
             onClick={() => { resetForm(); setEditId(null); setShowModal(true); }}
-            disabled={!isSuperAdmin}
-            title={!isSuperAdmin ? "Super admin only" : ""}
+            disabled={!canEdit}
+            title={lockTitle}
             className="bg-black text-white px-5 py-2 rounded-lg w-full sm:w-auto disabled:opacity-40 disabled:cursor-not-allowed"
           >
             + Add Trainer Coupon
           </button>
         </div>
 
-        {/* Desktop table */}
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full border text-sm">
             <thead className="bg-gray-100 text-left">
@@ -159,7 +194,6 @@ useEffect(() => {
                 <th className="p-3">Trainer</th>
                 <th className="p-3">Type</th>
                 <th className="p-3">Value</th>
-                {/* <th className="p-3">Min Cart</th>*/}
                 <th className="p-3">Max Discount</th>
                 <th className="p-3">Expiry</th>
                 <th className="p-3">Used</th>
@@ -183,7 +217,6 @@ useEffect(() => {
                     <td className="p-3">
                       {c.typeOfCoupon === "percentage" ? `${c.value}%` : `₹${c.value}`}
                     </td>
-                    {/* <td className="p-3">{c.minCartAmount ? `₹${c.minCartAmount}` : "—"}</td>*/}
                     <td className="p-3">{c.maxDiscount ? `₹${c.maxDiscount}` : "—"}</td>
                     <td className="p-3">{new Date(c.expiryDate).toLocaleDateString("en-IN")}</td>
                     <td className="p-3">
@@ -194,8 +227,8 @@ useEffect(() => {
                     <td className="p-3">
                       <button
                           onClick={() => handleToggle(c)}
-                          disabled={!isSuperAdmin}
-                          title={!isSuperAdmin ? "Super admin only" : ""}
+                          disabled={!canEdit}
+                          title={lockTitle}
                           className={`px-3 py-1 rounded-full text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed ${
                             c.isActive
                               ? "bg-green-100 text-green-700"
@@ -208,16 +241,16 @@ useEffect(() => {
                     <td className="p-3 flex gap-3">
                     <button
                       onClick={() => handleEdit(c)}
-                      disabled={!isSuperAdmin}
-                      title={!isSuperAdmin ? "Super admin only" : ""}
+                      disabled={!canEdit}
+                      title={lockTitle}
                       className="text-blue-600 font-semibold hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                                             Edit
                                           </button>
                     <button
                       onClick={() => handleDelete(c._id)}
-                      disabled={!isSuperAdmin}
-                      title={!isSuperAdmin ? "Super admin only" : ""}
+                      disabled={!canEdit}
+                      title={lockTitle}
                       className="text-red-500 font-semibold hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                         Delete
@@ -241,8 +274,8 @@ useEffect(() => {
                   <span className="font-semibold text-base">{c.code}</span>
                   <button
                       onClick={() => handleToggle(c)}
-                      disabled={!isSuperAdmin}
-                      title={!isSuperAdmin ? "Super admin only" : ""}
+                      disabled={!canEdit}
+                      title={lockTitle}
                       className={`text-xs px-2 py-1 rounded disabled:opacity-40 disabled:cursor-not-allowed ${
                         c.isActive
                           ? "bg-green-100 text-green-700"
@@ -259,7 +292,6 @@ useEffect(() => {
                 <div className="text-sm">
                   Value: {c.typeOfCoupon === "percentage" ? `${c.value}%` : `₹${c.value}`}
                 </div>
-                {/* <div className="text-sm">Min Cart: {c.minCartAmount ? `₹${c.minCartAmount}` : "—"}</div>*/}
                 <div className="text-sm">Max Discount: {c.maxDiscount ? `₹${c.maxDiscount}` : "—"}</div>
                 <div className="text-sm">
                   Expiry: {new Date(c.expiryDate).toLocaleDateString("en-IN")}
@@ -268,16 +300,16 @@ useEffect(() => {
                 <div className="flex gap-4 pt-2">
                 <button
                   onClick={() => handleEdit(c)}
-                  disabled={!isSuperAdmin}
-                  title={!isSuperAdmin ? "Super admin only" : ""}
+                  disabled={!canEdit}
+                  title={lockTitle}
                   className="text-blue-600 font-semibold hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                                     Edit
                                   </button>
                 <button
                   onClick={() => handleDelete(c._id)}
-                  disabled={!isSuperAdmin}
-                  title={!isSuperAdmin ? "Super admin only" : ""}
+                  disabled={!canEdit}
+                  title={lockTitle}
                   className="text-red-500 font-semibold hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                     Delete
@@ -307,7 +339,6 @@ useEffect(() => {
 
             <div className="p-6 space-y-4">
 
-              {/* Trainer dropdown */}
               <div>
                 <label className="text-xs text-gray-500 font-semibold uppercase mb-1 block">
                   Assign Trainer *
@@ -348,14 +379,6 @@ useEffect(() => {
                 value={form.value}
                 onChange={(e) => setForm({ ...form, value: e.target.value })}
               />
-
-              {/* <input
-                className="w-full border p-2 rounded"
-                placeholder="Min Cart Amount (Optional)"
-                type="number"
-                value={form.minCartAmount}
-                onChange={(e) => setForm({ ...form, minCartAmount: e.target.value })}
-              />*/}
 
               {form.typeOfCoupon === "percentage" && (
                 <input
@@ -398,7 +421,7 @@ useEffect(() => {
               </button>
               <button
                 onClick={handleSubmit}
-                disabled={loading || !isSuperAdmin}
+                disabled={loading || !canEdit}
                 className="px-6 py-2 bg-black text-white rounded w-full sm:w-auto disabled:opacity-50"
               >
                 {loading ? "Saving..." : editId ? "Update" : "Create"}

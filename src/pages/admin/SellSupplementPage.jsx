@@ -1,12 +1,52 @@
-import { useState } from "react";
-import { ShoppingCart, Filter, Gift } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ShoppingCart, Filter, Gift, Lock } from "lucide-react";
 import SellSupplementModal from "../../components/admin/SellSupplementModal.jsx";
 import SupplementBillsTable from "../../components/admin/SupplementBillsTable.jsx";
+import api from "../../api/axios.api.js";
 
 export default function SellSupplementPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [filterType, setFilterType] = useState("all"); 
+  const [filterType, setFilterType] = useState("all");
+
+  const [admin, setAdmin] = useState(null);
+  const [adminLoading, setAdminLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAdmin = async () => {
+      try {
+        const { data } = await api.get("/admin/get/me");
+        setAdmin(data?.admin ?? null);
+      } catch {
+        setAdmin(null);
+      } finally {
+        setAdminLoading(false);
+      }
+    };
+    fetchAdmin();
+  }, []);
+
+  const isSuperAdmin = admin?.isSuperAdmin ?? false;
+  const isAllowed = isSuperAdmin || !!admin?.sell_supplement?.allow;
+  const isReadOnly = !isSuperAdmin && !!admin?.sell_supplement?.isReadOnly;
+  const canEdit = isAllowed && !isReadOnly;
+  const lockTitle = isReadOnly ? "Read-only access" : "";
+
+  if (adminLoading) {
+    return <div className="p-6 text-gray-400">Loading...</div>;
+  }
+
+  if (!isAllowed) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[60vh] text-center">
+        <Lock size={40} className="text-red-600 mb-4" />
+        <h2 className="text-lg font-bold mb-1">Access restricted</h2>
+        <p className="text-gray-500 text-sm">
+          You don't have permission to view supplement sales.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
@@ -14,15 +54,22 @@ export default function SellSupplementPage() {
         <h1 className="text-xl sm:text-2xl font-black tracking-widest text-white">
           SUPPLEMENT <span className="text-red-600">SALES</span>
         </h1>
+        {isReadOnly && (
+          <span className="flex items-center gap-1 text-xs font-bold tracking-wide text-yellow-500">
+            <Lock size={12} /> READ ONLY
+          </span>
+        )}
         <button
           onClick={() => setModalOpen(true)}
-          className="flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold text-sm tracking-wide px-4 py-2.5 rounded-lg transition w-full sm:w-auto"
+          disabled={!canEdit}
+          title={lockTitle}
+          className="flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold text-sm tracking-wide px-4 py-2.5 rounded-lg transition w-full sm:w-auto disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          <ShoppingCart size={16} /> Sell Supplement
+          <ShoppingCart size={16} />
+          Sell Supplement
         </button>
       </div>
 
-      {/* Filter Section */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 bg-black/30 border border-white/10 rounded-xl p-4">
         <div className="flex items-center gap-2">
           <Filter size={16} className="text-gray-400" />
@@ -47,8 +94,7 @@ export default function SellSupplementPage() {
                 : "bg-transparent text-gray-400 border border-transparent hover:border-purple-600/20 hover:text-purple-400/80"
             }`}
           >
-            <Gift size={12} />
-            SPONSOR
+            <Gift size={12} /> SPONSOR
           </button>
           <button
             onClick={() => setFilterType("regular")}
@@ -66,24 +112,24 @@ export default function SellSupplementPage() {
             onClick={() => setFilterType("all")}
             className="text-xs text-gray-500 hover:text-white transition-colors ml-auto"
           >
-            ✕ Clear
+            × Clear
           </button>
         )}
       </div>
 
       <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
         <div className="min-w-full inline-block align-middle">
-          <SupplementBillsTable 
-            refreshKey={refreshKey} 
-            filterType={filterType}
-          />
+          <SupplementBillsTable refreshKey={refreshKey} filterType={filterType} />
         </div>
       </div>
 
-      {modalOpen && (
+      {modalOpen && canEdit && (
         <SellSupplementModal
           onClose={() => setModalOpen(false)}
-          onSaleComplete={() => setRefreshKey((k) => k + 1)}
+          onSuccess={() => {
+            setRefreshKey((k) => k + 1);
+            setModalOpen(false);
+          }}
         />
       )}
     </div>

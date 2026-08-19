@@ -31,6 +31,26 @@ import { adminLogout, changePasswordRequest } from "../../api/auth.api.js";
 import { useForm } from "react-hook-form";
 import api from "../../api/axios.api.js"
 
+
+const PERMISSION_MAP = {
+  "/admin/members": "members",
+  "/admin/trainers": "trainer",
+  "/admin/pt/requests": "trainer",
+  "/admin/workout-templates": "workout_templates",
+  "/admin/supplement/request": "supplement",
+  "/admin/check-in/qr": "check_in_qr",
+  "/admin/attendance": "attendance",   
+  "/admin/payments": "payments",           
+  "/admin/supplements": "supplement",
+  "/admin/supplements/dashboard": "sell_supplement",
+  "/admin/coupons": "coupons",
+  "/admin/coupons/trainer": "trainer_coupon",
+  "/admin/expenses": "expense",
+  "/admin/assets": "assets",
+  "/admin/plans": "plans",
+  "/admin/offers": "offers",
+};
+
 const mainMenu = [
   { label: "Dashboard", to: "/admin/dashboard", icon: LayoutDashboard },
   { label: "Members", to: "/admin/members", icon: Users },
@@ -40,7 +60,6 @@ const mainMenu = [
   { label: "Supplement Requests", to: "/admin/supplement/request", icon: GitPullRequestDraft },
   { label: "Check-In QR", to: "/admin/check-in/qr", icon: QrCode },
   { label: "Wp Qr", to: "/admin/wp/qr/code", icon: ScanQrCode },
-  
 ];
 
 const attendanceMenu = {
@@ -92,13 +111,17 @@ const otherMenu = [
   { label: "Assets", to: "/admin/assets", icon: Dumbbell },
 ];
 
+const superAdminMenu = [
+  { label: "Admins", to: "/admin/admins", icon: UserCog },
+];
+
 const settings = [
   { label: "Plans", to: "/admin/plans", icon: Layers },
   { label: "Offers", to: "/admin/offers", icon: BadgePercent },
-]
+];
 
 export default function Sidebar({ open, onClose }) {
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [admin, setAdmin] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
   const [showChangeModal, setShowChangeModal] = useState(false);
@@ -114,27 +137,33 @@ export default function Sidebar({ open, onClose }) {
     const fetchAdmin = async () => {
       try {
         const { data } = await api.get("/admin/get/me");
-        setIsSuperAdmin(data?.admin?.isSuperAdmin ?? false);
+        setAdmin(data?.admin ?? null); // keep the FULL admin object, not just isSuperAdmin
       } catch {
-        setIsSuperAdmin(false);
+        setAdmin(null);
       }
     };
     fetchAdmin();
   }, []);
 
+  const isSuperAdmin = admin?.isSuperAdmin ?? false;
 
-  // was assets earlier changed to empty cuz we don't need hide anything form visibleothermenu
-  const visibleOtherMenu = isSuperAdmin
-    ? otherMenu
-    : otherMenu.filter((item) => ![""].includes(item.label));
+  const hasAccess = (to) => {
+    if (isSuperAdmin) return true;
+    const module = PERMISSION_MAP[to];
+    if (!module) return true;
+    return !!admin?.[module]?.allow;
+  };
 
-  const visibleSettings = isSuperAdmin
-    ? settings
-    : settings.filter((item) => !["Offers"].includes(item.label));
+  const visibleMainMenu = mainMenu.filter((item) => {
+    if (item.label === "Wp Qr") return isSuperAdmin; // unchanged: superadmin-only, not a permission-module item
+    return hasAccess(item.to);
+  });
 
-    const visibleMainMenu = isSuperAdmin
-    ? mainMenu
-    : mainMenu.filter(item => item.label !== "Wp Qr");
+  const visibleOtherMenu = otherMenu.filter((item) => hasAccess(item.to));
+  const visibleSettings = settings.filter((item) => hasAccess(item.to));
+
+  const showAttendanceGroup = hasAccess(attendanceMenu.base);
+  const showPaymentsGroup = hasAccess(paymentsMenu.base);
 
   useEffect(() => {
     if (open) {
@@ -206,9 +235,21 @@ export default function Sidebar({ open, onClose }) {
             {visibleMainMenu.map((item) => (
               <SidebarLink key={item.to} item={item} onClose={onClose} />
             ))}
-            <CollapsibleGroup config={attendanceMenu} onClose={onClose} />
-            <CollapsibleGroup config={paymentsMenu} onClose={onClose} />
+            {showAttendanceGroup && (
+              <CollapsibleGroup config={attendanceMenu} onClose={onClose} />
+            )}
+            {showPaymentsGroup && (
+              <CollapsibleGroup config={paymentsMenu} onClose={onClose} />
+            )}
           </Section>
+
+          {isSuperAdmin && (
+            <Section title="SUPER ADMIN">
+              {superAdminMenu.map((item) => (
+                <SidebarLink key={item.to} item={item} onClose={onClose} />
+              ))}
+            </Section>
+          )}
 
           <Section title="CAFE">
             {cafeMenu.map((item) => (
@@ -216,17 +257,21 @@ export default function Sidebar({ open, onClose }) {
             ))}
           </Section>
 
-          <Section title="INVENTORY">
-            {visibleOtherMenu.map((item) => (   
-              <SidebarLink key={item.to} item={item} onClose={onClose} />
-            ))}
-          </Section>
+          {visibleOtherMenu.length > 0 && (
+            <Section title="INVENTORY">
+              {visibleOtherMenu.map((item) => (
+                <SidebarLink key={item.to} item={item} onClose={onClose} />
+              ))}
+            </Section>
+          )}
 
-          <Section title="SETTINGS">
-            {visibleSettings.map((item) => (   
-              <SidebarLink key={item.to} item={item} onClose={onClose} />
-            ))}
-          </Section>
+          {visibleSettings.length > 0 && (
+            <Section title="SETTINGS">
+              {visibleSettings.map((item) => (
+                <SidebarLink key={item.to} item={item} onClose={onClose} />
+              ))}
+            </Section>
+          )}
         </nav>
 
         <div className="border-t border-white/10 p-4 space-y-2">
