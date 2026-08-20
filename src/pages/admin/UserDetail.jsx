@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { Lock } from "lucide-react"; 
+import { Lock } from "lucide-react";
 import api from "../../api/axios.api";
 
 import UserHeader from "../../components/admin/UserHeader";
@@ -55,10 +55,16 @@ export default function UserDetail() {
   }, []);
 
   const isSuperAdmin = admin?.isSuperAdmin ?? false;
+
+  // Base access
   const isAllowed = isSuperAdmin || !!admin?.members?.allow;
-  const isReadOnly = !isSuperAdmin && !!admin?.members?.isReadOnly;
-  const canEdit = isAllowed && !isReadOnly;
-  const lockTitle = isReadOnly ? "Read-only access" : "";
+
+  // Granular permissions
+  const canEditMember = isSuperAdmin || (admin?.members?.allow && !admin?.members?.isReadOnly);
+  const canRenew = isSuperAdmin || (admin?.can_renew?.allow && !admin?.can_renew?.isReadOnly);
+  const canAssignWorkout = isSuperAdmin || (admin?.can_assign_workout?.allow && !admin?.can_assign_workout?.isReadOnly);
+  const canAssignDiet = isSuperAdmin || (admin?.can_assign_diet?.allow && !admin?.can_assign_diet?.isReadOnly);
+  const canChangeTrainer = isSuperAdmin || (admin?.can_change_trainer?.allow && !admin?.can_change_trainer?.isReadOnly);
 
   // ---- load user data ----
   const loadUser = async () => {
@@ -103,7 +109,7 @@ export default function UserDetail() {
     try {
       await api.patch(`/admin/personal-training/remove/${id}`);
       toast.success("Personal training removed successfully");
-      loadUser(); // refresh
+      loadUser();
     } catch (err) {
       toast.error(err?.response?.data?.message || "Failed to remove PT");
     }
@@ -168,7 +174,7 @@ export default function UserDetail() {
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-3xl font-black tracking-widest">MEMBER DETAILS</h1>
-              {isReadOnly && (
+              {!canEditMember && (
                 <span className="flex items-center gap-1 text-xs font-bold tracking-wide text-yellow-500">
                   <Lock size={12} /> READ ONLY
                 </span>
@@ -180,8 +186,8 @@ export default function UserDetail() {
           </div>
           <button
             onClick={() => setEditMemberOpen(true)}
-            disabled={!canEdit}
-            title={lockTitle}
+            disabled={!canEditMember}
+            title={!canEditMember ? "You don't have permission to edit member details" : ""}
             className="
               group relative overflow-hidden
               flex items-center gap-2
@@ -212,7 +218,8 @@ export default function UserDetail() {
               subscription={user.subscription}
               onRenew={() => setRenewMembershipOpen(true)}
               onRefresh={loadUser}
-              canEdit={canEdit} // pass down
+              canRenew={canRenew}         
+              isSuperAdmin={isSuperAdmin}   
             />
           </div>
 
@@ -225,7 +232,8 @@ export default function UserDetail() {
               subscription={user.subscription}
               onRemove={handleRemovePT}
               userId={user._id}
-              canEdit={canEdit} // pass down
+              canRenew={canRenew}                
+              canChangeTrainer={canChangeTrainer} 
             />
 
             <div className="border border-red-600/30 bg-gradient-to-br from-black via-neutral-900 to-black p-6 rounded-xl">
@@ -246,16 +254,16 @@ export default function UserDetail() {
                   <div className="flex gap-3">
                     <button
                       onClick={() => navigate(`/admin/workout/${userWorkout._id}`)}
-                      disabled={!canEdit}
-                      title={lockTitle}
+                      disabled={!canAssignWorkout}
+                      title={!canAssignWorkout ? "You don't have permission to edit workout plans" : ""}
                       className="flex-1 py-2 px-4 border border-white/10 text-white text-xs font-light hover:border-red-500 hover:text-red-500 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-white/10 disabled:hover:text-white"
                     >
                       EDIT PLAN
                     </button>
                     <button
                       onClick={() => { if (window.confirm("Replace current workout plan?")) setAssignWorkoutOpen(true); }}
-                      disabled={!canEdit}
-                      title={lockTitle}
+                      disabled={!canAssignWorkout}
+                      title={!canAssignWorkout ? "You don't have permission to change workout plans" : ""}
                       className="flex-1 py-2 px-4 border border-white/10 text-white text-xs font-light hover:border-red-500 hover:text-red-500 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-white/10 disabled:hover:text-white"
                     >
                       CHANGE PLAN
@@ -267,8 +275,8 @@ export default function UserDetail() {
                   <p className="text-neutral-400 text-sm">No workout plan assigned</p>
                   <button
                     onClick={() => setAssignWorkoutOpen(true)}
-                    disabled={!canEdit}
-                    title={lockTitle}
+                    disabled={!canAssignWorkout}
+                    title={!canAssignWorkout ? "You don't have permission to assign workout plans" : ""}
                     className="w-full py-3 px-4 bg-red-500 text-white text-xs font-light tracking-wider hover:bg-red-600 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     PROVIDE WORKOUT PLAN
@@ -318,8 +326,8 @@ export default function UserDetail() {
 
                   <button
                     onClick={() => setDietModalOpen(true)}
-                    disabled={!canEdit}
-                    title={lockTitle}
+                    disabled={!canAssignDiet}
+                    title={!canAssignDiet ? "You don't have permission to manage diet charts" : ""}
                     className="w-full py-2.5 px-4 border border-white/10 text-white text-xs font-light tracking-wider hover:border-red-500 hover:text-red-500 hover:bg-red-500/5 transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-white/10 disabled:hover:text-white"
                   >
                     <span>📋</span>
@@ -334,8 +342,8 @@ export default function UserDetail() {
                   </div>
                   <button
                     onClick={() => setDietModalOpen(true)}
-                    disabled={!canEdit}
-                    title={lockTitle}
+                    disabled={!canAssignDiet}
+                    title={!canAssignDiet ? "You don't have permission to assign diet charts" : ""}
                     className="w-full py-3 px-4 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white text-xs font-light tracking-wider transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     <span>+</span>
@@ -348,7 +356,6 @@ export default function UserDetail() {
         </div>
       </div>
 
-      {/* MODALS – only open if canEdit, but the button already disabled, so safe */}
       {assignPTOpen && (
         <AssignPTModal
           userId={user._id}

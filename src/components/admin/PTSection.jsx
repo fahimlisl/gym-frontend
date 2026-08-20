@@ -1,7 +1,17 @@
 import { useState, useMemo } from "react";
 import ChangePtDateModal from "./ChangePtDateModal";
 
-export default function PTSection({ pt, onAssign, onRenew, onChangeTrainer, onRemove, subscription, userId }) {
+export default function PTSection({ 
+  pt, 
+  onAssign, 
+  onRenew, 
+  onChangeTrainer, 
+  onRemove, 
+  subscription, 
+  userId,
+  canRenew,
+  canChangeTrainer
+}) {
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
   const [showChangeDate, setShowChangeDate] = useState(false);
   const [dateOverride, setDateOverride] = useState(null);
@@ -15,18 +25,23 @@ export default function PTSection({ pt, onAssign, onRenew, onChangeTrainer, onRe
         <p className="text-sm text-gray-400 tracking-widest">
           NO PERSONAL TRAINING ASSIGNED
         </p>
-        {subscription?.subscription[subscription?.subscription.length - 1]?.status === "active" ?
-        <button
-          onClick={onAssign}
-          className="bg-red-600 hover:bg-red-700
-          px-10 py-4 text-xs font-extrabold tracking-widest
-          shadow-[0_0_35px_rgba(239,68,68,0.4)]"
-        >
-          ASSIGN PERSONAL TRAINING
-        </button>
-        :
-        <p className="text-xs text-gray-500 tracking-widest">To assign Personal training must have a active plan</p>
-        }
+        {subscription?.subscription[subscription?.subscription.length - 1]?.status === "active" ? (
+          <button
+            onClick={onAssign}
+            disabled={!canRenew}
+            title={!canRenew ? "You don't have permission to assign PT" : ""}
+            className={`
+              bg-red-600 hover:bg-red-700
+              px-10 py-4 text-xs font-extrabold tracking-widest
+              shadow-[0_0_35px_rgba(239,68,68,0.4)]
+              ${!canRenew ? "opacity-40 cursor-not-allowed" : ""}
+            `}
+          >
+            ASSIGN PERSONAL TRAINING
+          </button>
+        ) : (
+          <p className="text-xs text-gray-500 tracking-widest">To assign Personal training must have a active plan</p>
+        )}
       </div>
     );
   }
@@ -34,7 +49,6 @@ export default function PTSection({ pt, onAssign, onRenew, onChangeTrainer, onRe
   const subs = pt.subscription;
   const now = new Date();
   
-  // Separate subscriptions by dates
   const { activeSubscription, upcomingSubscriptions, pastSubscriptions } = useMemo(() => {
     let active = null;
     const upcoming = [];
@@ -57,13 +71,12 @@ export default function PTSection({ pt, onAssign, onRenew, onChangeTrainer, onRe
   }, [subs]);
 
   const current = activeSubscription || upcomingSubscriptions[0] || pt.subscription[pt.subscription.length - 1];
-  const isPTActive = pt.subscription[pt.subscription.length - 1]?.status === "active" || pt.subscription[pt.subscription.length - 1]?.status === "upcoming"
-  const isPTExpired = pt.subscription[pt.subscription.length - 1]?.status === "expired"
+  const isPTActive = pt.subscription[pt.subscription.length - 1]?.status === "active" || pt.subscription[pt.subscription.length - 1]?.status === "upcoming";
+  const isPTExpired = pt.subscription[pt.subscription.length - 1]?.status === "expired";
   const isSubActive = subscription?.subscription[subscription?.subscription.length - 1]?.status?.toLowerCase() === "active" || subscription?.subscription[subscription?.subscription.length - 1]?.status?.toLowerCase() === "upcoming";
-  const canRenew = isPTExpired && isSubActive ;
-  const canAdvance = isPTActive && isSubActive;
+  const canRenewPT = isPTExpired && isSubActive && canRenew;
+  const canAdvancePT = isPTActive && isSubActive && canRenew;
 
-  // use overridden dates if we just changed them, otherwise fall back to server data
   const displayStart = dateOverride?.startDate ?? current.startDate;
   const displayEnd = dateOverride?.endDate ?? current.endDate;
 
@@ -93,11 +106,16 @@ export default function PTSection({ pt, onAssign, onRenew, onChangeTrainer, onRe
           {isPTActive && (
             <button
               onClick={() => setShowChangeDate(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5
-                         text-[10px] font-bold tracking-widest
-                         border border-white/10 rounded-lg
-                         text-gray-400 hover:border-red-600/50 hover:text-red-400
-                         cursor-pointer transition"
+              disabled={!canRenew}
+              title={!canRenew ? "You don't have permission to edit PT dates" : ""}
+              className={`
+                flex items-center gap-1.5 px-3 py-1.5
+                text-[10px] font-bold tracking-widest
+                border border-white/10 rounded-lg
+                text-gray-400 hover:border-red-600/50 hover:text-red-400
+                transition
+                ${!canRenew ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}
+              `}
             >
               <span>✎</span> EDIT DATES
             </button>
@@ -177,10 +195,10 @@ export default function PTSection({ pt, onAssign, onRenew, onChangeTrainer, onRe
         )}
       </div>
 
-      {/* Action Buttons - Just like your original */}
+      {/* Action Buttons */}
       <div className="flex flex-col sm:flex-row gap-4">
-        {/* RENEW PT - Only when expired */}
-        {canRenew && (
+        {/* RENEW PT */}
+        {canRenewPT && (
           <button
             onClick={onRenew}
             className="flex-1 border border-red-600
@@ -191,8 +209,8 @@ export default function PTSection({ pt, onAssign, onRenew, onChangeTrainer, onRe
           </button>
         )}
 
-        {/* ADVANCE PT - When active */}
-        {canAdvance && (
+        {/* ADVANCE PT */}
+        {canAdvancePT && (
           <button
             onClick={onRenew}
             className="flex-1 border border-green-600 text-green-400
@@ -203,8 +221,8 @@ export default function PTSection({ pt, onAssign, onRenew, onChangeTrainer, onRe
           </button>
         )}
 
-        {/* REMOVE PT - When expired */}
-        {isPTExpired && (
+        {/* REMOVE PT – only when expired, and requires canRenew */}
+        {isPTExpired && canRenew && (
           <button
             onClick={() => setShowRemoveConfirm(true)}
             className="flex-1 border border-red-600 text-red-500
@@ -215,8 +233,8 @@ export default function PTSection({ pt, onAssign, onRenew, onChangeTrainer, onRe
           </button>
         )}
 
-        {/* CHANGE TRAINER - When active */}
-        {isPTActive && (
+        {/* CHANGE TRAINER – only when active, requires canChangeTrainer */}
+        {isPTActive && canChangeTrainer && (
           <button
             onClick={onChangeTrainer}
             className="flex-1 border border-white/20 text-white/70

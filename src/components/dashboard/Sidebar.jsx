@@ -39,8 +39,7 @@ const PERMISSION_MAP = {
   "/admin/workout-templates": "workout_templates",
   "/admin/supplement/request": "supplement",
   "/admin/check-in/qr": "check_in_qr",
-  "/admin/attendance": "attendance",   
-  "/admin/payments": "payments",           
+  "/admin/attendance": "attendance",
   "/admin/supplements": "supplement",
   "/admin/supplements/dashboard": "sell_supplement",
   "/admin/coupons": "coupons",
@@ -49,6 +48,15 @@ const PERMISSION_MAP = {
   "/admin/assets": "assets",
   "/admin/plans": "plans",
   "/admin/offers": "offers",
+  "/admin/payments": "payments",
+  "/admin/cafe/items": "cafe_all_items",
+  "/admin/cafe/admins": "cafe_admins",
+};
+
+const NESTED_PERMISSION_MAP = {
+  "/admin/payments/payments-in": { parent: "payments", child: "payments_in" },
+  "/admin/payments/all": { parent: "payments", child: "all_payments" },
+  "/admin/payments/cafe": { parent: "payments", child: "cafe_payments" },
 };
 
 const mainMenu = [
@@ -86,7 +94,7 @@ const attendanceMenu = {
   ],
 };
 
-const paymentsMenu = {
+const paymentsMenuBase = {
   label: "Payments",
   icon: CreditCard,
   base: "/admin/payments",
@@ -149,21 +157,34 @@ export default function Sidebar({ open, onClose }) {
 
   const hasAccess = (to) => {
     if (isSuperAdmin) return true;
+
+    const nested = NESTED_PERMISSION_MAP[to];
+    if (nested) {
+      return !!admin?.[nested.parent]?.allow && !!admin?.[nested.child]?.allow;
+    }
+
     const module = PERMISSION_MAP[to];
     if (!module) return true;
     return !!admin?.[module]?.allow;
   };
 
   const visibleMainMenu = mainMenu.filter((item) => {
-    if (item.label === "Wp Qr") return isSuperAdmin; // unchanged: superadmin-only, not a permission-module item
+    if (item.label === "Wp Qr") return isSuperAdmin; 
     return hasAccess(item.to);
   });
 
   const visibleOtherMenu = otherMenu.filter((item) => hasAccess(item.to));
   const visibleSettings = settings.filter((item) => hasAccess(item.to));
+  const visibleCafeSection = cafeMenu.filter((item) => hasAccess(item.to));
+
+  const visiblePaymentsItems = paymentsMenuBase.items.filter((item) => hasAccess(item.to));
+  const paymentsMenu = {
+    ...paymentsMenuBase,
+    items: visiblePaymentsItems,
+  };
 
   const showAttendanceGroup = hasAccess(attendanceMenu.base);
-  const showPaymentsGroup = hasAccess(paymentsMenu.base);
+  const showPaymentsGroup = hasAccess(paymentsMenuBase.base) && visiblePaymentsItems.length > 0;
 
   useEffect(() => {
     if (open) {
@@ -251,11 +272,13 @@ export default function Sidebar({ open, onClose }) {
             </Section>
           )}
 
-          <Section title="CAFE">
-            {cafeMenu.map((item) => (
-              <SidebarLink key={item.to} item={item} onClose={onClose} />
-            ))}
-          </Section>
+          {visibleCafeSection.length > 0 && (
+            <Section title="CAFE">
+              {visibleCafeSection.map((item) => (
+                <SidebarLink key={item.to} item={item} onClose={onClose} />
+              ))}
+            </Section>
+          )}
 
           {visibleOtherMenu.length > 0 && (
             <Section title="INVENTORY">

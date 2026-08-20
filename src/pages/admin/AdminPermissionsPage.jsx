@@ -8,18 +8,48 @@ const MODULES = [
   "members", "payments", "trainer", "attendance", "plans", "offers",
   "supplement", "sell_supplement", "coupons", "trainer_coupon",
   "expense", "assets", "check_in_qr", "workout_templates",
+  "payments_in", "all_payments", "cafe_payments",
+  "cafe_all_items", "cafe_admins",
+  "can_assign_workout", "can_renew", "can_assign_diet", "can_change_trainer"
 ];
+
+const SECTION_GROUPS = {
+  "Members": [
+    "members",
+    "can_renew",
+    "can_assign_workout",
+    "can_assign_diet",
+    "can_change_trainer"
+  ],
+  "Payments": [
+    "payments",
+    "payments_in",
+    "all_payments",
+    "cafe_payments"
+  ],
+  "Cafe": [
+    "cafe_all_items",
+    "cafe_admins"
+  ],
+  "Other": [
+    "trainer", "attendance", "plans", "offers",
+    "supplement", "sell_supplement", "coupons", "trainer_coupon",
+    "expense", "assets", "check_in_qr", "workout_templates"
+  ]
+};
 
 export default function AdminPermissionsPage() {
   const { adminId } = useParams();
   const [admin, setAdmin] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [pending, setPending] = useState(null); 
-  console.log("do we have the adminId ? ",adminId)
+  const [pending, setPending] = useState(null);
+
+  console.log("do we have the adminId ? ", adminId);
+
   const loadAdmin = async () => {
     try {
       const { data } = await api.get(`/admin/get/a/${adminId}`);
-      console.log(data)
+      console.log(data);
       setAdmin(data?.data ?? data?.admin);
     } catch (err) {
       toast.error(err?.response?.data?.message || "Failed to load admin");
@@ -49,6 +79,54 @@ export default function AdminPermissionsPage() {
   if (loading) return <div className="text-gray-400 p-6">Loading...</div>;
   if (!admin) return <div className="text-gray-400 p-6">Admin not found</div>;
 
+  // Helper to render a group of modules with a section title
+  const renderSection = (title, moduleKeys) => {
+    // Filter out modules that don't exist on the admin (just in case)
+    const validModules = moduleKeys.filter(key => key in admin || MODULES.includes(key));
+    if (validModules.length === 0) return null;
+
+    return (
+      <div key={title} className="mb-8">
+        <h2 className="text-sm font-black tracking-widest text-gray-400 uppercase mb-4 border-b border-white/10 pb-2">
+          {title}
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {validModules.map((module) => {
+            const perm = admin[module] || { allow: false, isReadOnly: false };
+            return (
+              <div
+                key={module}
+                className="p-4 rounded-xl bg-neutral-950 border border-white/10"
+              >
+                <p className="text-white font-bold text-sm mb-3 capitalize">
+                  {module.replace(/_/g, " ")}
+                </p>
+
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-gray-400 text-xs">Allow access</span>
+                  <Toggle
+                    checked={perm.allow}
+                    disabled={pending === `${module}-allow`}
+                    onChange={() => handleToggle(module, "allow")}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-400 text-xs">Read only</span>
+                  <Toggle
+                    checked={perm.isReadOnly}
+                    disabled={!perm.allow || pending === `${module}-isReadOnly`}
+                    onChange={() => handleToggle(module, "isReadOnly")}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="p-6">
       <h1 className="text-xl font-black tracking-widest text-red-600 mb-1">
@@ -56,39 +134,8 @@ export default function AdminPermissionsPage() {
       </h1>
       <p className="text-gray-500 text-sm mb-6">{admin.email}</p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {MODULES.map((module) => {
-          const perm = admin[module] || { allow: false, isReadOnly: false };
-          return (
-            <div
-              key={module}
-              className="p-4 rounded-xl bg-neutral-950 border border-white/10"
-            >
-              <p className="text-white font-bold text-sm mb-3 capitalize">
-                {module.replace(/_/g, " ")}
-              </p>
-
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-400 text-xs">Allow access</span>
-                <Toggle
-                  checked={perm.allow}
-                  disabled={pending === `${module}-allow`}
-                  onChange={() => handleToggle(module, "allow")}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-gray-400 text-xs">Read only</span>
-                <Toggle
-                  checked={perm.isReadOnly}
-                  disabled={!perm.allow || pending === `${module}-isReadOnly`}
-                  onChange={() => handleToggle(module, "isReadOnly")}
-                />
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      {/* Render sections in order */}
+      {Object.entries(SECTION_GROUPS).map(([title, keys]) => renderSection(title, keys))}
     </div>
   );
 }

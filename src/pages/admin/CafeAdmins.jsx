@@ -1,14 +1,38 @@
 import { useEffect, useState } from "react";
-import { Plus, Trash2, Shield } from "lucide-react";
+import { Plus, Trash2, Shield, Lock } from "lucide-react";
 import toast from "react-hot-toast";
 
 import AddCafeAdminModal from "../../components/admin/cafe/AddCafeAdminModal.jsx";
 import { fetchAllCafeAdmin, destroyCafeAdmin } from "../../api/admin.api.js";
+import api from "../../api/axios.api.js";
 
 export default function CafeAdmins() {
   const [admins, setAdmins] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openAdd, setOpenAdd] = useState(false);
+
+  const [admin, setAdmin] = useState(null);
+  const [adminLoading, setAdminLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAdmin = async () => {
+      try {
+        const { data } = await api.get("/admin/get/me");
+        setAdmin(data?.admin ?? null);
+      } catch {
+        setAdmin(null);
+      } finally {
+        setAdminLoading(false);
+      }
+    };
+    fetchAdmin();
+  }, []);
+
+  const isSuperAdmin = admin?.isSuperAdmin ?? false;
+  const isAllowed = isSuperAdmin || !!admin?.cafe_admins?.allow;
+  const isReadOnly = !isSuperAdmin && !!admin?.cafe_admins?.isReadOnly;
+  const canEdit = isAllowed && !isReadOnly;
+  const lockTitle = isReadOnly ? "Read-only access" : "";
 
   const loadAdmins = async () => {
     try {
@@ -23,12 +47,11 @@ export default function CafeAdmins() {
   };
 
   useEffect(() => {
-    loadAdmins();
-  }, []);
+    if (isAllowed) loadAdmins();
+  }, [isAllowed]);
 
   const removeAdmin = async (id) => {
     if (!confirm("Remove this cafe admin?")) return;
-
     try {
       await destroyCafeAdmin(id);
       toast.success("Cafe admin removed");
@@ -37,6 +60,22 @@ export default function CafeAdmins() {
       toast.error("Failed to remove cafe admin");
     }
   };
+
+  if (adminLoading) {
+    return <div className="p-8 text-gray-400 tracking-widest">LOADING...</div>;
+  }
+
+  if (!isAllowed) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[60vh] text-center">
+        <Lock size={40} className="text-red-600 mb-4" />
+        <h2 className="text-lg font-bold mb-1">Access restricted</h2>
+        <p className="text-gray-500 text-sm">
+          You don't have permission to manage cafe admins.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -48,23 +87,37 @@ export default function CafeAdmins() {
                         p-6 rounded-xl"
         >
           <div>
-            <h1 className="text-3xl font-black tracking-widest">CAFE ADMINS</h1>
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-3xl font-black tracking-widest">CAFE ADMINS</h1>
+              {isReadOnly && (
+                <span className="flex items-center gap-1 text-xs font-bold tracking-wide text-yellow-500">
+                  <Lock size={12} /> READ ONLY
+                </span>
+              )}
+            </div>
             <p className="text-sm text-gray-400 mt-1">
               Manage cafe staff & permissions
             </p>
           </div>
 
-          <button
-            onClick={() => setOpenAdd(true)}
-            className="flex items-center gap-2
-                       bg-red-600 hover:bg-red-700
-                       px-6 py-3 text-xs font-extrabold
-                       tracking-widest rounded-lg
-                       shadow-lg shadow-red-600/30"
-          >
-            <Plus size={16} />
-            ADD CAFE ADMIN
-          </button>
+          {canEdit && (
+            <button
+              onClick={() => setOpenAdd(true)}
+              className="flex items-center gap-2
+                         bg-red-600 hover:bg-red-700
+                         px-6 py-3 text-xs font-extrabold
+                         tracking-widest rounded-lg
+                         shadow-lg shadow-red-600/30"
+            >
+              <Plus size={16} />
+              ADD CAFE ADMIN
+            </button>
+          )}
+          {!canEdit && isAllowed && (
+            <div className="flex items-center px-4 py-2 border border-yellow-500/30 rounded-lg text-yellow-500 text-[10px] font-bold tracking-widest">
+              VIEW ONLY
+            </div>
+          )}
         </div>
 
         {loading && (
@@ -84,13 +137,14 @@ export default function CafeAdmins() {
                 key={admin._id}
                 admin={admin}
                 onDelete={() => removeAdmin(admin._id)}
+                canEdit={canEdit}
               />
             ))}
           </div>
         )}
       </div>
 
-      {openAdd && (
+      {openAdd && canEdit && (
         <AddCafeAdminModal
           onClose={() => setOpenAdd(false)}
           onSuccess={loadAdmins}
@@ -100,7 +154,7 @@ export default function CafeAdmins() {
   );
 }
 
-function CafeAdminCard({ admin, onDelete }) {
+function CafeAdminCard({ admin, onDelete, canEdit }) {
   return (
     <div
       className="border border-white/10 bg-gradient-to-br
@@ -123,9 +177,14 @@ function CafeAdminCard({ admin, onDelete }) {
           </div>
         </div>
 
-        <button onClick={onDelete} className="text-gray-400 hover:text-red-500">
-          <Trash2 size={16} />
-        </button>
+        {canEdit && (
+          <button onClick={onDelete} className="text-gray-400 hover:text-red-500">
+            <Trash2 size={16} />
+          </button>
+        )}
+        {!canEdit && (
+          <span className="text-[10px] text-gray-500 font-semibold">VIEW ONLY</span>
+        )}
       </div>
 
       <div className="text-sm space-y-2 text-gray-300">

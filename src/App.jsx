@@ -223,16 +223,13 @@ export default function App() {
           <Route path="assets" element={
             <AdminInventory />
           } />
-          {/* <Route path="assets" element={
-            <SuperAdminRoute><AdminInventory /></SuperAdminRoute>
-          } /> */}
 
           <Route path="payments/all" element={
             <Payments />
           } />
 
           <Route path="payments/cafe" element={
-            <SuperAdminRoute><CafePaymentsOfAdmin /></SuperAdminRoute>
+            <CafePaymentsOfAdmin />
           } />
 
           <Route path="admins" element={

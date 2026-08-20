@@ -7,6 +7,7 @@ import {
   XCircle,
   Pencil,
   Trash2,
+  Lock,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import * as XLSX from "xlsx";
@@ -19,6 +20,7 @@ import {
   toggleCafeItemAvailability,
   destroyCafeItem,
 } from "../../api/admin.api.js";
+import api from "../../api/axios.api.js";
 
 function Macro({ label, value }) {
   return (
@@ -28,7 +30,8 @@ function Macro({ label, value }) {
     </div>
   );
 }
-function CafeItemCard({ item, onEdit, onDelete }) {
+
+function CafeItemCard({ item, onEdit, onDelete, canEdit }) {
   const [available, setAvailable] = useState(item.available);
   const [toggling, setToggling] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -37,6 +40,7 @@ function CafeItemCard({ item, onEdit, onDelete }) {
   const isLowStock = item.quantity < 5;
 
   const handleToggle = async () => {
+    if (!canEdit) return;
     try {
       setToggling(true);
       const res = await toggleCafeItemAvailability(item._id);
@@ -50,6 +54,7 @@ function CafeItemCard({ item, onEdit, onDelete }) {
   };
 
   const handleDeleteConfirmed = async () => {
+    if (!canEdit) return;
     try {
       setDeleting(true);
       await destroyCafeItem(item._id);
@@ -129,17 +134,18 @@ function CafeItemCard({ item, onEdit, onDelete }) {
           text-[10px] font-extrabold tracking-widest
           ${available ? "bg-emerald-500 text-black" : "bg-red-700 text-white"}`}
       >
-        {/* <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1">
           {available ? <CheckCircle size={13} /> : <XCircle size={13} />}
           {available ? "AVAILABLE" : "OUT OF STOCK"}
-        </div> */}
+        </div>
 
         <div className="flex gap-2 items-center">
           <button
             type="button"
             onClick={handleToggle}
-            disabled={toggling}
+            disabled={toggling || !canEdit}
             className={`min-w-[52px] h-7 px-3 text-[9px] rounded border cursor-pointer
+              ${!canEdit ? "opacity-40 cursor-not-allowed" : ""}
               ${available ? "border-black/40 text-black" : "border-white/40 text-white"}`}
           >
             {toggling ? "···" : "TOGGLE"}
@@ -147,8 +153,10 @@ function CafeItemCard({ item, onEdit, onDelete }) {
 
           <button
             type="button"
-            onClick={() => onEdit(item)}
-            className="min-w-[44px] h-7 px-3 text-[9px] rounded border border-yellow-400 text-yellow-400 flex items-center gap-1 cursor-pointer"
+            onClick={() => canEdit && onEdit(item)}
+            disabled={!canEdit}
+            className={`min-w-[44px] h-7 px-3 text-[9px] rounded border border-yellow-400 text-yellow-400 flex items-center gap-1 cursor-pointer
+              ${!canEdit ? "opacity-40 cursor-not-allowed" : ""}`}
           >
             <Pencil size={11} />
             EDIT
@@ -156,8 +164,10 @@ function CafeItemCard({ item, onEdit, onDelete }) {
 
           <button
             type="button"
-            onClick={() => setShowConfirm(true)}
-            className="min-w-[36px] h-7 px-3 text-[9px] rounded border border-white/40 text-white/70 flex items-center gap-1 cursor-pointer"
+            onClick={() => canEdit && setShowConfirm(true)}
+            disabled={!canEdit}
+            className={`min-w-[36px] h-7 px-3 text-[9px] rounded border border-white/40 text-white/70 flex items-center gap-1 cursor-pointer
+              ${!canEdit ? "opacity-40 cursor-not-allowed" : ""}`}
           >
             <Trash2 size={11} />
             DEL
@@ -165,7 +175,7 @@ function CafeItemCard({ item, onEdit, onDelete }) {
         </div>
       </div>
 
-      {showConfirm && (
+      {showConfirm && canEdit && (
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-black/90 rounded-xl">
           <Trash2 size={28} className="text-red-500" />
           <p className="text-white font-black text-sm tracking-wide text-center px-4">
@@ -206,6 +216,30 @@ export default function CafeItems() {
   const [openEdit, setOpenEdit] = useState(false);
   const [editItem, setEditItem] = useState(null);
 
+  // ---- admin permission state ----
+  const [admin, setAdmin] = useState(null);
+  const [adminLoading, setAdminLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAdmin = async () => {
+      try {
+        const { data } = await api.get("/admin/get/me");
+        setAdmin(data?.admin ?? null);
+      } catch {
+        setAdmin(null);
+      } finally {
+        setAdminLoading(false);
+      }
+    };
+    fetchAdmin();
+  }, []);
+
+  const isSuperAdmin = admin?.isSuperAdmin ?? false;
+  const isAllowed = isSuperAdmin || !!admin?.cafe_all_items?.allow;
+  const isReadOnly = !isSuperAdmin && !!admin?.cafe_all_items?.isReadOnly;
+  const canEdit = isAllowed && !isReadOnly;
+  const lockTitle = isReadOnly ? "Read-only access" : "";
+
   const loadItems = async () => {
     try {
       setLoading(true);
@@ -219,8 +253,8 @@ export default function CafeItems() {
   };
 
   useEffect(() => {
-    loadItems();
-  }, []);
+    if (isAllowed) loadItems();
+  }, [isAllowed]);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
@@ -265,13 +299,38 @@ export default function CafeItems() {
     toast.success("Exported successfully");
   };
 
+  // ---- loading / blocked states ----
+  if (adminLoading) {
+    return <div className="p-8 text-gray-400 tracking-widest">LOADING...</div>;
+  }
+
+  if (!isAllowed) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[60vh] text-center">
+        <Lock size={40} className="text-red-600 mb-4" />
+        <h2 className="text-lg font-bold mb-1">Access restricted</h2>
+        <p className="text-gray-500 text-sm">
+          You don't have permission to manage cafe items.
+        </p>
+      </div>
+    );
+  }
+
+  // ---- main render ----
   return (
     <>
       <div className="space-y-6">
 
         <div className="flex flex-col lg:flex-row gap-4 justify-between border border-red-600/30 bg-gradient-to-br from-black via-neutral-900 to-black p-5 rounded-xl">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-widest">CAFE ITEMS</h1>
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-2xl sm:text-3xl font-black tracking-widest">CAFE ITEMS</h1>
+              {isReadOnly && (
+                <span className="flex items-center gap-1 text-xs font-bold tracking-wide text-yellow-500">
+                  <Lock size={12} /> READ ONLY
+                </span>
+              )}
+            </div>
             <p className="text-xs sm:text-sm text-gray-400 mt-0.5">
               {loading ? "Loading…" : `${filtered.length} item${filtered.length !== 1 ? "s" : ""}`}
             </p>
@@ -296,13 +355,20 @@ export default function CafeItems() {
               EXPORT
             </button>
 
-            <button
-              onClick={() => setOpenAdd(true)}
-              className="flex items-center justify-center gap-2 bg-red-600 hover:bg-red-500 px-4 py-2 text-[11px] font-extrabold rounded-lg w-full sm:w-auto transition"
-            >
-              <Plus size={15} />
-              ADD ITEM
-            </button>
+            {canEdit && (
+              <button
+                onClick={() => setOpenAdd(true)}
+                className="flex items-center justify-center gap-2 bg-red-600 hover:bg-red-500 px-4 py-2 text-[11px] font-extrabold rounded-lg w-full sm:w-auto transition"
+              >
+                <Plus size={15} />
+                ADD ITEM
+              </button>
+            )}
+            {!canEdit && isAllowed && (
+              <div className="flex items-center px-4 py-2 border border-yellow-500/30 rounded-lg text-yellow-500 text-[10px] font-bold tracking-widest">
+                VIEW ONLY
+              </div>
+            )}
           </div>
         </div>
 
@@ -346,19 +412,20 @@ export default function CafeItems() {
                   setOpenEdit(true);
                 }}
                 onDelete={handleDelete}
+                canEdit={canEdit}
               />
             ))}
           </div>
         )}
       </div>
 
-      {openAdd && (
+      {openAdd && canEdit && (
         <AddCafeItemModal
           onClose={() => setOpenAdd(false)}
           onSuccess={loadItems}
         />
       )}
-      {openEdit && editItem && (
+      {openEdit && editItem && canEdit && (
         <EditCafeItemModal
           item={editItem}
           onClose={() => { setOpenEdit(false); setEditItem(null); }}

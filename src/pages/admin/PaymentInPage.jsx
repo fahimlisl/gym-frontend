@@ -361,9 +361,10 @@ export default function PaymentInPage() {
     fetchAdmin();
   }, []);
 
+  // ---- NEW: Combined permission logic ----
   const isSuperAdmin = admin?.isSuperAdmin ?? false;
-  const isAllowed = isSuperAdmin || !!admin?.payments?.allow;
-  const isReadOnly = !isSuperAdmin && !!admin?.payments?.isReadOnly;
+  const isAllowed = isSuperAdmin || (!!admin?.payments?.allow && !!admin?.payments_in?.allow);
+  const isReadOnly = !isSuperAdmin && !!admin?.payments_in?.isReadOnly;
   const canEdit = isAllowed && !isReadOnly;
   const lockTitle = isReadOnly ? "Read-only access" : "";
 
@@ -441,7 +442,9 @@ export default function PaymentInPage() {
         <Lock size={40} className="text-red-600 mb-4" />
         <h2 className="text-lg font-bold text-white mb-1">Access restricted</h2>
         <p className="text-gray-500 text-sm">
-          You don't have permission to view payments.
+          You don't have permission to view Payment In.
+          <br />
+          <span className="text-xs">Requires both Payments and Payment In access.</span>
         </p>
       </div>
     );

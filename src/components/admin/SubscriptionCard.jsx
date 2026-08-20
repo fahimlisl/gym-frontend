@@ -1,7 +1,14 @@
 import { useState, useMemo } from "react";
 import ChangeDateModal from "./ChangeDateModal";
 
-export default function SubscriptionCard({ isSuperAdmin, subscription, userId, onRenew, onRefresh }) {
+export default function SubscriptionCard({ 
+  isSuperAdmin, 
+  subscription, 
+  userId, 
+  onRenew, 
+  onRefresh,
+  canRenew 
+}) {
   const [changeDateOpen, setChangeDateOpen] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
 
@@ -16,7 +23,6 @@ export default function SubscriptionCard({ isSuperAdmin, subscription, userId, o
   const subs = subscription.subscription;
   const now = new Date();
   
-  // Separate subscriptions by actual dates, not just status
   const { 
     activeSubscriptions, 
     upcomingSubscriptions, 
@@ -33,14 +39,11 @@ export default function SubscriptionCard({ isSuperAdmin, subscription, userId, o
       
       const enrichedSub = { ...sub, isFirstEver, _originalIndex: index };
       
-      // Check if currently active based on dates
       if (startDate <= now && endDate >= now) {
         active.push(enrichedSub);
       } else if (startDate > now) {
-        // Future subscription
         upcoming.push(enrichedSub);
       } else if (endDate < now) {
-        // Past subscription (expired)
         past.push(enrichedSub);
       }
     });
@@ -48,14 +51,10 @@ export default function SubscriptionCard({ isSuperAdmin, subscription, userId, o
     return { activeSubscriptions: active, upcomingSubscriptions: upcoming, pastSubscriptions: past };
   }, [subs]);
 
-  // The most recent active subscription is the "current" one
   const currentActive = activeSubscriptions[activeSubscriptions.length - 1];
-  
-  // Check if last subscription is currently active (for button text)
   const lastSub = subs[subs.length - 1];
   const lastSubEndDate = new Date(lastSub.endDate);
   const hasActiveSubscription = currentActive !== undefined;
-  console.log(subs)
   
   return (
     <>
@@ -66,24 +65,22 @@ export default function SubscriptionCard({ isSuperAdmin, subscription, userId, o
             <p className="text-xs text-gray-400 mt-1">Membership details & history</p>
           </div>
           <div className="flex gap-2">
-            {/* Always show Renew/Advance button */}
-            {/* <button
+            {/* Renew/Advance button – now gated by canRenew */}
+            <button
               onClick={onRenew}
-              className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold tracking-widest 
-                         border border-green-600/50 text-green-400 rounded-lg 
-                         hover:bg-green-600/20 transition cursor-pointer"
+              disabled={!canRenew}
+              title={!canRenew ? "You don't have permission to renew or advance" : ""}
+              className={`
+                flex items-center gap-1.5 px-4 py-2 text-xs font-bold tracking-widest 
+                border border-green-600/50 text-green-400 rounded-lg 
+                hover:bg-green-600/20 transition cursor-pointer
+                ${!canRenew ? "opacity-40 cursor-not-allowed" : ""}
+              `}
             >
               {hasActiveSubscription ? "+ ADVANCE" : "+ RENEW"}
-            </button> */}
+            </button>
 
-            <button
-  onClick={onRenew}
-  className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold tracking-widest 
-             border border-green-600/50 text-green-400 rounded-lg 
-             hover:bg-green-600/20 transition cursor-pointer"
->
-  {hasActiveSubscription ? "+ ADVANCE" : "+ RENEW"}
-</button>
+            {/* Edit Dates – super admin only (keep as is) */}
             <button
               onClick={() => isSuperAdmin && currentActive && setChangeDateOpen(true)}
               disabled={!isSuperAdmin || !currentActive}
@@ -104,20 +101,17 @@ export default function SubscriptionCard({ isSuperAdmin, subscription, userId, o
           </div>
         </div>
 
-        {/* 1. CURRENT ACTIVE SUBSCRIPTION */}
+        {/* Rest of the component unchanged... */}
+
         {currentActive && (
           <div className="border border-green-600/40 bg-neutral-950 p-4 rounded-lg space-y-2">
             <p className="text-xs tracking-widest text-green-500">CURRENTLY ACTIVE</p>
-
             <Row label="Plan" value={currentActive.plan.toUpperCase()} />
             <Row label="Base Price" value={`₹${currentActive.baseAmount}`} />
-
             {currentActive.discount?.amount > 0 && (
               <Row label="Discount" value={`₹${currentActive.discount.amount}`} />
             )}
-
             <Row label="Final Amount" value={`₹${currentActive.finalAmount}`} />
-
             {currentActive.isFirstEver && (
               <>
                 <Row label="Admission Fee" value={`₹${subscription.admissionFee}`} />
@@ -135,7 +129,6 @@ export default function SubscriptionCard({ isSuperAdmin, subscription, userId, o
                 <Row label="Subtotal" value={`₹${subscription.finalAdFee + currentActive.finalAmount}`} />
               </>
             )}
-
             <Row label="Status" value={currentActive.status} />
             <Row label="Payment" value={currentActive.paymentStatus} />
             <Row
@@ -145,7 +138,7 @@ export default function SubscriptionCard({ isSuperAdmin, subscription, userId, o
           </div>
         )}
 
-        {/* 2. UPCOMING/ADVANCE SUBSCRIPTIONS */}
+        {/* Upcoming & History sections unchanged... */}
         {upcomingSubscriptions.length > 0 && (
           <div className="space-y-3">
             <p className="text-xs tracking-widest text-yellow-400 flex items-center gap-2">
@@ -161,7 +154,6 @@ export default function SubscriptionCard({ isSuperAdmin, subscription, userId, o
                 </p>
                 <Row label="Plan" value={s.plan.toUpperCase()} />
                 <Row label="Base Price" value={`₹${s.baseAmount}`} />
-                
                 {s.discount?.amount > 0 && (
                   <>
                     <Row label="Discount" value={`₹${s.discount.amount}`} />
@@ -170,7 +162,6 @@ export default function SubscriptionCard({ isSuperAdmin, subscription, userId, o
                     )}
                   </>
                 )}
-                
                 <Row label="Final Amount" value={`₹${s.finalAmount}`} />
                 <Row label="Status" value={s.status} />
                 <Row label="Payment" value={s.paymentStatus} />
@@ -183,7 +174,6 @@ export default function SubscriptionCard({ isSuperAdmin, subscription, userId, o
           </div>
         )}
 
-        {/* 3. SUBSCRIPTION HISTORY (Past Subscriptions) */}
         {pastSubscriptions.length > 0 && (
           <div className="space-y-3">
             <button
@@ -234,7 +224,6 @@ export default function SubscriptionCard({ isSuperAdmin, subscription, userId, o
           </div>
         )}
 
-        {/* If no subscriptions at all */}
         {!currentActive && upcomingSubscriptions.length === 0 && pastSubscriptions.length === 0 && (
           <div className="text-center text-gray-500 py-4">
             No subscriptions found
