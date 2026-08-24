@@ -248,80 +248,192 @@ const DeleteWarning = ({ target, onCancel, onConfirm }) => (
 );
 
 const calcStatBlocks = (txList, view) => {
+  const validTransactions = txList.filter(
+    (t) => t.status === "success"
+  );
+
+  const getAmountByMethod = (list, method) =>
+    list
+      .filter((t) => t.paymentMethod === method)
+      .reduce((sum, t) => sum + Number(t.amount || 0), 0);
+
   if (view === "paymentin") {
-    const paymentins = txList.filter((t) => t.source === "paymentin");
+    const paymentins = validTransactions.filter(
+      (t) => t.source === "paymentin"
+    );
+
     return {
-      cash:     paymentins.filter((t) => t.paymentMethod === "cash").reduce((s, t) => s + t.amount, 0),
-      upi:      paymentins.filter((t) => t.paymentMethod === "upi").reduce((s, t) => s + t.amount, 0),
-      razorpay: paymentins.filter((t) => t.paymentMethod === "razorpay").reduce((s, t) => s + t.amount, 0),
+      cash: getAmountByMethod(paymentins, "cash"),
+      upi: getAmountByMethod(paymentins, "upi"),
+      card: getAmountByMethod(paymentins, "card"),
+      netbanking: getAmountByMethod(paymentins, "netbanking"),
+      razorpay: getAmountByMethod(paymentins, "razorpay"),
     };
   }
-  const netByMethod = (m) => {
-    const credits = txList
-      .filter((t) => CREDIT_SOURCES.includes(t.source) && (m === "all" || t.paymentMethod === m))
-      .reduce((s, t) => s + t.amount, 0);
-    const debits = txList
-      .filter((t) => t.source === "expense" && (m === "all" || t.paymentMethod === m))
-      .reduce((s, t) => s + t.amount, 0);
+
+  const netByMethod = (method) => {
+    const credits = validTransactions
+      .filter(
+        (t) =>
+          CREDIT_SOURCES.includes(t.source) &&
+          t.paymentMethod === method
+      )
+      .reduce((sum, t) => sum + Number(t.amount || 0), 0);
+
+    const debits = validTransactions
+      .filter(
+        (t) =>
+          t.source === "expense" &&
+          t.paymentMethod === method
+      )
+      .reduce((sum, t) => sum + Number(t.amount || 0), 0);
+
     return credits - debits;
   };
-  return { cash: netByMethod("cash"), upi: netByMethod("upi"), razorpay: netByMethod("razorpay") };
+
+  return {
+    cash: netByMethod("cash"),
+    upi: netByMethod("upi"),
+    card: netByMethod("card"),
+    netbanking: netByMethod("netbanking"),
+    razorpay: netByMethod("razorpay"),
+  };
 };
 
 const StatRow = ({ blocks, view }) => {
-  const upiPlusRazorpay = blocks.upi + blocks.razorpay;
-  const netTotal = blocks.cash + blocks.upi + blocks.razorpay;
+  const digitalTotal =
+    blocks.upi +
+    blocks.card +
+    blocks.netbanking +
+    blocks.razorpay;
+
+  const netTotal =
+    blocks.cash +
+    digitalTotal;
+
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4">
       <StatCard
         label={view === "paymentin" ? "Cash (Payment In)" : "Net Cash (All)"}
         value={fmt(blocks.cash)}
         color={blocks.cash >= 0 ? "text-green-400" : "text-red-500"}
-        sub={view === "all" ? (blocks.cash >= 0 ? "↑ Positive" : "↓ Negative") : undefined}
+        sub={
+          view === "all"
+            ? blocks.cash >= 0
+              ? "↑ Positive"
+              : "↓ Negative"
+            : undefined
+        }
       />
+
       <StatCard
         label={view === "paymentin" ? "UPI (Payment In)" : "Net UPI (All)"}
         value={fmt(blocks.upi)}
         color={blocks.upi >= 0 ? "text-green-400" : "text-red-500"}
-        sub={view === "all" ? (blocks.upi >= 0 ? "↑ Positive" : "↓ Negative") : undefined}
+        sub={
+          view === "all"
+            ? blocks.upi >= 0
+              ? "↑ Positive"
+              : "↓ Negative"
+            : undefined
+        }
       />
-      <div className="col-span-2 md:col-span-1 flex flex-col rounded-xl bg-gradient-to-br from-black via-neutral-900 to-black border border-white/10 p-5">
+
+      <StatCard
+        label={view === "paymentin" ? "Cards (Payment In)" : "Net Cards (All)"}
+        value={fmt(blocks.card)}
+        color={blocks.card >= 0 ? "text-green-400" : "text-red-500"}
+        sub={
+          view === "all"
+            ? blocks.card >= 0
+              ? "↑ Positive"
+              : "↓ Negative"
+            : undefined
+        }
+      />
+
+      <div className="flex flex-col rounded-xl bg-gradient-to-br from-black via-neutral-900 to-black border border-white/10 p-5">
         <p className="text-[10px] text-gray-500 tracking-widest uppercase font-semibold">
-          {view === "paymentin" ? "Digital (Payment In)" : "Net Digital (All)"}
+          {view === "paymentin" ? "Net Digital (Payment In)" : "Net Digital (All)"}
         </p>
-        <p className={`text-2xl font-black mt-2 ${upiPlusRazorpay >= 0 ? "text-green-400" : "text-red-500"}`}>
-          ₹{fmt(upiPlusRazorpay)}
+
+        <p
+          className={`text-2xl font-black mt-2 ${
+            digitalTotal >= 0 ? "text-green-400" : "text-red-500"
+          }`}
+        >
+          ₹{fmt(digitalTotal)}
         </p>
+
         {view === "all" && (
-          <p className="text-xs text-gray-500 mt-1">
-            {upiPlusRazorpay >= 0 ? "↑ Positive" : "↓ Negative"}
+          <p
+            className={`text-xs mt-1 ${
+              digitalTotal >= 0 ? "text-green-400" : "text-red-400"
+            }`}
+          >
+            {digitalTotal >= 0 ? "↑ Positive" : "↓ Negative"}
           </p>
         )}
-        <div className="flex items-center gap-2 mt-2">
-          <span className="text-[10px] text-gray-500">UPI ₹{fmt(blocks.upi)}</span>
-          <span className="text-[10px] text-gray-600">+</span>
-          <span className="text-[10px] text-gray-500">Razorpay ₹{fmt(blocks.razorpay)}</span>
+
+        <div className="flex flex-col gap-1 mt-3 pt-3 border-t border-white/5">
+          <span className="text-[10px] text-gray-500">
+            UPI ₹{fmt(blocks.upi)}
+          </span>
+          <span className="text-[10px] text-gray-500">
+            Cards ₹{fmt(blocks.card)}
+          </span>
+          <span className="text-[10px] text-gray-500">
+            Netbanking ₹{fmt(blocks.netbanking)}
+          </span>
+          <span className="text-[10px] text-gray-500">
+            Razorpay ₹{fmt(blocks.razorpay)}
+          </span>
         </div>
+
         <p className="text-[10px] text-yellow-500/70 mt-2 leading-relaxed">
           ⚠ Razorpay settlements go directly to bank — not reflected in physical cash.
         </p>
       </div>
 
-      <div className="col-span-2 md:col-span-1 flex flex-col rounded-xl bg-gradient-to-br from-black via-neutral-900 to-black border border-white/10 p-5 relative overflow-hidden">
+      <div className="flex flex-col rounded-xl bg-gradient-to-br from-black via-neutral-900 to-black border border-white/10 p-5 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-red-600/5 to-transparent pointer-events-none" />
+
         <p className="text-[10px] text-gray-500 tracking-widest uppercase font-semibold">
           {view === "paymentin" ? "Net Total (Payment In)" : "Net Total (All)"}
         </p>
-        <p className={`text-2xl font-black mt-2 ${netTotal >= 0 ? "text-white" : "text-red-500"}`}>
+
+        <p
+          className={`text-2xl font-black mt-2 ${
+            netTotal >= 0 ? "text-white" : "text-red-500"
+          }`}
+        >
           ₹{fmt(netTotal)}
         </p>
-        <p className={`text-xs mt-1 font-semibold ${netTotal >= 0 ? "text-green-400" : "text-red-400"}`}>
+
+        <p
+          className={`text-xs mt-1 font-semibold ${
+            netTotal >= 0 ? "text-green-400" : "text-red-400"
+          }`}
+        >
           {netTotal >= 0 ? "↑ Net Positive" : "↓ Net Negative"}
         </p>
+
         <div className="flex flex-col gap-1 mt-3 pt-3 border-t border-white/5">
-          <span className="text-[10px] text-gray-500">Cash ₹{fmt(blocks.cash)}</span>
-          <span className="text-[10px] text-gray-500">UPI ₹{fmt(blocks.upi)}</span>
-          <span className="text-[10px] text-gray-500">Razorpay ₹{fmt(blocks.razorpay)}</span>
+          <span className="text-[10px] text-gray-500">
+            Cash ₹{fmt(blocks.cash)}
+          </span>
+          <span className="text-[10px] text-gray-500">
+            UPI ₹{fmt(blocks.upi)}
+          </span>
+          <span className="text-[10px] text-gray-500">
+            Cards ₹{fmt(blocks.card)}
+          </span>
+          <span className="text-[10px] text-gray-500">
+            Netbanking ₹{fmt(blocks.netbanking)}
+          </span>
+          <span className="text-[10px] text-gray-500">
+            Razorpay ₹{fmt(blocks.razorpay)}
+          </span>
         </div>
       </div>
     </div>
@@ -335,7 +447,6 @@ export default function PaymentInPage() {
   const [editTarget, setEditTarget]     = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   
-  // ---- admin permission state ----
   const [admin, setAdmin] = useState(null);
   const [adminLoading, setAdminLoading] = useState(true);
 
@@ -346,7 +457,6 @@ export default function PaymentInPage() {
   const [method, setMethod]     = useState("all");
   const [source, setSource]     = useState("all");
 
-  // Fetch admin permissions
   useEffect(() => {
     const fetchAdmin = async () => {
       try {
@@ -361,7 +471,6 @@ export default function PaymentInPage() {
     fetchAdmin();
   }, []);
 
-  // ---- NEW: Combined permission logic ----
   const isSuperAdmin = admin?.isSuperAdmin ?? false;
   const isAllowed = isSuperAdmin || (!!admin?.payments?.allow && !!admin?.payments_in?.allow);
   const isReadOnly = !isSuperAdmin && !!admin?.payments_in?.isReadOnly;
@@ -379,7 +488,6 @@ export default function PaymentInPage() {
     }
   };
 
-  // Only load if allowed
   useEffect(() => {
     if (isAllowed) load();
   }, [isAllowed]);
@@ -431,7 +539,6 @@ export default function PaymentInPage() {
   const filterInputCls =
     "w-full bg-neutral-900 border border-white/10 px-3 py-2.5 rounded-lg text-sm text-white focus:outline-none focus:border-red-600/40 transition-colors";
 
-  // ---- loading / block states ----
   if (adminLoading) {
     return <div className="min-h-screen bg-black text-gray-400 p-8">Loading...</div>;
   }
@@ -450,7 +557,6 @@ export default function PaymentInPage() {
     );
   }
 
-  // ---- main render ----
   let si = 1;
   return (
     <div className="min-h-screen bg-black py-4 md:py-8 space-y-6">
