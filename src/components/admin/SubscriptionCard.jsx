@@ -81,19 +81,21 @@ export default function SubscriptionCard({
             </button>
 
             {/* Edit Dates – super admin only (keep as is) */}
+            {/* not true normal admin as well can access with with canRenew permission */}
             <button
-              onClick={() => isSuperAdmin && currentActive && setChangeDateOpen(true)}
-              disabled={!isSuperAdmin || !currentActive}
-              title={!isSuperAdmin ? "Super admin only" : !currentActive ? "No active subscription" : ""}
+              onClick={() => currentActive && setChangeDateOpen(true)}
+              disabled={!canRenew}
+              title={!canRenew ? "You don't have permission to edit dates" : ""}
               className={`
                 flex items-center gap-1.5 px-3 py-1.5
                 text-[10px] font-bold tracking-widest
                 border border-white/10 rounded-lg
                 transition
-                ${isSuperAdmin && currentActive
+                ${currentActive
                   ? "text-gray-400 hover:border-red-600/50 hover:text-red-400 cursor-pointer"
                   : "text-gray-600 opacity-40 cursor-not-allowed"
                 }
+                ${!canRenew ? "opacity-40 cursor-not-allowed" : ""}
               `}
             >
               <span>✎</span> EDIT DATES
