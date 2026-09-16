@@ -25,7 +25,9 @@ export default function PTSection({
         <p className="text-sm text-gray-400 tracking-widest">
           NO PERSONAL TRAINING ASSIGNED
         </p>
-        {subscription?.subscription[subscription?.subscription.length - 1]?.status === "active" ? (
+        {/* {subscription?.subscription[subscription?.subscription.length - 1]?.status === "active" ? ( */}
+        {/* doing such cuz we neeed to give access for pt modification and things if the user has a non expired membership */}
+        {subscription?.subscription[subscription?.subscription.length - 1]?.status !== "expired" ? (
           <button
             onClick={onAssign}
             disabled={!canRenew}
