@@ -80,6 +80,36 @@ const SectionLabel = ({ children }) => (
   <p className="text-[10px] text-gray-500 tracking-widest uppercase font-semibold px-1">{children}</p>
 );
 
+// --- Mobile-friendly date field ---------------------------------------------
+const DateField = ({ label, value, onChange }) => {
+  const handleClick = (e) => {
+    // Force the native date picker to open on mobile
+    try {
+      e.currentTarget.showPicker?.();
+    } catch {
+      /* ignore – browser will handle it natively */
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-1.5 w-full min-w-0">
+      <span className="text-[10px] text-gray-500 tracking-widest uppercase font-semibold px-1">
+        {label}
+      </span>
+      <input
+        type="date"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onClick={handleClick}
+        className="w-full min-w-0 min-h-[44px] bg-black border border-white/20 px-4 py-2
+                   text-white cursor-pointer appearance-auto [-webkit-appearance:auto]
+                   focus:outline-none focus:border-red-600/60"
+      />
+    </div>
+  );
+};
+// ---------------------------------------------------------------------------
+
 export default function Expenses() {
   const [expenses, setExpenses]     = useState([]);
   const [loading, setLoading]       = useState(true);
@@ -272,6 +302,24 @@ export default function Expenses() {
 
   return (
     <>
+      <style>{`
+        input[type="date"] {
+          -webkit-appearance: auto;
+          appearance: auto;
+          min-height: 44px;
+          cursor: pointer;
+        }
+        input[type="date"]::-webkit-calendar-picker-indicator {
+          filter: invert(1);
+          opacity: 1;
+          cursor: pointer;
+          padding: 4px;
+        }
+        input[type="date"]::-webkit-date-and-time-value {
+          text-align: left;
+        }
+      `}</style>
+
       <div className="space-y-8">
 
         <div className="border border-red-600/30 bg-black p-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
@@ -375,21 +423,40 @@ export default function Expenses() {
           )}
         </div>
 
-        <div className="flex flex-col sm:flex-row flex-wrap gap-4 items-stretch sm:items-end">
-          <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)}
-            className="bg-black border border-white/20 px-4 py-2 w-full sm:w-auto" />
-          <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)}
-            className="bg-black border border-white/20 px-4 py-2 w-full sm:w-auto" />
-          <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}
-            className="bg-black border border-white/20 px-4 py-2 w-full sm:w-auto">
-            <option value="all">All Categories</option>
-            {categories.map((c) => <option key={c} value={c}>{c}</option>)}
-          </select>
-          <button onClick={exportExcel}
-            className="bg-green-600 hover:bg-green-700 px-6 py-2 font-bold w-full sm:w-auto sm:ml-auto">
+        {/* ------------------------- FILTER BAR (mobile fixed) ------------------------- */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap gap-4 lg:items-end">
+          <div className="w-full lg:w-auto lg:min-w-[170px]">
+            <DateField label="From Date" value={fromDate} onChange={setFromDate} />
+          </div>
+
+          <div className="w-full lg:w-auto lg:min-w-[170px]">
+            <DateField label="To Date" value={toDate} onChange={setToDate} />
+          </div>
+
+          <div className="flex flex-col gap-1.5 w-full lg:w-auto min-w-0">
+            <span className="text-[10px] text-gray-500 tracking-widest uppercase font-semibold px-1">
+              Category
+            </span>
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="w-full lg:w-auto min-h-[44px] bg-black border border-white/20 px-4 py-2
+                         text-white focus:outline-none focus:border-red-600/60"
+            >
+              <option value="all">All Categories</option>
+              {categories.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+
+          <button
+            onClick={exportExcel}
+            className="bg-green-600 hover:bg-green-700 px-6 py-2 min-h-[44px] font-bold
+                       w-full lg:w-auto lg:ml-auto"
+          >
             EXPORT EXCEL
           </button>
         </div>
+        {/* -------------------------------------------------------------------------- */}
 
         {loading ? (
           <p className="text-gray-500 tracking-widest">LOADING EXPENSES...</p>
