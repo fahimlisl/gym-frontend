@@ -1,26 +1,28 @@
 export const ROLE_MAP = {
   admin: {
     label: "Admin",
-    loginEndpoint: "/admin/login",
     basePath: "/admin",
+    loginEndpoint: "/admin/login",
+    sessionEndpoint: "/admin/get/me",
     redirect: "/admin/dashboard",
   },
+
   trainer: {
     label: "Trainer",
-    loginEndpoint: "/trainer/login",
     basePath: "/trainer",
+    loginEndpoint: "/trainer/login",
+    sessionEndpoint: "/trainer/fetchSelf",
     redirect: "/trainer/dashboard",
   },
+
   member: {
     label: "Member",
-    loginEndpoint: "/user/login",
     basePath: "/user",
+    loginEndpoint: "/user/login",
+
+    // no auto redirect for members
+    sessionEndpoint: null,
+
     redirect: "/member/dashboard",
-  },
-  cafe: {
-    label: "Cafe",
-    loginEndpoint: "/cafe/admin/login",
-    basePath: "/cafe/admin",
-    redirect: "/cafe/dashboard",
   },
 };

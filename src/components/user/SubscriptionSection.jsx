@@ -186,13 +186,52 @@ function QuickInfo({ icon, label, value, highlight = false }) {
 
 function StatusBadge({ status, isExpired }) {
   const statusConfig = {
-    active: { color: "green", icon: CheckCircle2, label: isExpired ? "EXPIRED" : "ACTIVE", bg: isExpired ? "bg-red-500/20" : "bg-green-500/20", border: isExpired ? "border-red-500/30" : "border-green-500/30", text: isExpired ? "text-red-400" : "text-green-400" },
-    expired: { color: "red", icon: XCircle, label: "EXPIRED", bg: "bg-red-500/20", border: "border-red-500/30", text: "text-red-400" },
-    pending: { color: "yellow", icon: AlertCircle, label: "PENDING", bg: "bg-yellow-500/20", border: "border-yellow-500/30", text: "text-yellow-400" },
-    cancelled: { color: "gray", icon: XCircle, label: "CANCELLED", bg: "bg-gray-500/20", border: "border-gray-500/30", text: "text-gray-400" }
+    active: {
+      color: "green",
+      icon: CheckCircle2,
+      label: isExpired ? "EXPIRED" : "ACTIVE",
+      bg: isExpired ? "bg-red-500/20" : "bg-green-500/20",
+      border: isExpired ? "border-red-500/30" : "border-green-500/30",
+      text: isExpired ? "text-red-400" : "text-green-400",
+    },
+    upcoming: {
+      color: "blue",
+      icon: Calendar,
+      label: "UPCOMING",
+      bg: "bg-blue-500/20",
+      border: "border-blue-500/30",
+      text: "text-blue-400",
+    },
+    expired: {
+      color: "red",
+      icon: XCircle,
+      label: "EXPIRED",
+      bg: "bg-red-500/20",
+      border: "border-red-500/30",
+      text: "text-red-400",
+    },
+    pending: {
+      color: "yellow",
+      icon: AlertCircle,
+      label: "PENDING",
+      bg: "bg-yellow-500/20",
+      border: "border-yellow-500/30",
+      text: "text-yellow-400",
+    },
+    cancelled: {
+      color: "gray",
+      icon: XCircle,
+      label: "CANCELLED",
+      bg: "bg-gray-500/20",
+      border: "border-gray-500/30",
+      text: "text-gray-400",
+    },
   };
 
-  const config = statusConfig[isExpired ? "expired" : (status?.toLowerCase() || "active")];
+  const config =
+    statusConfig[isExpired ? "expired" : (status?.toLowerCase() || "active")] ??
+    statusConfig.pending;
+
   const StatusIcon = config.icon;
 
   return (

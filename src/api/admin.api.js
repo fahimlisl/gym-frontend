@@ -138,4 +138,43 @@ export const showParticularDiet = (userId) =>
 export const unlockDiet = (dietId) =>
   api.patch(`/admin/diet/approve/${dietId}`, { status: "draft" });
 
+
+// from adminFace.api.js
+export const uploadTrainerVerificationAvatar = (
+  trainerId,
+  files
+) => {
+  const formData = new FormData();
+
+  files.forEach((file) => {
+    formData.append(
+      "verificationAvatar",
+      file,
+      file.name
+    );
+  });
+
+  return api.patch(
+    `/admin/trainer/${trainerId}/verification-avatar`,
+    formData,
+    {
+      timeout: 120000,
+    }
+  );
+};
+
+
+export const getTrainerVerificationPhotos = async (
+  trainerId
+) => {
+  const { data } = await api.get(
+    `/admin/trainer/${trainerId}/verification-photos`
+  );
+
+  return data?.data?.photos ?? [];
+};
+
+
+
+
 export const registerAdmin = (payload) => api.post("/admin/register", payload);

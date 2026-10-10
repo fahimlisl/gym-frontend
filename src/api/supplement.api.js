@@ -1,4 +1,4 @@
-import { api } from "./auth.api";
+import { api } from "./axios.api.js";
 
 
 export const fetchPublicSupplements = async () => {

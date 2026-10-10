@@ -1,18 +1,26 @@
 import { NavLink, useNavigate, Outlet } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { 
-  Menu, 
-  X, 
-  LayoutDashboard, 
-  QrCode, 
-  CalendarCheck, 
+import {
+  Menu,
+  X,
+  LayoutDashboard,
+  QrCode,
+  CalendarCheck,
   UserCheck,
   Key,
-  LogOut, 
+  LogOut,
   ScanQrCode
 } from "lucide-react";
+
 import toast from "react-hot-toast";
-import { trainerLogout, trainerChangePassword, getTrainerSelf } from "../../api/trainer.api.js";
+
+import {
+  trainerLogout,
+  trainerChangePassword,
+  getTrainerSelf
+} from "../../api/trainer.api.js";
+import FloatingAttendance from "../../components/trainer/FloatingAttendance.jsx";
+
 import { useForm } from "react-hook-form";
 
 export default function TrainerDashboardLayout() {
@@ -26,18 +34,18 @@ export default function TrainerDashboardLayout() {
     register,
     handleSubmit,
     reset,
-    formState: { isSubmitting },
+    formState: { isSubmitting }
   } = useForm();
 
   useEffect(() => {
     const fetchTrainer = async () => {
       try {
-        const response = await getTrainerSelf(); 
-        setTrainer(response.data.data); 
+        const response = await getTrainerSelf();
+        setTrainer(response.data.data);
       } catch (error) {
-        console.log(error)
+        console.log(error);
         toast.error("Failed to fetch trainer data");
-        navigate("/login"); 
+        navigate("/login");
       } finally {
         setLoading(false);
       }
@@ -95,6 +103,7 @@ export default function TrainerDashboardLayout() {
       </div>
     );
   }
+
   if (!trainer) {
     return null;
   }
@@ -102,12 +111,8 @@ export default function TrainerDashboardLayout() {
   return (
     <>
       <div className="min-h-screen bg-neutral-950 text-white">
-        <header
-          className="md:hidden h-14 px-4 flex items-center justify-between
-                           border-b border-red-600/30 bg-black"
-        >
+        <header className="md:hidden h-14 px-4 flex items-center justify-between border-b border-red-600/30 bg-black">
           <h1 className="font-black tracking-widest uppercase">Trainer</h1>
-
           <button
             onClick={() => setOpen(true)}
             className="border border-red-600 p-2 rounded hover:bg-red-600/20 transition-colors"
@@ -122,24 +127,16 @@ export default function TrainerDashboardLayout() {
               className="absolute inset-0 bg-black/70 backdrop-blur-sm"
               onClick={() => setOpen(false)}
             />
-
-            <aside
-              className="absolute left-0 top-0 h-full w-72
-                              bg-black border-r border-red-600/30
-                              flex flex-col"
-            >
-              <div
-                className="px-6 py-5 border-b border-red-600/30
-                              flex items-center justify-between"
-              >
+            <aside className="absolute left-0 top-0 h-full w-72 bg-black border-r border-red-600/30 flex flex-col">
+              <div className="px-6 py-5 border-b border-red-600/30 flex items-center justify-between">
                 <div>
-                  <p className="text-[10px] text-gray-400 tracking-widest">
-                    TRAINER
-                  </p>
+                  <p className="text-[10px] text-gray-400 tracking-widest">TRAINER</p>
                   <p className="font-black text-lg">{trainer?.fullName}</p>
                 </div>
-
-                <button onClick={() => setOpen(false)} className="hover:text-red-500 transition-colors">
+                <button
+                  onClick={() => setOpen(false)}
+                  className="hover:text-red-500 transition-colors"
+                >
                   <X size={20} />
                 </button>
               </div>
@@ -155,19 +152,14 @@ export default function TrainerDashboardLayout() {
               <div className="px-4 py-4 border-t border-red-600/30 space-y-2">
                 <button
                   onClick={() => setShowChangeModal(true)}
-                  className="w-full flex items-center justify-center gap-2 border border-red-600 py-2.5
-                             text-xs font-extrabold tracking-widest rounded
-                             hover:bg-red-600 transition-all duration-200"
+                  className="w-full flex items-center justify-center gap-2 border border-red-600 py-2.5 text-xs font-extrabold tracking-widest rounded hover:bg-red-600 transition-all duration-200"
                 >
                   <Key size={14} />
                   CHANGE PASSWORD
                 </button>
-
                 <button
                   onClick={logout}
-                  className="w-full flex items-center justify-center gap-2 border border-red-600 py-2.5
-                             text-xs font-extrabold tracking-widest rounded
-                             hover:bg-red-600 transition-all duration-200"
+                  className="w-full flex items-center justify-center gap-2 border border-red-600 py-2.5 text-xs font-extrabold tracking-widest rounded hover:bg-red-600 transition-all duration-200"
                 >
                   <LogOut size={14} />
                   LOGOUT
@@ -183,14 +175,11 @@ export default function TrainerDashboardLayout() {
               <div className="flex items-center gap-4">
                 <img
                   src={trainer?.avatar?.url}
-                  className="w-14 h-14 rounded-full
-                             border-2 border-red-600 object-cover"
+                  className="w-14 h-14 rounded-full border-2 border-red-600 object-cover"
                   alt={trainer?.fullName}
                 />
                 <div>
-                  <p className="text-[10px] text-gray-400 tracking-widest">
-                    TRAINER
-                  </p>
+                  <p className="text-[10px] text-gray-400 tracking-widest">TRAINER</p>
                   <p className="font-black text-base">{trainer?.fullName}</p>
                   <p className="text-xs text-gray-500 mt-0.5">{trainer?.email}</p>
                 </div>
@@ -208,19 +197,14 @@ export default function TrainerDashboardLayout() {
             <div className="px-4 py-4 border-t border-red-600/30 space-y-2">
               <button
                 onClick={() => setShowChangeModal(true)}
-                className="w-full flex items-center justify-center gap-2 border border-red-600 py-2.5
-                           text-xs font-extrabold tracking-widest rounded
-                           hover:bg-red-600 transition-all duration-200"
+                className="w-full flex items-center justify-center gap-2 border border-red-600 py-2.5 text-xs font-extrabold tracking-widest rounded hover:bg-red-600 transition-all duration-200"
               >
                 <Key size={14} />
                 CHANGE PASSWORD
               </button>
-
               <button
                 onClick={logout}
-                className="w-full flex items-center justify-center gap-2 border border-red-600 py-2.5
-                           text-xs font-extrabold tracking-widest rounded
-                           hover:bg-red-600 transition-all duration-200"
+                className="w-full flex items-center justify-center gap-2 border border-red-600 py-2.5 text-xs font-extrabold tracking-widest rounded hover:bg-red-600 transition-all duration-200"
               >
                 <LogOut size={14} />
                 LOGOUT
@@ -229,44 +213,33 @@ export default function TrainerDashboardLayout() {
           </aside>
 
           <div className="flex-1 flex flex-col">
-            <header
-              className="h-16 px-6 flex items-center justify-between
-                               border-b border-red-600/30 bg-neutral-900"
-            >
-              <h1 className="text-lg font-black tracking-widest uppercase">
-                Trainer Panel
-              </h1>
+            <header className="h-16 px-6 flex items-center justify-between border-b border-red-600/30 bg-neutral-900">
+              <h1 className="text-lg font-black tracking-widest uppercase">Trainer Panel</h1>
               <div className="flex items-center gap-3">
-                <span className="text-sm text-gray-400">
-                  Welcome back,
-                </span>
+                <span className="text-sm text-gray-400">Welcome back,</span>
                 <span className="text-sm font-bold text-red-500">
-                  {trainer?.fullName?.split(' ')[0]}
+                  {trainer?.fullName?.split(" ")[0]}
                 </span>
               </div>
             </header>
 
-            <main className="flex-1 p-6 overflow-y-auto">
+            <main className="flex-1 px-6 pt-6 pb-28 overflow-y-auto">
               <Outlet />
             </main>
           </div>
         </div>
 
-        <main className="md:hidden p-4">
+        <main className="md:hidden px-4 pt-4 pb-28">
           <Outlet />
         </main>
       </div>
-      {showChangeModal && (
-        <div
-          className="fixed inset-0 bg-black/80 backdrop-blur-sm
-                        flex items-center justify-center z-50"
-        >
-          <div
-            className="relative w-full max-w-md border border-red-600/30
-                          bg-neutral-950 shadow-[0_0_80px_rgba(255,0,0,0.25)]"
-          >
-            <div className="h-1 bg-gradient-to-r from-red-700 via-red-500 to-red-700" />
 
+      <FloatingAttendance />
+
+      {showChangeModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="relative w-full max-w-md border border-red-600/30 bg-neutral-950 shadow-[0_0_80px_rgba(255,0,0,0.25)]">
+            <div className="h-1 bg-gradient-to-r from-red-700 via-red-500 to-red-700" />
             <div className="p-8">
               <h2 className="text-xl font-black tracking-widest text-red-600 mb-6 flex items-center gap-2">
                 <Key size={20} />
@@ -278,33 +251,24 @@ export default function TrainerDashboardLayout() {
                   type="password"
                   placeholder="OLD PASSWORD"
                   {...register("oldPassword", { required: true })}
-                  className="w-full mb-4 bg-black border border-white/10 px-4 py-3 text-white
-                             focus:border-red-500 focus:outline-none transition-colors"
+                  className="w-full mb-4 bg-black border border-white/10 px-4 py-3 text-white focus:border-red-500 focus:outline-none transition-colors"
                 />
-
                 <input
                   type="password"
                   placeholder="NEW PASSWORD"
                   {...register("newPassword", { required: true })}
-                  className="w-full mb-4 bg-black border border-white/10 px-4 py-3 text-white
-                             focus:border-red-500 focus:outline-none transition-colors"
+                  className="w-full mb-4 bg-black border border-white/10 px-4 py-3 text-white focus:border-red-500 focus:outline-none transition-colors"
                 />
-
                 <input
                   type="password"
                   placeholder="CONFIRM NEW PASSWORD"
                   {...register("confirmNewPassword", { required: true })}
-                  className="w-full mb-6 bg-black border border-white/10 px-4 py-3 text-white
-                             focus:border-red-500 focus:outline-none transition-colors"
+                  className="w-full mb-6 bg-black border border-white/10 px-4 py-3 text-white focus:border-red-500 focus:outline-none transition-colors"
                 />
-
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full py-4 font-extrabold tracking-widest rounded
-                             bg-gradient-to-r from-red-700 via-red-600 to-red-700
-                             text-black hover:brightness-110 transition-all duration-200
-                             disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full py-4 font-extrabold tracking-widest rounded bg-gradient-to-r from-red-700 via-red-600 to-red-700 text-black hover:brightness-110 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? "UPDATING..." : "UPDATE PASSWORD"}
                 </button>

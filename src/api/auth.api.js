@@ -1,10 +1,4 @@
-
-import axios from "axios";
-
-export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
-  withCredentials: true,
-});
+import { api } from "../api/axios.api.js"
 
 
 // will be shifting  admin things to admin.api.js
