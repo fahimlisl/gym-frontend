@@ -64,6 +64,7 @@ export default function AddMemberModal({ onClose, onSuccess }) {
   const [form, setForm] = useState({
     username: "",
     email: "",
+    gender: "",
     phoneNumber: "",
     planId: "",
     paymentMethod: "cash",
@@ -264,6 +265,7 @@ export default function AddMemberModal({ onClose, onSuccess }) {
       const fd = new FormData();
       fd.append("username", form.username);
       fd.append("email", form.email || "");
+      fd.append("gender", form.gender || "");
       fd.append("phoneNumber", form.phoneNumber);
       fd.append("planId", selectedPlan._id);
       fd.append("admissionFee", ADMISSION_FEE);
@@ -347,6 +349,16 @@ export default function AddMemberModal({ onClose, onSuccess }) {
             />
           </TwoCol>
 
+        <TwoCol>
+          <Select
+            label="GENDER *"
+            name="gender"
+            value={form.gender}
+            onChange={handleChange}
+            options={["male", "female", "prefer not to say"]}
+            placeholder="Select Gender"
+            required
+          />
           <Input 
             label="EMAIL *" 
             name="email" 
@@ -355,6 +367,8 @@ export default function AddMemberModal({ onClose, onSuccess }) {
             onChange={handleChange}
             required
           />
+        </TwoCol>
+
 
           <FileInput 
             label="AVATAR" 
@@ -612,17 +626,30 @@ function Input({ label, ...props }) {
   );
 }
 
-function Select({ label, options, ...props }) {
+function Select({ label, options, placeholder, ...props }) {
   return (
     <div>
-      <label className="text-xs tracking-widest text-gray-400">{label}</label>
+      <label className="text-xs tracking-widest text-gray-400">
+        {label}
+      </label>
+
       <select
         {...props}
         className="mt-2 w-full bg-neutral-900 border border-white/10
-                   px-4 py-3 text-sm focus:border-red-600 outline-none rounded-lg"
+                   px-4 py-3 text-sm text-white
+                   focus:border-red-600 outline-none rounded-lg
+                   cursor-pointer"
       >
-        {options.map(o => (
-          <option key={o} value={o}>{o.toUpperCase()}</option>
+        {placeholder && (
+          <option value="" disabled>
+            {placeholder}
+          </option>
+        )}
+
+        {options.map((option) => (
+          <option key={option} value={option}>
+            {option.toUpperCase()}
+          </option>
         ))}
       </select>
     </div>
