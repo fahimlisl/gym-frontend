@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import axios from "../../api/axios.api.js";
 import * as XLSX from "xlsx";
-import { Lock } from "lucide-react";
+import { Lock, Search, X } from "lucide-react";
 
 const categories = [
   "RENT", "SALARY", "ELECTRICITY", "WATER", "EQUIPMENT",
@@ -80,17 +80,13 @@ const SectionLabel = ({ children }) => (
   <p className="text-[10px] text-gray-500 tracking-widest uppercase font-semibold px-1">{children}</p>
 );
 
-// --- Mobile-friendly date field ---------------------------------------------
-const DateField = ({ label, value, onChange }) => {
+const DateField = ({ label, value, onChange, disabled = false }) => {
   const handleClick = (e) => {
-    // Force the native date picker to open on mobile
     try {
       e.currentTarget.showPicker?.();
     } catch {
-      /* ignore – browser will handle it natively */
     }
   };
-
   return (
     <div className="flex flex-col gap-1.5 w-full min-w-0">
       <span className="text-[10px] text-gray-500 tracking-widest uppercase font-semibold px-1">
@@ -101,38 +97,33 @@ const DateField = ({ label, value, onChange }) => {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onClick={handleClick}
+        disabled={disabled}
         className="w-full min-w-0 min-h-[44px] bg-black border border-white/20 px-4 py-2
                    text-white cursor-pointer appearance-auto [-webkit-appearance:auto]
-                   focus:outline-none focus:border-red-600/60"
+                   focus:outline-none focus:border-red-600/60 disabled:cursor-not-allowed disabled:opacity-50"
       />
     </div>
   );
 };
-// ---------------------------------------------------------------------------
 
 export default function Expenses() {
   const [expenses, setExpenses]     = useState([]);
   const [loading, setLoading]       = useState(true);
-
   const [admin, setAdmin] = useState(null);
   const [adminLoading, setAdminLoading] = useState(true);
-
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
   const [fromDate, setFromDate]           = useState(today);
   const [toDate, setToDate]               = useState(today);
   const [categoryFilter, setCategoryFilter] = useState("all");
-
+  const [titleSearch, setTitleSearch] = useState("");
+  const [searchAll, setSearchAll] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm]           = useState(emptyForm);
-
   const [showEditModal, setShowEditModal]   = useState(false);
   const [editForm, setEditForm]             = useState(emptyForm);
   const [editingId, setEditingId]           = useState(null);
-
   const [deleteTarget, setDeleteTarget] = useState(null);
-
   const [submitting, setSubmitting] = useState(false);
-
   useEffect(() => {
     const fetchAdmin = async () => {
       try {
@@ -146,7 +137,6 @@ export default function Expenses() {
     };
     fetchAdmin();
   }, []);
-
   const isSuperAdmin = admin?.isSuperAdmin ?? false;
   const isAllowed = isSuperAdmin || !!admin?.expense?.allow;
   const isReadOnly = !isSuperAdmin && !!admin?.expense?.isReadOnly;
@@ -163,7 +153,6 @@ export default function Expenses() {
       setLoading(false);
     }
   };
-
   useEffect(() => { if (isAllowed) fetchExpenses(); }, [isAllowed]);
 
   const calculateStats = (expenseList) => {
@@ -172,7 +161,6 @@ export default function Expenses() {
     const upi = expenseList.filter(e => e.paymentMethod === "upi").reduce((sum, e) => sum + e.amount, 0);
     const online = expenseList.filter(e => e.paymentMethod === "card" || e.paymentMethod === "netbanking").reduce((sum, e) => sum + e.amount, 0);
     const count = expenseList.length;
-
     const categoryBreakdown = {};
     expenseList.forEach(e => {
       if (!categoryBreakdown[e.category]) {
@@ -180,25 +168,32 @@ export default function Expenses() {
       }
       categoryBreakdown[e.category] += e.amount;
     });
-
     return { total, cash, upi, online, count, categoryBreakdown };
   };
 
   const filteredExpenses = useMemo(() => {
-    return expenses.filter((e) => {
-      const expenseDate = new Date(e.createdAt).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+    const query = titleSearch.trim().toLowerCase();
+    return expenses.filter((expense) => {
+      if (query && !String(expense.title ?? "").toLowerCase().includes(query)) {
+        return false;
+      }
+      if (searchAll) return true;
 
+      const expenseDate = new Date(expense.createdAt).toLocaleDateString("en-CA", {
+        timeZone: "Asia/Kolkata",
+      });
       return (
         expenseDate >= fromDate &&
         expenseDate <= toDate &&
-        (categoryFilter === "all" || e.category === categoryFilter)
+        (categoryFilter === "all" || expense.category === categoryFilter)
       );
     });
-  }, [expenses, fromDate, toDate, categoryFilter]);
+  }, [expenses, fromDate, toDate, categoryFilter, titleSearch, searchAll]);
 
   const filteredStats = useMemo(() => {
     return calculateStats(filteredExpenses);
   }, [filteredExpenses]);
+
   const allTimeStats = useMemo(() => {
     return calculateStats(expenses);
   }, [expenses]);
@@ -213,7 +208,10 @@ export default function Expenses() {
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Expenses");
-    XLSX.writeFile(wb, `Expenses_${fromDate}_to_${toDate}.xlsx`, { bookType: "xlsx" });
+    const filename = searchAll
+      ? "Expenses_All_Dates.xlsx"
+      : `Expenses_${fromDate}_to_${toDate}.xlsx`;
+    XLSX.writeFile(wb, filename, { bookType: "xlsx" });
     toast.success("Excel exported");
   };
 
@@ -299,7 +297,6 @@ export default function Expenses() {
       </div>
     );
   }
-
   return (
     <>
       <style>{`
@@ -319,9 +316,7 @@ export default function Expenses() {
           text-align: left;
         }
       `}</style>
-
       <div className="space-y-8">
-
         <div className="border border-red-600/30 bg-black p-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <div>
             <div className="flex items-center gap-3">
@@ -352,6 +347,46 @@ export default function Expenses() {
               + ADD
             </button>
           </div>
+        </div>
+        <div className="w-full min-w-0 sm:max-w-md space-y-3">
+          <label htmlFor="expense-title-search" className="sr-only">
+            Search expenses by title
+          </label>
+          <div className="relative w-full min-w-0">
+            <Search
+              size={18}
+              aria-hidden="true"
+              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500"
+            />
+            <input
+              id="expense-title-search"
+              type="text"
+              autoComplete="off"
+              placeholder="Search expenses by title..."
+              value={titleSearch}
+              onChange={(e) => setTitleSearch(e.target.value)}
+              className="block w-full min-w-0 max-w-full box-border rounded-lg border border-white/15 bg-neutral-950 py-3 pl-11 pr-11 text-base sm:text-sm text-white placeholder:text-gray-500 outline-none transition focus:border-red-600/70 focus:ring-1 focus:ring-red-600/30"
+            />
+            {titleSearch && (
+              <button
+                type="button"
+                onClick={() => setTitleSearch("")}
+                aria-label="Clear title search"
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-2 text-gray-400 hover:bg-white/10 hover:text-white focus:outline-none focus:ring-1 focus:ring-white/40"
+              >
+                <X size={16} aria-hidden="true" />
+              </button>
+            )}
+          </div>
+          <label className="flex w-fit max-w-full cursor-pointer items-center gap-2 text-sm text-gray-300">
+            <input
+              type="checkbox"
+              checked={searchAll}
+              onChange={(e) => setSearchAll(e.target.checked)}
+              className="h-4 w-4 shrink-0 accent-red-600"
+            />
+            <span>Search all dates &amp; categories</span>
+          </label>
         </div>
         <div className="space-y-2">
           <SectionLabel>Lifetime Statistics (All Time)</SectionLabel>
@@ -384,9 +419,11 @@ export default function Expenses() {
         </div>
         <div className="space-y-2">
           <SectionLabel>
-            {fromDate === toDate
-              ? `Stats for ${new Date(fromDate).toLocaleDateString("en-IN")}`
-              : `Stats: ${new Date(fromDate).toLocaleDateString("en-IN")} – ${new Date(toDate).toLocaleDateString("en-IN")}`}
+            {searchAll
+              ? "Search Results — All Dates & Categories"
+              : fromDate === toDate
+                ? `Stats for ${new Date(fromDate).toLocaleDateString("en-IN")}`
+                : `Stats: ${new Date(fromDate).toLocaleDateString("en-IN")} – ${new Date(toDate).toLocaleDateString("en-IN")}`}
           </SectionLabel>
           <div className="grid grid-cols-3 gap-1.5 md:gap-3">
             <StatCard
@@ -422,17 +459,14 @@ export default function Expenses() {
             </div>
           )}
         </div>
-
-        {/* ------------------------- FILTER BAR (mobile fixed) ------------------------- */}
+        {/* Date/category filters are only applied when searchAll is off. */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap gap-4 lg:items-end">
           <div className="w-full lg:w-auto lg:min-w-[170px]">
-            <DateField label="From Date" value={fromDate} onChange={setFromDate} />
+            <DateField label="From Date" value={fromDate} onChange={setFromDate} disabled={searchAll} />
           </div>
-
           <div className="w-full lg:w-auto lg:min-w-[170px]">
-            <DateField label="To Date" value={toDate} onChange={setToDate} />
+            <DateField label="To Date" value={toDate} onChange={setToDate} disabled={searchAll} />
           </div>
-
           <div className="flex flex-col gap-1.5 w-full lg:w-auto min-w-0">
             <span className="text-[10px] text-gray-500 tracking-widest uppercase font-semibold px-1">
               Category
@@ -440,14 +474,14 @@ export default function Expenses() {
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
+              disabled={searchAll}
               className="w-full lg:w-auto min-h-[44px] bg-black border border-white/20 px-4 py-2
-                         text-white focus:outline-none focus:border-red-600/60"
+                         text-white focus:outline-none focus:border-red-600/60 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <option value="all">All Categories</option>
               {categories.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
-
           <button
             onClick={exportExcel}
             className="bg-green-600 hover:bg-green-700 px-6 py-2 min-h-[44px] font-bold
@@ -456,8 +490,6 @@ export default function Expenses() {
             EXPORT EXCEL
           </button>
         </div>
-        {/* -------------------------------------------------------------------------- */}
-
         {loading ? (
           <p className="text-gray-500 tracking-widest">LOADING EXPENSES...</p>
         ) : (
@@ -524,7 +556,6 @@ export default function Expenses() {
                 </tfoot>
               </table>
             </div>
-
             <div className="md:hidden space-y-4">
               {filteredExpenses.map((e) => (
                 <div key={e._id} className="border border-white/10 p-4 space-y-2">
@@ -574,11 +605,12 @@ export default function Expenses() {
                 </div>
               ))}
             </div>
-
             {!filteredExpenses.length && (
               <div className="border border-white/10 bg-gradient-to-br from-black via-neutral-900 to-black rounded-xl p-12 text-center">
-                <p className="text-gray-500 font-semibold text-sm">NO EXPENSES FOUND</p>
-                {canEdit && (
+                <p className="text-gray-500 font-semibold text-sm">
+                  {titleSearch.trim() ? "NO MATCHING EXPENSE TITLES" : "NO EXPENSES FOUND"}
+                </p>
+                {canEdit && expenses.length === 0 && (
                   <button onClick={() => setShowModal(true)}
                     className="mt-4 flex items-center gap-2 mx-auto bg-red-600 hover:bg-red-700 transition px-4 py-2 text-[11px] font-extrabold rounded-lg text-white">
                     + ADD YOUR FIRST EXPENSE
@@ -589,7 +621,6 @@ export default function Expenses() {
           </>
         )}
       </div>
-
       {showModal && canEdit && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <div className="bg-black border border-white/10 w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
@@ -610,7 +641,6 @@ export default function Expenses() {
           </div>
         </div>
       )}
-
       {showEditModal && canEdit && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <div className="bg-black border border-white/10 w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
@@ -632,15 +662,12 @@ export default function Expenses() {
           </div>
         </div>
       )}
-
       {deleteTarget && canEdit && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <div className="bg-black border border-red-600/40 w-full max-w-sm p-6 space-y-6">
-
             <div className="flex items-center justify-center w-14 h-14 border-2 border-red-600 mx-auto">
               <span className="text-red-500 text-2xl font-black">!</span>
             </div>
-
             <div className="text-center space-y-2">
               <h2 className="text-lg font-black tracking-widest">DELETE EXPENSE?</h2>
               <p className="text-gray-400 text-sm">
@@ -650,7 +677,6 @@ export default function Expenses() {
               </p>
               <p className="text-red-500 text-xs tracking-widest">THIS ACTION CANNOT BE UNDONE</p>
             </div>
-
             <div className="flex gap-3">
               <button
                 onClick={() => setDeleteTarget(null)}
@@ -665,7 +691,6 @@ export default function Expenses() {
                 YES, DELETE
               </button>
             </div>
-
           </div>
         </div>
       )}
