@@ -70,12 +70,10 @@ import SellSupplementPage from "./pages/admin/SellSupplementPage.jsx";
 import WhatsAppStatus from "./components/admin/WhatsAppStatus.jsx";
 import AdminsListPage from "./pages/admin/AdminsListPage.jsx";
 import AdminPermissionsPage from "./pages/admin/AdminPermissionsPage.jsx";
-
+import MemberComplaints from "./pages/admin/MemberComplaints.jsx";
 import CafeAdminDashboard from "./pages/cafe/CafeAdminDashboard.jsx";
 import CafePayments from "./pages/cafe/CafePayments.jsx";
-
 import ScannerPage from "./pages/ScannerPage.jsx";
-
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -126,6 +124,7 @@ function getFrontendPanel() {
   if (hostname === "trainer.localhost") {
     return "trainer";
   }
+
   return "main";
 }
 
@@ -133,14 +132,17 @@ function AdminPanelRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+
       <Route
         path="/"
         element={<Navigate to="/login" replace />}
       />
+
       <Route
         path="/admin"
         element={<Navigate to="/admin/dashboard" replace />}
       />
+
       <Route
         path="/admin"
         element={<AdminDashboardLayout />}
@@ -149,6 +151,7 @@ function AdminPanelRoutes() {
           path="dashboard"
           element={<AdminDashboard />}
         />
+
         <Route
           path="supplements"
           element={<AdminSupplements />}
@@ -168,9 +171,16 @@ function AdminPanelRoutes() {
           path="supplement/request"
           element={<SuppBillsAdmin />}
         />
+
         <Route
           path="members"
           element={<Members />}
+        />
+
+        {/* NEW: Member Complaints */}
+        <Route
+          path="complaints"
+          element={<MemberComplaints />}
         />
 
         <Route
@@ -182,6 +192,7 @@ function AdminPanelRoutes() {
           path="trainers"
           element={<Trainers />}
         />
+
         <Route
           path="coupons"
           element={<Coupon />}
@@ -525,7 +536,6 @@ function MainWebsiteRoutes() {
         element={<Navigate to="/login" replace />}
       />
 
-      {/* MAIN 404 */}
       <Route
         path="*"
         element={<Navigate to="/" replace />}

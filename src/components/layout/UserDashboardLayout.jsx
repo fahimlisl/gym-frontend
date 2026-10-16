@@ -1,14 +1,47 @@
 import { useNavigate, useLocation, Outlet } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import api from "../../api/axios.api";
-import { Menu, X, Lock, LogOut, Home, Apple, Dumbbell, ChevronRight, History, ScanQrCode, MessageSquareWarning, Phone, Mail, Bot, ArrowUpRight } from "lucide-react";
+import { Menu, X, Lock, LogOut, Home, Apple, Dumbbell, ChevronRight, History, ScanQrCode, MessageSquareWarning, Phone, Mail, Bot, ArrowUpRight, ArrowLeft, Send, Loader2, RotateCcw, ShieldCheck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const COMPLAINT_PHONE = "+91 77191 61307";
 const COMPLAINT_PHONE_URI = "tel:+917719161307";
 const COMPLAINT_EMAIL = "alphagym2001@gmail.com";
+const COMPLAINT_CATEGORIES = [
+  { value: "trainer", label: "Trainer" },
+  { value: "equipment", label: "Equipment" },
+  { value: "membership", label: "Membership" },
+  { value: "personal_training", label: "Personal Training" },
+  { value: "payment", label: "Payment" },
+  { value: "website", label: "Website" },
+  { value: "staff", label: "Staff" },
+  { value: "other", label: "Other" },
+];
+
+const MEMBER_DESTINATIONS = [
+  { label: "Dashboard", path: "/member/dashboard" },
+  { label: "Diet Chart", path: "/member/diet-chart" },
+  { label: "Workout Plans", path: "/member/workout-plans" },
+  { label: "History", path: "/member/history" },
+  { label: "Scan QR", path: "/member/scan-qr" },
+];
+
+const makeAiSessionId = () => crypto.randomUUID();
+const initialAiMessages = () => [
+  {
+    id: "welcome",
+    role: "assistant",
+    text: "Hi! I'm AlphaGym AI. Ask me about your membership, PT, renewals, or gym services. I can also help you prepare and submit a complaint.",
+  },
+];
+
+const aiErrorMessage = (err, fallback) => {
+  if (err?.response?.status === 401) return "Your login has expired. Please sign in again.";
+  if (err?.response?.status === 403) return "Your account cannot access this assistant right now.";
+  return err?.response?.data?.message || fallback;
+};
 
 const gmailUrl = `https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(
   COMPLAINT_EMAIL
@@ -22,6 +55,169 @@ export default function UserDashboardLayout() {
   const [showChangeModal, setShowChangeModal] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
   const [showComplaintModal, setShowComplaintModal] = useState(false);
+  const [complaintView, setComplaintView] = useState("options");
+  const [aiSessionId, setAiSessionId] = useState(makeAiSessionId);
+  const [aiMessages, setAiMessages] = useState(initialAiMessages);
+  const [aiDraft, setAiDraft] = useState("");
+  const [aiInitState, setAiInitState] = useState("idle");
+  const [aiInitError, setAiInitError] = useState("");
+  const [aiSending, setAiSending] = useState(false);
+  const [complaintDraft, setComplaintDraft] = useState(null);
+  const [complaintSubmitting, setComplaintSubmitting] = useState(false);
+  const complaintSubmitLock = useRef(false);
+  const aiMessageListRef = useRef(null);
+
+  const closeComplaintModal = () => {
+    setShowComplaintModal(false);
+    setComplaintView("options");
+  };
+
+  const startAiAssistant = async () => {
+    setComplaintView("ai");
+    if (aiInitState === "ready" || aiInitState === "loading") return;
+
+    setAiInitState("loading");
+    setAiInitError("");
+
+    try {
+      const { data } = await api.post("/user/ai/open");
+      if (!data?.success) throw new Error("Member AI initialization failed");
+      setAiInitState("ready");
+    } catch (err) {
+      setAiInitState("error");
+      setAiInitError(aiErrorMessage(err, "Couldn't start AI Assistance. Please try again."));
+    }
+  };
+
+  const sendAiMessage = async (event) => {
+    event.preventDefault();
+    const message = aiDraft.trim();
+    if (!message || aiSending || complaintSubmitting || aiInitState !== "ready") return;
+    if (message.length > 2000) {
+      toast.error("Your message must be 2,000 characters or fewer.");
+      return;
+    }
+
+    setComplaintDraft(null);
+    setAiDraft("");
+    setAiSending(true);
+    setAiMessages((prev) => [
+      ...prev,
+      { id: crypto.randomUUID(), role: "user", text: message },
+    ]);
+
+    try {
+      const { data } = await api.post("/user/ai/chat", {
+        message,
+        sessionId: aiSessionId,
+      });
+
+      if (!data?.success || typeof data.reply !== "string" || !data.reply.trim()) {
+        throw new Error("Invalid reply from AI service");
+      }
+
+      const proposedPath = data?.action?.type === "navigate" ? data.action.path : null;
+      const allowed = MEMBER_DESTINATIONS.find((item) => item.path === proposedPath);
+
+      setAiMessages((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          text: data.reply,
+          action: allowed ? allowed : null,
+        },
+      ]);
+      if (data.complaintDraft && data.complaintDraft.ready !== false &&
+          COMPLAINT_CATEGORIES.some((cat) => cat.value === data.complaintDraft.category) &&
+          typeof data.complaintDraft.description === "string" &&
+          data.complaintDraft.description.trim().length >= 10) {
+        setComplaintDraft({
+          category: data.complaintDraft.category,
+          description: data.complaintDraft.description.trim().slice(0, 2000),
+        });
+      }
+    } catch (err) {
+      setAiMessages((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          error: true,
+          text: aiErrorMessage(err, "I couldn't respond right now. Please try sending your message again."),
+        },
+      ]);
+    } finally {
+      setAiSending(false);
+    }
+  };
+
+  const startNewAiChat = () => {
+    if (aiSending || complaintSubmitting) return;
+    setAiSessionId(makeAiSessionId());
+    setAiMessages(initialAiMessages());
+    setAiDraft("");
+    setComplaintDraft(null);
+    // Only reset conversation memory. Redis's member snapshot stays cached.
+  };
+
+  const openManualComplaintDraft = () => {
+    // Manual fallback: never copy an unrelated chat message into a complaint.
+    setComplaintDraft({ category: "other", description: "" });
+  };
+
+  const submitComplaint = async () => {
+    if (complaintSubmitLock.current || aiSending || !complaintDraft) return;
+    const description = complaintDraft.description.trim();
+    if (description.length < 10 || description.length > 2000) {
+      toast.error("Please describe your complaint in 10–2000 characters.");
+      return;
+    }
+    if (!COMPLAINT_CATEGORIES.some((c) => c.value === complaintDraft.category)) {
+      toast.error("Please select a valid category.");
+      return;
+    }
+
+    complaintSubmitLock.current = true;
+    setComplaintSubmitting(true);
+    try {
+      const { data } = await api.post("/user/ai/complaint", {
+        category: complaintDraft.category,
+        description,
+      });
+      if (!data?.success || !data.data?.complaintId) {
+        throw new Error("Complaint confirmation missing");
+      }
+      setComplaintDraft(null);
+      setAiMessages((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          text: `Your complaint has been submitted successfully.\n\nComplaint ID: ${data.data.complaintId}\nStatus: Open\n\nKeep this reference for your records.`,
+        },
+      ]);
+      toast.success("Complaint submitted");
+    } catch (err) {
+      // Keep the draft so it can be reviewed or retried.
+      toast.error(aiErrorMessage(err, "Could not save the complaint. Please try again."));
+    } finally {
+      complaintSubmitLock.current = false;
+      setComplaintSubmitting(false);
+    }
+  };
+
+  const navigateFromAi = (path) => {
+    if (!MEMBER_DESTINATIONS.some((item) => item.path === path)) return;
+    closeComplaintModal();
+    navigate(path);
+  };
+
+  useEffect(() => {
+    if (!showComplaintModal || complaintView !== "ai") return;
+    const list = aiMessageListRef.current;
+    if (list) list.scrollTop = list.scrollHeight;
+  }, [showComplaintModal, complaintView, aiMessages, aiSending, aiInitState]);
   const {
     register,
     handleSubmit,
@@ -35,7 +231,7 @@ export default function UserDashboardLayout() {
     document.body.style.overflow = "hidden";
 
     const onKeyDown = (event) => {
-      if (event.key === "Escape") setShowComplaintModal(false);
+      if (event.key === "Escape") closeComplaintModal();
     };
 
     document.addEventListener("keydown", onKeyDown);
@@ -49,6 +245,12 @@ export default function UserDashboardLayout() {
     try {
       await api.post("/user/logout");
       toast.success("Logged out");
+      setComplaintDraft(null);
+      setAiMessages(initialAiMessages());
+      setAiSessionId(makeAiSessionId());
+      setAiInitState("idle");
+      setComplaintView("options");
+      setShowComplaintModal(false);
       navigate("/login");
     } catch {
       toast.error("Logout failed");
@@ -186,7 +388,7 @@ export default function UserDashboardLayout() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           whileTap={{ scale: 0.97 }}
-          onClick={() => setShowComplaintModal(true)}
+          onClick={() => { setComplaintView("options"); setShowComplaintModal(true); }}
           aria-label="Raise a complaint"
           aria-haspopup="dialog"
           className="fixed bottom-5 right-4 z-50 inline-flex min-h-11 items-center gap-2 rounded-full border border-amber-400/40 bg-amber-500 px-4 py-3 text-xs font-bold text-neutral-950 shadow-lg shadow-amber-500/20 transition-colors hover:bg-amber-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 sm:bottom-8 sm:right-8 sm:px-5 sm:text-sm"
@@ -201,7 +403,7 @@ export default function UserDashboardLayout() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={() => setShowComplaintModal(false)}
+            onClick={closeComplaintModal}
             className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-3 backdrop-blur-sm sm:p-4"
           >
             <motion.div
@@ -213,8 +415,14 @@ export default function UserDashboardLayout() {
               exit={{ opacity: 0, scale: 0.96, y: 12 }}
               transition={{ duration: 0.18 }}
               onClick={(event) => event.stopPropagation()}
-              className="w-full min-w-0 max-w-md max-h-[calc(100dvh-24px)] overflow-y-auto rounded-2xl border border-white/10 bg-neutral-950 p-4 shadow-2xl sm:p-6"
+              className={`w-full min-w-0 overflow-hidden rounded-2xl border border-white/10 bg-neutral-950 shadow-2xl ${
+                complaintView === "ai"
+                  ? "max-w-2xl"
+                  : "max-w-md max-h-[calc(100dvh-24px)] overflow-y-auto p-4 sm:p-6"
+              }`}
             >
+              {complaintView === "options" ? (
+              <>
               <div className="mb-1 flex items-start justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-3">
                   <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-2">
@@ -228,7 +436,7 @@ export default function UserDashboardLayout() {
                   type="button"
                   aria-label="Close complaint options"
                   autoFocus
-                  onClick={() => setShowComplaintModal(false)}
+                  onClick={closeComplaintModal}
                   className="shrink-0 rounded-lg p-2 text-gray-400 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
                 >
                   <X className="h-5 w-5" />
@@ -271,16 +479,204 @@ export default function UserDashboardLayout() {
 
                   <ArrowUpRight className="h-4 w-4 shrink-0 text-gray-400" />
                 </a>
-                <div className="flex min-w-0 items-center gap-3 rounded-xl border border-dashed border-white/10 bg-white/[0.02] p-3 opacity-65 sm:p-4">
-                  <span className="rounded-lg bg-violet-500/10 p-2.5 text-violet-400">
+                <button
+                  type="button"
+                  onClick={startAiAssistant}
+                  className="group flex w-full min-w-0 items-center gap-3 rounded-xl border border-violet-500/30 bg-violet-500/[0.07] p-3 text-left transition hover:border-violet-400/60 hover:bg-violet-500/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 sm:p-4"
+                >
+                  <span className="rounded-lg bg-violet-500/15 p-2.5 text-violet-300">
                     <Bot className="h-5 w-5" />
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-sm font-semibold text-white">AI Assistance</span>
-                    <span className="block text-xs text-gray-400 sm:text-sm">Coming soon</span>
+                    <span className="block text-xs text-gray-400 sm:text-sm">Member questions, subscriptions and PT support</span>
                   </span>
-                </div>
+                  <ChevronRight className="h-4 w-4 shrink-0 text-violet-300" />
+                </button>
               </div>
+              </>
+              ) : (
+                <section className="flex h-[calc(100dvh-24px)] max-h-[780px] min-h-0 flex-col sm:h-[min(760px,calc(100dvh-32px))]" aria-label="AlphaGym AI chat">
+                  <div className="flex shrink-0 items-center gap-3 border-b border-white/10 bg-neutral-950 px-3 py-3 sm:px-5 sm:py-4">
+                    <button
+                      type="button"
+                      onClick={() => setComplaintView("options")}
+                      aria-label="Back to complaint support options"
+                      className="rounded-lg p-2 text-gray-400 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
+                    >
+                      <ArrowLeft className="h-5 w-5" />
+                    </button>
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-violet-500/25 bg-violet-500/10">
+                      <Bot className="h-5 w-5 text-violet-300" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h2 id="complaint-modal-title" className="truncate font-bold text-white">AlphaGym AI Assistant</h2>
+                      <p className="flex items-center gap-1.5 text-xs text-gray-400">
+                        <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
+                        {aiInitState === "ready" ? "Connected to your member account" : aiInitState === "loading" ? "Connecting securely..." : "Member support"}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      title="Start new conversation"
+                      aria-label="Start new conversation"
+                      disabled={aiSending || complaintSubmitting}
+                      onClick={startNewAiChat}
+                      className="rounded-lg p-2 text-gray-400 hover:bg-white/10 hover:text-white disabled:opacity-40"
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Close AI Assistant"
+                      onClick={closeComplaintModal}
+                      className="rounded-lg p-2 text-gray-400 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
+
+                  <div
+                    ref={aiMessageListRef}
+                    role="log"
+                    aria-label="AI conversation"
+                    aria-live="polite"
+                    className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain bg-gradient-to-b from-neutral-950 to-[#101015] px-3 py-4 sm:px-6"
+                  >
+                    {aiMessages.map((item) => (
+                      <div
+                        key={item.id}
+                        className={`flex ${item.role === "user" ? "justify-end" : "justify-start"}`}
+                      >
+                        <div className={`max-w-[88%] break-words rounded-2xl px-3.5 py-3 text-sm leading-6 shadow-sm sm:max-w-[80%] ${
+                          item.role === "user"
+                            ? "rounded-br-md bg-red-600 text-white"
+                            : item.error
+                              ? "rounded-bl-md border border-red-500/30 bg-red-500/10 text-red-100"
+                              : "rounded-bl-md border border-white/10 bg-white/[0.055] text-gray-100"
+                        }`}>
+                          <p className="whitespace-pre-wrap">{item.text}</p>
+                          {item.action && (
+                            <button
+                              type="button"
+                              onClick={() => navigateFromAi(item.action.path)}
+                              className="mt-3 inline-flex items-center gap-2 rounded-lg border border-violet-400/40 bg-violet-500/15 px-3 py-2 text-xs font-semibold text-violet-200 hover:bg-violet-500/25"
+                            >
+                              Open {item.action.label}
+                              <ArrowUpRight className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+
+                    {aiInitState === "loading" && (
+                      <div className="flex items-center gap-2 text-sm text-gray-400">
+                        <Loader2 className="h-4 w-4 animate-spin text-violet-400" />
+                        Loading your account information...
+                      </div>
+                    )}
+                    {aiInitState === "error" && (
+                      <div role="alert" className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
+                        <p>{aiInitError}</p>
+                        <button
+                          type="button"
+                          onClick={startAiAssistant}
+                          className="mt-2 rounded-lg border border-red-400/40 px-3 py-1.5 text-xs font-bold hover:bg-red-500/10"
+                        >
+                          Retry connection
+                        </button>
+                      </div>
+                    )}
+                    {aiSending && (
+                      <div className="flex items-center gap-2 text-sm text-gray-400">
+                        <Loader2 className="h-4 w-4 animate-spin text-violet-400" />
+                        AlphaGym AI is typing...
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="shrink-0 border-t border-white/10 bg-neutral-950 px-3 pb-[max(12px,env(safe-area-inset-bottom))] pt-3 sm:px-5 sm:pb-4">
+                    {complaintDraft && (
+                      <div className="mb-3 max-h-[38dvh] overflow-y-auto rounded-xl border border-violet-400/40 bg-violet-500/[0.08] p-3 sm:p-4" role="region" aria-label="Review complaint before submitting">
+                        <div className="mb-2 flex items-center justify-between gap-2">
+                          <p className="text-sm font-bold text-violet-200">Review your complaint</p>
+                          <button type="button" onClick={() => setComplaintDraft(null)} disabled={complaintSubmitting} className="text-xs text-gray-400 hover:text-white">Cancel</button>
+                        </div>
+                        <label htmlFor="ai-complaint-category" className="mb-1 block text-xs text-gray-300">Category</label>
+                        <select
+                          id="ai-complaint-category"
+                          value={complaintDraft.category}
+                          disabled={complaintSubmitting}
+                          onChange={(e) => setComplaintDraft((prev) => ({ ...prev, category: e.target.value }))}
+                          className="mb-2 w-full rounded-lg border border-white/20 bg-neutral-900 px-3 py-2 text-sm text-white"
+                        >
+                          {COMPLAINT_CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+                        </select>
+                        <label htmlFor="ai-complaint-description" className="mb-1 block text-xs text-gray-300">Description</label>
+                        <textarea
+                          id="ai-complaint-description"
+                          value={complaintDraft.description}
+                          disabled={complaintSubmitting}
+                          rows={3}
+                          maxLength={2000}
+                          onChange={(e) => setComplaintDraft((prev) => ({ ...prev, description: e.target.value }))}
+                          className="mb-2 w-full resize-y rounded-lg border border-white/20 bg-neutral-900 px-3 py-2 text-sm text-white"
+                        />
+                        <p className="mb-3 text-xs text-gray-400">Your registered member identity is attached securely by AlphaGym. Nothing is submitted until you click the button.</p>
+                        <button
+                          type="button"
+                          onClick={submitComplaint}
+                          disabled={complaintSubmitting || aiSending || complaintDraft.description.trim().length < 10}
+                          className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-bold text-white hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          {complaintSubmitting ? <><Loader2 className="h-4 w-4 animate-spin" /> Submitting...</> : "Confirm & Submit Complaint"}
+                        </button>
+                      </div>
+                    )}
+                    {!complaintDraft && (
+                      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-xs text-gray-400">For a complaint, describe the issue to the AI. Review it before submitting.</p>
+                        <button type="button" onClick={openManualComplaintDraft} disabled={aiSending || complaintSubmitting || aiInitState !== "ready"} className="rounded-lg border border-violet-400/40 px-3 py-1.5 text-xs font-semibold text-violet-200 hover:bg-violet-500/10 disabled:opacity-40">Write complaint</button>
+                      </div>
+                    )}
+                    <div className="mb-2 flex gap-2 overflow-x-auto pb-1">
+                      {MEMBER_DESTINATIONS.map((item) => (
+                        <button
+                          key={item.path}
+                          type="button"
+                          onClick={() => navigateFromAi(item.path)}
+                          className="shrink-0 rounded-full border border-white/15 px-3 py-1.5 text-xs font-medium text-gray-300 transition hover:border-violet-400/40 hover:text-white"
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                    <form onSubmit={sendAiMessage} className="flex min-w-0 items-center gap-2">
+                      <label htmlFor="alphagym-ai-message" className="sr-only">Message AlphaGym AI</label>
+                      <input
+                        id="alphagym-ai-message"
+                        type="text"
+                        autoComplete="off"
+                        maxLength={2000}
+                        value={aiDraft}
+                        onChange={(event) => setAiDraft(event.target.value)}
+                        disabled={aiInitState !== "ready" || aiSending || complaintSubmitting}
+                        placeholder={aiInitState === "ready" ? "Ask about your membership..." : "Connecting to AI..."}
+                        className="h-12 min-w-0 flex-1 rounded-xl border border-white/15 bg-white/[0.055] px-3.5 text-sm text-white placeholder:text-gray-500 focus:border-violet-400 focus:outline-none focus:ring-1 focus:ring-violet-400/40 disabled:opacity-60"
+                      />
+                      <button
+                        type="submit"
+                        disabled={aiInitState !== "ready" || aiSending || complaintSubmitting || !aiDraft.trim()}
+                        aria-label="Send message"
+                        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-violet-600 text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        {aiSending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
+                      </button>
+                    </form>
+                  </div>
+                </section>
+              )}
             </motion.div>
           </motion.div>
         )}

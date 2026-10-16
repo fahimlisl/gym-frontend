@@ -1,11 +1,10 @@
-import { data, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
   UserCog,
   CreditCard,
   Package,
-  Coffee,
   List,
   TicketPercent,
   BanknoteArrowDown,
@@ -20,17 +19,20 @@ import {
   GitPullRequestCreateArrow,
   ChartBar,
   GitPullRequestDraft,
-  Hamburger,
   QrCode,
   PackageOpen,
   ScanQrCode,
+  MessageSquareWarning,
 } from "lucide-react";
+
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
-import { adminLogout, changePasswordRequest } from "../../api/auth.api.js";
+import {
+  adminLogout,
+  changePasswordRequest,
+} from "../../api/auth.api.js";
 import { useForm } from "react-hook-form";
-import api from "../../api/axios.api.js"
-
+import api from "../../api/axios.api.js";
 
 const PERMISSION_MAP = {
   "/admin/members": "members",
@@ -54,20 +56,70 @@ const PERMISSION_MAP = {
 };
 
 const NESTED_PERMISSION_MAP = {
-  "/admin/payments/payments-in": { parent: "payments", child: "payments_in" },
-  "/admin/payments/all": { parent: "payments", child: "all_payments" },
-  "/admin/payments/cafe": { parent: "payments", child: "cafe_payments" },
+  "/admin/payments/payments-in": {
+    parent: "payments",
+    child: "payments_in",
+  },
+
+  "/admin/payments/all": {
+    parent: "payments",
+    child: "all_payments",
+  },
+
+  "/admin/payments/cafe": {
+    parent: "payments",
+    child: "cafe_payments",
+  },
 };
 
 const mainMenu = [
-  { label: "Dashboard", to: "/admin/dashboard", icon: LayoutDashboard },
-  { label: "Members", to: "/admin/members", icon: Users },
-  { label: "Trainers", to: "/admin/trainers", icon: UserCog },
-  { label: "PT Requests", to: "/admin/pt/requests", icon: GitPullRequestCreateArrow },
-  { label: "Workout Template", to: "/admin/workout-templates", icon: ChartBar },
-  { label: "Supplement Requests", to: "/admin/supplement/request", icon: GitPullRequestDraft },
-  { label: "Check-In QR", to: "/admin/check-in/qr", icon: QrCode },
-  { label: "Wp Qr", to: "/admin/wp/qr/code", icon: ScanQrCode },
+  {
+    label: "Dashboard",
+    to: "/admin/dashboard",
+    icon: LayoutDashboard,
+  },
+  {
+    label: "Members",
+    to: "/admin/members",
+    icon: Users,
+  },
+
+  {
+    label: "Member Complaints",
+    to: "/admin/complaints",
+    icon: MessageSquareWarning,
+  },
+
+  {
+    label: "Trainers",
+    to: "/admin/trainers",
+    icon: UserCog,
+  },
+  {
+    label: "PT Requests",
+    to: "/admin/pt/requests",
+    icon: GitPullRequestCreateArrow,
+  },
+  {
+    label: "Workout Template",
+    to: "/admin/workout-templates",
+    icon: ChartBar,
+  },
+  {
+    label: "Supplement Requests",
+    to: "/admin/supplement/request",
+    icon: GitPullRequestDraft,
+  },
+  {
+    label: "Check-In QR",
+    to: "/admin/check-in/qr",
+    icon: QrCode,
+  },
+  {
+    label: "Wp Qr",
+    to: "/admin/wp/qr/code",
+    icon: ScanQrCode,
+  },
 ];
 
 const attendanceMenu = {
@@ -79,16 +131,28 @@ const attendanceMenu = {
       label: "Member",
       base: "/admin/attendance/member",
       items: [
-        { label: "Dashboard", to: "/admin/attendance/member/dashboard" },
-        { label: "Today", to: "/admin/attendance/member/today" },
-        { label: "Monthly", to: "/admin/attendance/member/month" },
+        {
+          label: "Dashboard",
+          to: "/admin/attendance/member/dashboard",
+        },
+        {
+          label: "Today",
+          to: "/admin/attendance/member/today",
+        },
+        {
+          label: "Monthly",
+          to: "/admin/attendance/member/month",
+        },
       ],
     },
     {
       label: "Trainer",
       base: "/admin/attendance/trainer",
       items: [
-        { label: "Monthly & Today", to: "/admin/attendance/trainer/dashboard" },
+        {
+          label: "Monthly & Today",
+          to: "/admin/attendance/trainer/dashboard",
+        },
       ],
     },
   ],
@@ -99,40 +163,96 @@ const paymentsMenuBase = {
   icon: CreditCard,
   base: "/admin/payments",
   items: [
-    { label: "All Payments", to: "/admin/payments/all" },
-    { label: "Payments In", to: "/admin/payments/payments-in" },
-    { label: "Cafe Payments", to: "/admin/payments/cafe" },
+    {
+      label: "All Payments",
+      to: "/admin/payments/all",
+    },
+    {
+      label: "Payments In",
+      to: "/admin/payments/payments-in",
+    },
+    {
+      label: "Cafe Payments",
+      to: "/admin/payments/cafe",
+    },
   ],
 };
 
 const cafeMenu = [
-  { label: "All Items", to: "/admin/cafe/items", icon: List },
-  { label: "Cafe Admins", to: "/admin/cafe/admins", icon: UserCog },
+  {
+    label: "All Items",
+    to: "/admin/cafe/items",
+    icon: List,
+  },
+  {
+    label: "Cafe Admins",
+    to: "/admin/cafe/admins",
+    icon: UserCog,
+  },
 ];
 
 const otherMenu = [
-  { label: "Supplements", to: "/admin/supplements", icon: Package, end: true },
-  { label: "Sell Supplements", to: "/admin/supplements/dashboard", icon: PackageOpen },
-  { label: "Coupons", to: "/admin/coupons", icon: TicketPercent },
-  { label: "Trainer Coupons", to: "/admin/coupons/trainer", icon: BadgePercent },
-  { label: "Expenses", to: "/admin/expenses", icon: BanknoteArrowDown },
-  { label: "Assets", to: "/admin/assets", icon: Dumbbell },
+  {
+    label: "Supplements",
+    to: "/admin/supplements",
+    icon: Package,
+    end: true,
+  },
+  {
+    label: "Sell Supplements",
+    to: "/admin/supplements/dashboard",
+    icon: PackageOpen,
+  },
+  {
+    label: "Coupons",
+    to: "/admin/coupons",
+    icon: TicketPercent,
+  },
+  {
+    label: "Trainer Coupons",
+    to: "/admin/coupons/trainer",
+    icon: BadgePercent,
+  },
+  {
+    label: "Expenses",
+    to: "/admin/expenses",
+    icon: BanknoteArrowDown,
+  },
+  {
+    label: "Assets",
+    to: "/admin/assets",
+    icon: Dumbbell,
+  },
 ];
 
 const superAdminMenu = [
-  { label: "Admins", to: "/admin/admins", icon: UserCog },
+  {
+    label: "Admins",
+    to: "/admin/admins",
+    icon: UserCog,
+  },
 ];
 
 const settings = [
-  { label: "Plans", to: "/admin/plans", icon: Layers },
-  { label: "Offers", to: "/admin/offers", icon: BadgePercent },
+  {
+    label: "Plans",
+    to: "/admin/plans",
+    icon: Layers,
+  },
+  {
+    label: "Offers",
+    to: "/admin/offers",
+    icon: BadgePercent,
+  },
 ];
 
 export default function Sidebar({ open, onClose }) {
   const [admin, setAdmin] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
-  const [showChangeModal, setShowChangeModal] = useState(false);
+
+  const [showChangeModal, setShowChangeModal] =
+    useState(false);
 
   const {
     register,
@@ -145,11 +265,12 @@ export default function Sidebar({ open, onClose }) {
     const fetchAdmin = async () => {
       try {
         const { data } = await api.get("/admin/get/me");
-        setAdmin(data?.admin ?? null); // keep the FULL admin object, not just isSuperAdmin
+        setAdmin(data?.admin ?? null);
       } catch {
         setAdmin(null);
       }
     };
+
     fetchAdmin();
   }, []);
 
@@ -159,32 +280,57 @@ export default function Sidebar({ open, onClose }) {
     if (isSuperAdmin) return true;
 
     const nested = NESTED_PERMISSION_MAP[to];
+
     if (nested) {
-      return !!admin?.[nested.parent]?.allow && !!admin?.[nested.child]?.allow;
+      return (
+        !!admin?.[nested.parent]?.allow &&
+        !!admin?.[nested.child]?.allow
+      );
     }
 
     const module = PERMISSION_MAP[to];
+
     if (!module) return true;
+
     return !!admin?.[module]?.allow;
   };
 
   const visibleMainMenu = mainMenu.filter((item) => {
-    if (item.label === "Wp Qr") return isSuperAdmin; 
+    if (item.label === "Wp Qr") {
+      return isSuperAdmin;
+    }
+
     return hasAccess(item.to);
   });
 
-  const visibleOtherMenu = otherMenu.filter((item) => hasAccess(item.to));
-  const visibleSettings = settings.filter((item) => hasAccess(item.to));
-  const visibleCafeSection = cafeMenu.filter((item) => hasAccess(item.to));
+  const visibleOtherMenu = otherMenu.filter(
+    (item) => hasAccess(item.to)
+  );
 
-  const visiblePaymentsItems = paymentsMenuBase.items.filter((item) => hasAccess(item.to));
+  const visibleSettings = settings.filter(
+    (item) => hasAccess(item.to)
+  );
+
+  const visibleCafeSection = cafeMenu.filter(
+    (item) => hasAccess(item.to)
+  );
+
+  const visiblePaymentsItems = paymentsMenuBase.items.filter(
+    (item) => hasAccess(item.to)
+  );
+
   const paymentsMenu = {
     ...paymentsMenuBase,
     items: visiblePaymentsItems,
   };
 
-  const showAttendanceGroup = hasAccess(attendanceMenu.base);
-  const showPaymentsGroup = hasAccess(paymentsMenuBase.base) && visiblePaymentsItems.length > 0;
+  const showAttendanceGroup = hasAccess(
+    attendanceMenu.base
+  );
+
+  const showPaymentsGroup =
+    hasAccess(paymentsMenuBase.base) &&
+    visiblePaymentsItems.length > 0;
 
   useEffect(() => {
     if (open) {
@@ -195,7 +341,9 @@ export default function Sidebar({ open, onClose }) {
   const handleLogout = async () => {
     try {
       await adminLogout();
+
       toast.success("Logged out successfully");
+
       navigate("/login");
     } catch {
       toast.error("Logout failed");
@@ -210,11 +358,16 @@ export default function Sidebar({ open, onClose }) {
 
     try {
       await changePasswordRequest(data);
+
       toast.success("Password changed successfully");
+
       reset();
       setShowChangeModal(false);
     } catch (err) {
-      toast.error(err?.response?.data?.message || "Failed to change password");
+      toast.error(
+        err?.response?.data?.message ||
+          "Failed to change password"
+      );
     }
   };
 
@@ -226,24 +379,34 @@ export default function Sidebar({ open, onClose }) {
           w-72 h-screen flex flex-col
           border-r border-white/10 bg-black
           transform transition-all duration-300 ease-in-out
-          ${open ? "translate-x-0 opacity-100" : "-translate-x-full opacity-0 md:opacity-100"}
+          ${
+            open
+              ? "translate-x-0 opacity-100"
+              : "-translate-x-full opacity-0 md:opacity-100"
+          }
           md:translate-x-0 md:sticky md:top-0
         `}
       >
         <div className="h-16 flex items-center justify-between px-6 border-b border-white/10">
           <div className="text-xl font-black tracking-widest">
             <span className="inline-flex items-center gap-1">
-            <img
-              src="https://res.cloudinary.com/dkrwq4wvi/image/upload/v1772311625/gym/gam3nt7czytzycq9uruu.png"
-              alt="logo"
-              className="h-6 w-auto"
-            />
-            <span>
-              <span className="text-red-600">ALPHA</span> GYM
+              <img
+                src="https://res.cloudinary.com/dkrwq4wvi/image/upload/v1774033562/gym/y42uwqkvjwvogdewfcx7.png"
+                alt="AlphaGym logo"
+                className="h-6 w-auto"
+              />
+
+              <span>
+                <span className="text-red-600">
+                  ALPHA
+                </span>{" "}
+                GYM
+              </span>
             </span>
-          </span>
           </div>
+
           <button
+            type="button"
             onClick={onClose}
             className="md:hidden text-gray-400 hover:text-red-500"
           >
@@ -254,20 +417,36 @@ export default function Sidebar({ open, onClose }) {
         <nav className="flex-1 px-4 py-6 space-y-6 overflow-y-auto">
           <Section title="CORE">
             {visibleMainMenu.map((item) => (
-              <SidebarLink key={item.to} item={item} onClose={onClose} />
+              <SidebarLink
+                key={item.to}
+                item={item}
+                onClose={onClose}
+              />
             ))}
+
             {showAttendanceGroup && (
-              <CollapsibleGroup config={attendanceMenu} onClose={onClose} />
+              <CollapsibleGroup
+                config={attendanceMenu}
+                onClose={onClose}
+              />
             )}
+
             {showPaymentsGroup && (
-              <CollapsibleGroup config={paymentsMenu} onClose={onClose} />
+              <CollapsibleGroup
+                config={paymentsMenu}
+                onClose={onClose}
+              />
             )}
           </Section>
 
           {isSuperAdmin && (
             <Section title="SUPER ADMIN">
               {superAdminMenu.map((item) => (
-                <SidebarLink key={item.to} item={item} onClose={onClose} />
+                <SidebarLink
+                  key={item.to}
+                  item={item}
+                  onClose={onClose}
+                />
               ))}
             </Section>
           )}
@@ -275,7 +454,11 @@ export default function Sidebar({ open, onClose }) {
           {visibleCafeSection.length > 0 && (
             <Section title="CAFE">
               {visibleCafeSection.map((item) => (
-                <SidebarLink key={item.to} item={item} onClose={onClose} />
+                <SidebarLink
+                  key={item.to}
+                  item={item}
+                  onClose={onClose}
+                />
               ))}
             </Section>
           )}
@@ -283,7 +466,11 @@ export default function Sidebar({ open, onClose }) {
           {visibleOtherMenu.length > 0 && (
             <Section title="INVENTORY">
               {visibleOtherMenu.map((item) => (
-                <SidebarLink key={item.to} item={item} onClose={onClose} />
+                <SidebarLink
+                  key={item.to}
+                  item={item}
+                  onClose={onClose}
+                />
               ))}
             </Section>
           )}
@@ -291,7 +478,11 @@ export default function Sidebar({ open, onClose }) {
           {visibleSettings.length > 0 && (
             <Section title="SETTINGS">
               {visibleSettings.map((item) => (
-                <SidebarLink key={item.to} item={item} onClose={onClose} />
+                <SidebarLink
+                  key={item.to}
+                  item={item}
+                  onClose={onClose}
+                />
               ))}
             </Section>
           )}
@@ -299,20 +490,22 @@ export default function Sidebar({ open, onClose }) {
 
         <div className="border-t border-white/10 p-4 space-y-2">
           <button
+            type="button"
             onClick={() => setShowChangeModal(true)}
             className="w-full flex items-center gap-3 px-4 py-3
-                       text-sm font-bold tracking-wide rounded-lg transition
-                       text-gray-400 hover:text-white hover:bg-white/5"
+              text-sm font-bold tracking-wide rounded-lg transition
+              text-gray-400 hover:text-white hover:bg-white/5"
           >
             <KeyRound size={18} />
             Change Password
           </button>
 
           <button
+            type="button"
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-3
-                       text-sm font-bold tracking-wide rounded-lg transition
-                       text-red-500 hover:text-white hover:bg-red-600"
+              text-sm font-bold tracking-wide rounded-lg transition
+              text-red-500 hover:text-white hover:bg-red-600"
           >
             <LogOut size={18} />
             Logout
@@ -323,20 +516,16 @@ export default function Sidebar({ open, onClose }) {
       {showChangeModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center
-               bg-black/80 backdrop-blur-sm
-               px-4 sm:px-6
-               animate-fadeIn"
+            bg-black/80 backdrop-blur-sm
+            px-4 sm:px-6 animate-fadeIn"
           onClick={() => setShowChangeModal(false)}
         >
           <div
-            className="relative w-full max-w-md
-                 max-h-[90vh] overflow-y-auto
-                 bg-neutral-950
-                 border border-red-600/30
-                 shadow-[0_0_60px_rgba(255,0,0,0.25)]
-                 rounded-2xl
-                 transform transition-all duration-300
-                 scale-100 opacity-100"
+            className="relative w-full max-w-md max-h-[90vh]
+              overflow-y-auto bg-neutral-950
+              border border-red-600/30
+              shadow-[0_0_60px_rgba(255,0,0,0.25)]
+              rounded-2xl transition-all duration-300"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="h-1 bg-gradient-to-r from-red-700 via-red-500 to-red-700 rounded-t-2xl" />
@@ -348,6 +537,7 @@ export default function Sidebar({ open, onClose }) {
                 </h2>
 
                 <button
+                  type="button"
                   onClick={() => setShowChangeModal(false)}
                   className="text-gray-500 hover:text-white transition text-lg"
                 >
@@ -356,59 +546,60 @@ export default function Sidebar({ open, onClose }) {
               </div>
 
               <form
-                onSubmit={handleSubmit(handleChangePassword)}
+                onSubmit={handleSubmit(
+                  handleChangePassword
+                )}
                 className="space-y-4"
               >
                 <input
                   type="password"
                   placeholder="OLD PASSWORD"
-                  {...register("oldPassword", { required: true })}
+                  {...register("oldPassword", {
+                    required: true,
+                  })}
                   className="w-full bg-black border border-white/10
-                       px-4 py-3 sm:py-3.5
-                       text-white text-sm sm:text-base
-                       rounded-lg
-                       focus:outline-none
-                       focus:border-red-500
-                       transition"
+                    px-4 py-3 sm:py-3.5
+                    text-white text-sm sm:text-base rounded-lg
+                    focus:outline-none focus:border-red-500 transition"
                 />
 
                 <input
                   type="password"
                   placeholder="NEW PASSWORD"
-                  {...register("newPassword", { required: true })}
+                  {...register("newPassword", {
+                    required: true,
+                  })}
                   className="w-full bg-black border border-white/10
-                       px-4 py-3 sm:py-3.5
-                       text-white text-sm sm:text-base
-                       rounded-lg
-                       focus:outline-none
-                       focus:border-red-500
-                       transition"
+                    px-4 py-3 sm:py-3.5
+                    text-white text-sm sm:text-base rounded-lg
+                    focus:outline-none focus:border-red-500 transition"
                 />
 
                 <input
                   type="password"
                   placeholder="CONFIRM NEW PASSWORD"
-                  {...register("confirmNewPassword", { required: true })}
+                  {...register("confirmNewPassword", {
+                    required: true,
+                  })}
                   className="w-full bg-black border border-white/10
-                       px-4 py-3 sm:py-3.5
-                       text-white text-sm sm:text-base
-                       rounded-lg
-                       focus:outline-none
-                       focus:border-red-500
-                       transition"
+                    px-4 py-3 sm:py-3.5
+                    text-white text-sm sm:text-base rounded-lg
+                    focus:outline-none focus:border-red-500 transition"
                 />
 
                 <button
                   type="submit"
                   disabled={isSubmitting}
                   className="w-full mt-4 py-3 sm:py-4
-                       font-bold tracking-widest text-sm sm:text-base
-                       bg-gradient-to-r from-red-700 via-red-600 to-red-700
-                       text-black rounded-lg
-                       hover:brightness-110
-                       transition-all duration-200"
+                    font-bold tracking-widest text-sm sm:text-base
+                    bg-gradient-to-r from-red-700 via-red-600 to-red-700
+                    text-black rounded-lg
+                    hover:brightness-110
+                    disabled:opacity-50 transition-all duration-200"
                 >
-                  {isSubmitting ? "UPDATING..." : "UPDATE PASSWORD"}
+                  {isSubmitting
+                    ? "UPDATING..."
+                    : "UPDATE PASSWORD"}
                 </button>
               </form>
             </div>
@@ -425,7 +616,10 @@ function Section({ title, children }) {
       <p className="text-xs text-gray-500 tracking-widest font-bold px-3 mb-2">
         {title}
       </p>
-      <div className="space-y-1">{children}</div>
+
+      <div className="space-y-1">
+        {children}
+      </div>
     </div>
   );
 }
@@ -440,12 +634,12 @@ function SidebarLink({ item, onClose }) {
       onClick={onClose}
       className={({ isActive }) =>
         `flex items-center gap-3 px-4 py-3
-         text-sm font-bold tracking-wide rounded-lg transition
-         ${
-           isActive
-             ? "bg-red-600 text-white shadow-md shadow-red-600/30"
-             : "text-gray-400 hover:text-white hover:bg-white/5"
-         }`
+          text-sm font-bold tracking-wide rounded-lg transition
+          ${
+            isActive
+              ? "bg-red-600 text-white shadow-md shadow-red-600/30"
+              : "text-gray-400 hover:text-white hover:bg-white/5"
+          }`
       }
     >
       <Icon size={18} />
@@ -454,8 +648,13 @@ function SidebarLink({ item, onClose }) {
   );
 }
 
-function CollapsibleGroup({ config, onClose, level = 0 }) {
+function CollapsibleGroup({
+  config,
+  onClose,
+  level = 0,
+}) {
   const location = useLocation();
+
   const isActive = config.base
     ? location.pathname.startsWith(config.base)
     : false;
@@ -463,7 +662,9 @@ function CollapsibleGroup({ config, onClose, level = 0 }) {
   const [open, setOpen] = useState(isActive);
 
   useEffect(() => {
-    if (isActive) setOpen(true);
+    if (isActive) {
+      setOpen(true);
+    }
   }, [isActive]);
 
   const Icon = config.icon;
@@ -471,15 +672,18 @@ function CollapsibleGroup({ config, onClose, level = 0 }) {
   return (
     <div>
       <button
+        type="button"
         onClick={() => setOpen((prev) => !prev)}
         className={`w-full flex items-center justify-between px-4 py-3
-        text-sm font-bold tracking-wide rounded-lg transition
-        ${
-          isActive
-            ? "bg-red-600 text-white shadow-md shadow-red-600/30"
-            : "text-gray-400 hover:text-white hover:bg-white/5"
-        }`}
-        style={{ paddingLeft: `${level * 12 + 16}px` }}
+          text-sm font-bold tracking-wide rounded-lg transition
+          ${
+            isActive
+              ? "bg-red-600 text-white shadow-md shadow-red-600/30"
+              : "text-gray-400 hover:text-white hover:bg-white/5"
+          }`}
+        style={{
+          paddingLeft: `${level * 12 + 16}px`,
+        }}
       >
         <div className="flex items-center gap-3">
           {Icon && <Icon size={18} />}
@@ -489,7 +693,9 @@ function CollapsibleGroup({ config, onClose, level = 0 }) {
         {config.items && (
           <ChevronDown
             size={16}
-            className={`transition ${open ? "rotate-180" : ""}`}
+            className={`transition ${
+              open ? "rotate-180" : ""
+            }`}
           />
         )}
       </button>
@@ -511,13 +717,17 @@ function CollapsibleGroup({ config, onClose, level = 0 }) {
                 onClick={onClose}
                 className={({ isActive }) =>
                   `block px-4 py-2 text-sm rounded-md transition
-                  ${
-                    isActive
-                      ? "text-red-400 bg-red-500/10"
-                      : "text-gray-400 hover:text-white hover:bg-white/5"
-                  }`
+                    ${
+                      isActive
+                        ? "text-red-400 bg-red-500/10"
+                        : "text-gray-400 hover:text-white hover:bg-white/5"
+                    }`
                 }
-                style={{ paddingLeft: `${(level + 1) * 12 + 16}px` }}
+                style={{
+                  paddingLeft: `${
+                    (level + 1) * 12 + 16
+                  }px`,
+                }}
               >
                 {item.label}
               </NavLink>
